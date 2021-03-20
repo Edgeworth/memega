@@ -1,6 +1,7 @@
+use crate::cfg::{Cfg, Crossover, Mutation};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::unevaluated::UnevaluatedGen;
-use crate::{Cfg, Evaluator, Genome};
+use crate::{Evaluator, Genome};
 use derive_more::Display;
 use eyre::Result;
 
@@ -60,5 +61,17 @@ impl<E: Evaluator> Runner<E> {
 
     pub fn eval(&self) -> &E {
         &self.eval
+    }
+
+    pub fn summary(&self, r: &mut RunResult<E::Genome>) -> String {
+        let mut s = String::new();
+        s += &format!("Best: {:?}", Stats::from_run(r, &self));
+        if self.cfg.mutation == Mutation::Adaptive {
+            s += &format!("  mutation weights: {:?}", r.gen.best().state.1.mutation)
+        }
+        if self.cfg.crossover == Crossover::Adaptive {
+            s += &format!("  crossover weights: {:?}", r.gen.best().state.1.crossover)
+        }
+        s
     }
 }

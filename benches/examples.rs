@@ -1,13 +1,12 @@
-use std::time::Duration;
-
 use criterion::{criterion_group, criterion_main, Criterion};
-use ga::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
-use ga::examples::ackley::ackley_runner;
-use ga::examples::griewank::griewank_runner;
-use ga::examples::knapsack::knapsack_runner;
-use ga::examples::rastrigin::rastrigin_runner;
-use ga::examples::target_string::target_string_runner;
-use ga::hyper::hyper_runner;
+use memega::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
+use memega::examples::ackley::ackley_runner;
+use memega::examples::griewank::griewank_runner;
+use memega::examples::knapsack::knapsack_runner;
+use memega::examples::rastrigin::rastrigin_runner;
+use memega::examples::target_string::target_string_runner;
+use memega::hyper::hyper_runner;
+use std::time::Duration;
 
 fn get_cfg() -> Cfg {
     Cfg::new(100)
