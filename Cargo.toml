@@ -1,0 +1,26 @@
+[package]
+authors = ["Eliot Courtney <edgeworth.dev@gmail.com>"]
+edition = "2018"
+name = "memega"
+version = "0.1.0"
+
+[dependencies]
+color-eyre = "*"
+derive_more = "*"
+eyre = "*"
+log = "*"
+memestat = {path = "../memestat"}
+num-traits = "*"
+pretty_env_logger = "*"
+rand = "*"
+rand_distr = "*"
+rayon = "*"
+serde = {version = "*", features = ["derive"]}
+smallvec = "*"
+
+[dev-dependencies]
+criterion = {version = "*", features = ["real_blackbox"]}
+
+[[bench]]
+harness = false
+name = "examples"
