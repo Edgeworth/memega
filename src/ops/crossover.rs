@@ -153,8 +153,8 @@ pub fn crossover_order_single<T: Copy + Hash + Default + Eq>(
 
 //
 // s1 and s2 must have the same length.
-pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
-    let mut r = rand::thread_rng();
+pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(_s1: &mut [T], _s2: &mut [T]) {
+    let _r = rand::thread_rng();
 }
 
 // Discrete crossover operators  //////////////////////////////////////////////
