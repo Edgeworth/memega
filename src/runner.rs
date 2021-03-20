@@ -4,10 +4,19 @@ use crate::gen::unevaluated::UnevaluatedGen;
 use crate::{Evaluator, Genome};
 use derive_more::Display;
 use eyre::Result;
+use float_pretty_print::PrettyPrintFloat;
 
 pub trait RunnerFn<E: Evaluator> = Fn(Cfg) -> Runner<E> + Sync + Send + Clone + 'static;
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq, Display)]
+#[display(
+    fmt = "best: {}, mean: {}, dupes: {}, dist: {}, species: {}",
+    "PrettyPrintFloat(*best_fitness)",
+    "PrettyPrintFloat(*mean_fitness)",
+    "num_dup",
+    "PrettyPrintFloat(*mean_distance)",
+    "num_species"
+)]
 pub struct Stats {
     pub best_fitness: f64,
     pub mean_fitness: f64,
@@ -65,12 +74,20 @@ impl<E: Evaluator> Runner<E> {
 
     pub fn summary(&self, r: &mut RunResult<E::Genome>) -> String {
         let mut s = String::new();
-        s += &format!("Best: {:?}", Stats::from_run(r, &self));
+        s += &format!("{}\n", Stats::from_run(r, &self));
         if self.cfg.mutation == Mutation::Adaptive {
-            s += &format!("  mutation weights: {:?}", r.gen.best().state.1.mutation)
+            s += "  mutation weights: ";
+            for &v in r.gen.best().state.1.mutation.iter() {
+                s += &format!("{}, ", PrettyPrintFloat(v));
+            }
+            s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
-            s += &format!("  crossover weights: {:?}", r.gen.best().state.1.crossover)
+            s += "  crossover weights: ";
+            for &v in r.gen.best().state.1.crossover.iter() {
+                s += &format!("{}, ", PrettyPrintFloat(v));
+            }
+            s += "\n";
         }
         s
     }

@@ -12,7 +12,6 @@ fix:
 	cargo clippy --workspace --all-targets --all-features --fix -Z unstable-options
 	cargo fmt --all
 	cargo outdated --workspace
-	cargo audit
 	cargo udeps --all-features --all-targets --workspace
 
 update-deps:
