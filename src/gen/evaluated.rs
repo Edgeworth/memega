@@ -1,7 +1,7 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Selection, Survival};
 use crate::gen::species::DistCache;
 use crate::gen::unevaluated::UnevaluatedGen;
-use crate::ops::mutation::{mutate_lognorm, mutate_rate};
+use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 use crate::{Evaluator, Genome, State};
 use derive_more::Display;
@@ -149,14 +149,12 @@ impl<T: Genome> EvaluatedGen<T> {
                 s2.1.crossover = rates.clone();
             }
             Crossover::Adaptive => {
-                // Apply every mutation with the given rate.
-                // c' = c * e^(learning rate * N(0, 1))
                 let lrate = 1.0 / (self.size() as f64).sqrt();
                 mutate_rate(&mut s1.1.crossover, 1.0, |v| {
-                    mutate_lognorm(v, lrate).max(0.0)
+                    mutate_normal(v, lrate).max(0.0)
                 });
                 mutate_rate(&mut s2.1.crossover, 1.0, |v| {
-                    mutate_lognorm(v, lrate).max(0.0)
+                    mutate_normal(v, lrate).max(0.0)
                 });
             }
         };
