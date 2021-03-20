@@ -1,13 +1,13 @@
 use rand::prelude::IteratorRandom;
 use rand::Rng;
 use smallvec::SmallVec;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::mem::swap;
 
 // Permutation crossover operators ////////////////////////////////////////////
 
-// Partially mapped crossover.
+// Partially mapped crossover. Good for permutations where adjacency is important.
 // 1 2 3 | 4 5 6 7 | 8 9  =>  . . . 4 5 6 7 . . => . . . 4 5 6 7 . 8
 // 9 3 7 | 8 2 6 5 | 1 4
 // Take a random substring from s1 to create child c1. We then want to place the
@@ -28,41 +28,41 @@ use std::mem::swap;
 //
 // Then do it with swapped s1 and s2 swapped for c2.
 //
-// Non-common elements:
-//   If there are non-common elements between s1 and s2, they effectively end up
-//   undergoing 2 point crossover (not touched by the partially mapped crossover,
-//   except for the initial 2-point crossover).
-//
 // s1 and s2 must have the same length.
 pub fn crossover_pmx<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
     let mut r = rand::thread_rng();
-    let mut i0 = r.gen_range(0..s1.len());
-    let mut i1 = r.gen_range(0..s1.len());
-    if i0 > i1 {
-        swap(&mut i0, &mut i1);
+    let mut st = r.gen_range(0..s1.len());
+    let mut en = r.gen_range(0..s1.len());
+    if st > en {
+        swap(&mut st, &mut en);
     }
-    let c1 = crossover_pmx_single(s1, s2, i0, i1);
-    let c2 = crossover_pmx_single(s2, s1, i0, i1);
+    let c1 = crossover_pmx_single(s1, s2, st, en);
+    let c2 = crossover_pmx_single(s2, s1, st, en);
     s1.copy_from_slice(&c1);
     s2.copy_from_slice(&c2);
 }
 
+// en is inclusive.
 pub fn crossover_pmx_single<T: Copy + Hash + Default + Eq>(
     s1: &[T],
     s2: &[T],
-    i0: usize,
-    i1: usize,
+    st: usize,
+    en: usize,
 ) -> Vec<T> {
+    if s1.is_empty() {
+        return vec![];
+    }
+
     let mut c1 = vec![Default::default(); s1.len()];
     let mut m: HashMap<T, T> = HashMap::new();
-    for i in i0..=i1 {
+    for i in st..=en {
         c1[i] = s1[i]; // Copy substring from s1 into c1.
         m.entry(s1[i]).or_insert(s2[i]); // Map from s1 => s2.
     }
 
     // Find new locations for items in s2 that were displaced by stuff copied
     // into c1.
-    for i in (0..i0).chain((i1 + 1)..s1.len()) {
+    for i in (0..st).chain((en + 1)..s1.len()) {
         let mut ins = s2[i];
         // Try looking up
         let mut count = 0;
@@ -81,26 +81,79 @@ pub fn crossover_pmx_single<T: Copy + Hash + Default + Eq>(
     c1
 }
 
-// Non-common elements:
+// Order type crossover. Useful for permutations where relative order
+// information is more important.
+//
+// This copies a random substring from s1 into c1. Then fills the remaining
+// places starting after the substring ends in c1 and wrapping around with
+// unused values from s2.
 //
 // s1 and s2 must have the same length.
-pub fn crossover_edge<T>(s1: &mut [T], s2: &mut [T]) {
+pub fn crossover_order<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
     let mut r = rand::thread_rng();
+    let mut st = r.gen_range(0..s1.len());
+    let mut en = r.gen_range(0..s1.len());
+    if st > en {
+        swap(&mut st, &mut en);
+    }
+    let c1 = crossover_order_single(s1, s2, st, en);
+    let c2 = crossover_order_single(s2, s1, st, en);
+    s1.copy_from_slice(&c1);
+    s2.copy_from_slice(&c2);
 }
 
-// Non-common elements:
-//
-// s1 and s2 must have the same length.
-pub fn crossover_order<T>(s1: &mut [T], s2: &mut [T]) {
-    let mut r = rand::thread_rng();
+// en is inclusive.
+pub fn crossover_order_single<T: Copy + Hash + Default + Eq>(
+    s1: &[T],
+    s2: &[T],
+    st: usize,
+    en: usize,
+) -> Vec<T> {
+    if s1.is_empty() {
+        return vec![];
+    }
+
+    let mut c1 = vec![Default::default(); s1.len()];
+    let mut m: HashSet<T> = HashSet::new();
+    for i in st..=en {
+        c1[i] = s1[i]; // Copy substring from s1 into c1.
+        m.insert(s1[i]); // Record stuff already in c1.
+    }
+
+    // Add elements from s2 in order after en to c1.
+    let mut cur_idx = (en + 1) % c1.len();
+    for i in 0..s2.len() {
+        // If there are non-common elements in s2, we might have too many
+        // elements and need to break early.
+        if cur_idx == st {
+            break;
+        }
+
+        // Ignore elements already in c1.
+        let v = s2[(en + 1 + i) % c1.len()];
+        if m.contains(&v) {
+            continue;
+        }
+        println!("{} {}", cur_idx, i);
+        c1[cur_idx] = v;
+        cur_idx = (cur_idx + 1) % c1.len();
+    }
+
+    // If there were duplicates, we might not be done. This time don't
+    // check for duplication from s2.
+    for _ in 0..s2.len() {
+        if cur_idx == st {
+            break;
+        }
+        c1[cur_idx] = s2[cur_idx];
+        cur_idx = (cur_idx + 1) % c1.len();
+    }
+    c1
 }
 
-// Non-common elements:
-//
-// Duplicate elements:
 //
 // s1 and s2 must have the same length.
-pub fn crossover_cycle<T>(s1: &mut [T], s2: &mut [T]) {
+pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
     let mut r = rand::thread_rng();
 }
 
@@ -183,34 +236,66 @@ mod tests {
     use rand::rngs::mock::StepRng;
 
     #[test]
-    fn test_crossover_pmx_int() {
+    fn test_crossover_pmx() {
+        let a: [i32; 0] = [];
+        let b: [i32; 0] = [];
+        assert_eq!(crossover_pmx_single(&a, &b, 0, 0), []);
+
+        let a = [1];
+        let b = [1];
+        assert_eq!(crossover_pmx_single(&a, &b, 0, 0), [1]);
+
         let a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         let b = [9, 3, 7, 8, 2, 6, 5, 1, 4];
         assert_eq!(
             crossover_pmx_single(&a, &b, 3, 6),
             [9, 3, 2, 4, 5, 6, 7, 1, 8]
         );
-    }
 
-    #[test]
-    fn test_crossover_pmx_str() {
         let a = str_to_vec("abcdefghi");
         let b = str_to_vec("icghbfead");
         assert_eq!(vec_to_str(&crossover_pmx_single(&a, &b, 3, 6)), "icbdefgah");
-    }
 
-    #[test]
-    fn test_crossover_pmx_dupes() {
         let a = [1, 1, 1, 1, 1];
         let b = [1, 1, 1, 1, 1];
         assert_eq!(crossover_pmx_single(&a, &b, 1, 3), [1, 1, 1, 1, 1]);
-    }
 
-    #[test]
-    fn test_crossover_pmx_dups_non_common() {
         let a = [1, 2, 3, 1, 1];
         let b = [1, 1, 4, 5, 6];
         assert_eq!(crossover_pmx_single(&a, &b, 1, 3), [5, 2, 3, 1, 6]);
+    }
+
+    #[test]
+    fn test_crossover_order() {
+        let a: [i32; 0] = [];
+        let b: [i32; 0] = [];
+        assert_eq!(crossover_order_single(&a, &b, 0, 0), []);
+
+        let a = [1];
+        let b = [1];
+        assert_eq!(crossover_order_single(&a, &b, 0, 0), [1]);
+
+        let a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let b = [9, 3, 7, 8, 2, 6, 5, 1, 4];
+        assert_eq!(
+            crossover_order_single(&a, &b, 3, 6),
+            [3, 8, 2, 4, 5, 6, 7, 1, 9]
+        );
+
+        let a = str_to_vec("abcdefghi");
+        let b = str_to_vec("icghbfead");
+        assert_eq!(
+            vec_to_str(&crossover_order_single(&a, &b, 3, 6)),
+            "chbdefgai"
+        );
+
+        let a = [1, 1, 1, 1, 1];
+        let b = [1, 1, 1, 1, 1];
+        assert_eq!(crossover_order_single(&a, &b, 1, 3), [1, 1, 1, 1, 1]);
+
+        let a = [1, 2, 3, 1, 1];
+        let b = [1, 1, 4, 5, 6];
+        assert_eq!(crossover_order_single(&a, &b, 1, 3), [4, 2, 3, 1, 6]);
     }
 
     #[test]
