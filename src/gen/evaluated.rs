@@ -79,12 +79,9 @@ impl<T: Genome> EvaluatedGen<T> {
     }
 
     fn take_proportion(mems: &[Member<T>], prop: f64) -> Vec<State<T>> {
-        let num = mems.len() as f64 * prop;
-        mems.iter()
-            .map(|v| &v.state)
-            .cloned()
-            .take(num as usize)
-            .collect()
+        // Ceiling so we don't miss keeping things for small sizes.
+        let num = (mems.len() as f64 * prop).ceil() as usize;
+        mems.iter().map(|v| &v.state).cloned().take(num).collect()
     }
 
     fn survivors(&self, survival: Survival) -> Vec<State<T>> {
