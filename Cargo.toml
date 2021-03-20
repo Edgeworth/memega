@@ -8,6 +8,7 @@ version = "0.1.0"
 color-eyre = "*"
 derive_more = "*"
 eyre = "*"
+float-pretty-print = "*"
 log = "*"
 memestat = {path = "../memestat"}
 num-traits = "*"
