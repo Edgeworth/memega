@@ -13,7 +13,6 @@
     type_alias_impl_trait
 )]
 
-use crate::cfg::Cfg;
 use crate::gen::Params;
 use std::fmt;
 

@@ -1,11 +1,9 @@
-use crate::cfg::{Crossover, Mutation, Selection, Survival};
+use crate::cfg::{Cfg, Crossover, Mutation, Selection, Survival};
 use crate::gen::species::DistCache;
 use crate::gen::unevaluated::UnevaluatedGen;
-use crate::ops::crossover::crossover_blx;
 use crate::ops::mutation::{mutate_lognorm, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
-use crate::ops::util::clamp_vec;
-use crate::{Cfg, Evaluator, Genome, State};
+use crate::{Evaluator, Genome, State};
 use derive_more::Display;
 use eyre::{eyre, Result};
 

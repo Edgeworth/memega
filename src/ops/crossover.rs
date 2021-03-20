@@ -134,7 +134,6 @@ pub fn crossover_order_single<T: Copy + Hash + Default + Eq>(
         if m.contains(&v) {
             continue;
         }
-        println!("{} {}", cur_idx, i);
         c1[cur_idx] = v;
         cur_idx = (cur_idx + 1) % c1.len();
     }
@@ -151,10 +150,41 @@ pub fn crossover_order_single<T: Copy + Hash + Default + Eq>(
     c1
 }
 
+// Cycle type crossover. Good for when absolute position of elements is
+// important.
+//
+// Works by finding all cycles between the two strings and alternately
+// assigning the contents of each cycle to the two children.
 //
 // s1 and s2 must have the same length.
-pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(_s1: &mut [T], _s2: &mut [T]) {
-    let _r = rand::thread_rng();
+pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
+    let mut c1: Vec<T> = vec![Default::default(); s1.len()];
+    let mut c2: Vec<T> = vec![Default::default(); s1.len()];
+    // Build map from values in s1 to positions.
+    let mut m: HashMap<T, usize> = HashMap::new();
+    for i in 0..s2.len() {
+        m.entry(s1[i]).or_insert(i);
+    }
+    let mut seen = vec![false; s1.len()];
+    for i in 0..s1.len() {
+        // Already placed into c1 and c2 as part of a cycle.
+        if seen[i] {
+            continue;
+        }
+        let mut idx = i;
+        // Avoid infinite loop with duplicates by checking seen.
+        while !seen[idx] {
+            c1[idx] = s1[idx];
+            c2[idx] = s2[idx];
+            seen[idx] = true;
+            if let Some(&next) = m.get(&s2[idx]) {
+                idx = next; // Follow cycle link.
+            }
+        }
+        swap(&mut c1, &mut c2); // Alternate cycle data between children.
+    }
+    s1.copy_from_slice(&c2);
+    s2.copy_from_slice(&c1);
 }
 
 // Discrete crossover operators  //////////////////////////////////////////////
@@ -296,6 +326,51 @@ mod tests {
         let a = [1, 2, 3, 1, 1];
         let b = [1, 1, 4, 5, 6];
         assert_eq!(crossover_order_single(&a, &b, 1, 3), [4, 2, 3, 1, 6]);
+    }
+
+    #[test]
+    fn test_crossover_cycle() {
+        let mut a: [i32; 0] = [];
+        let mut b: [i32; 0] = [];
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(a, []);
+        assert_eq!(b, []);
+
+        let mut a = [1];
+        let mut b = [1];
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(a, [1]);
+        assert_eq!(b, [1]);
+
+        let mut a = [1];
+        let mut b = [2];
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(a, [1]);
+        assert_eq!(b, [2]);
+
+        let mut a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+        let mut b = [9, 3, 7, 8, 2, 6, 5, 1, 4];
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(a, [1, 3, 7, 4, 2, 6, 5, 8, 9]);
+        assert_eq!(b, [9, 2, 3, 8, 5, 6, 7, 1, 4]);
+
+        let mut a = str_to_vec("abcdefghi");
+        let mut b = str_to_vec("icghbfead");
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(vec_to_str(&a), "acgdbfehi");
+        assert_eq!(vec_to_str(&b), "ibchefgad");
+
+        let mut a = [1, 1, 1, 1, 1];
+        let mut b = [1, 1, 1, 1, 1];
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(a, [1, 1, 1, 1, 1]);
+        assert_eq!(b, [1, 1, 1, 1, 1]);
+
+        let mut a = [1, 2, 3, 1, 1];
+        let mut b = [1, 1, 4, 5, 6];
+        crossover_cycle(&mut a, &mut b);
+        assert_eq!(a, [1, 1, 3, 5, 1]);
+        assert_eq!(b, [1, 2, 4, 1, 6]);
     }
 
     #[test]
