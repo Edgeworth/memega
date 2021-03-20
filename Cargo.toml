@@ -15,7 +15,6 @@ pretty_env_logger = "*"
 rand = "*"
 rand_distr = "*"
 rayon = "*"
-serde = {version = "*", features = ["derive"]}
 smallvec = "*"
 
 [dev-dependencies]
