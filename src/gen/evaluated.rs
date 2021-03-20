@@ -151,10 +151,15 @@ impl<T: Genome> EvaluatedGen<T> {
                 s2.1.crossover = rates.clone();
             }
             Crossover::Adaptive => {
-                // We need to generate one crossover rate vector from two parents.
-                // Use blend crossover to do this, and take the first one.
-                crossover_blx(&mut s1.1.crossover, &mut s2.1.crossover, 0.5);
-                clamp_vec(&mut s1.1.crossover, Some(0.0), None);
+                // Apply every mutation with the given rate.
+                // c' = c * e^(learning rate * N(0, 1))
+                let lrate = 1.0 / (self.size() as f64).sqrt();
+                mutate_rate(&mut s1.1.crossover, 1.0, |v| {
+                    mutate_lognorm(v, lrate).max(0.0)
+                });
+                mutate_rate(&mut s2.1.crossover, 1.0, |v| {
+                    mutate_lognorm(v, lrate).max(0.0)
+                });
             }
         };
         Self::check_weights(&s1.1.crossover, E::NUM_CROSSOVER)?;
