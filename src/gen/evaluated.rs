@@ -1,5 +1,4 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Selection, Stagnation, Survival};
-use crate::gen::species::DistCache;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::gen::Params;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
@@ -26,7 +25,6 @@ pub struct Member<T: Genome> {
 #[display(fmt = "pop: {}, best: {}", "mems.len()", "self.best()")]
 pub struct EvaluatedGen<T: Genome> {
     mems: Vec<Member<T>>,
-    cache: Option<DistCache>,
 }
 
 impl<T: Genome> EvaluatedGen<T> {
@@ -36,7 +34,7 @@ impl<T: Genome> EvaluatedGen<T> {
                 .partial_cmp(&a.selection_fitness)
                 .unwrap()
         });
-        Self { mems, cache: None }
+        Self { mems }
     }
 
     pub fn size(&self) -> usize {
@@ -66,18 +64,6 @@ impl<T: Genome> EvaluatedGen<T> {
     pub fn num_species(&self) -> usize {
         // Relies on species index assignment to be contigous from zero.
         self.mems.iter().map(|mem| mem.species).max().unwrap_or(0) + 1
-    }
-
-    pub fn dists<E: Evaluator<Genome = T>>(&mut self, cfg: &Cfg, eval: &E) -> &DistCache {
-        if self.cache.is_none() {
-            let states = self
-                .mems
-                .iter()
-                .map(|mem| mem.state.clone())
-                .collect::<Vec<_>>();
-            self.cache = Some(DistCache::new(eval, &states, cfg.par_dist));
-        }
-        self.cache.as_ref().unwrap()
     }
 
     fn take_proportion(mems: &[Member<T>], prop: f64) -> Vec<State<T>> {

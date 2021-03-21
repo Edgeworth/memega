@@ -23,7 +23,7 @@ fn eval_run<E: Evaluator>(
             for _ in 0..100 {
                 runner.run_iter()?;
             }
-            let r = Stats::from_run(&mut runner.run_iter()?, &runner);
+            let r = Stats::from_run(&mut runner.run_iter()?);
             g.add(
                 &format!("{}:{}:best fitness", name, cfg_name),
                 run_id,

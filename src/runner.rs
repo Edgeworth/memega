@@ -29,16 +29,13 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn from_run<T: Genome, E: Evaluator<Genome = T>>(
-        r: &mut RunResult<T>,
-        runner: &Runner<E>,
-    ) -> Self {
+    pub fn from_run<T: Genome>(r: &mut RunResult<T>) -> Self {
         Self {
             best_fitness: r.gen.best().base_fitness,
             mean_fitness: r.gen.mean_base_fitness(),
             pop_size: r.gen.size(),
             num_dup: r.gen.num_dup(),
-            mean_distance: r.gen.dists(runner.cfg(), runner.eval()).mean(),
+            mean_distance: r.mean_distance,
             num_species: r.gen.num_species(),
         }
     }
@@ -48,6 +45,7 @@ impl Stats {
 #[display(fmt = "Run({})", gen)]
 pub struct RunResult<T: Genome> {
     pub gen: EvaluatedGen<T>,
+    pub mean_distance: f64,
 }
 
 pub trait RandGenome<G: Genome> = FnMut() -> G;
@@ -93,7 +91,7 @@ impl<E: Evaluator> Runner<E> {
     pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
         const REL_ERR: f64 = 1e-12;
 
-        let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
+        let (gen, mean_distance) = self.gen.evaluate(&self.cfg, &self.eval)?;
         if (gen.best().base_fitness - self.stagnation_fitness).abs() / self.stagnation_fitness
             < REL_ERR
         {
@@ -111,7 +109,7 @@ impl<E: Evaluator> Runner<E> {
         }
         let mut next = gen.next_gen(genfn, &self.cfg, &self.eval)?;
         std::mem::swap(&mut next, &mut self.gen);
-        Ok(RunResult { gen })
+        Ok(RunResult { gen, mean_distance })
     }
 
     pub fn cfg(&self) -> &Cfg {
@@ -124,7 +122,7 @@ impl<E: Evaluator> Runner<E> {
 
     pub fn summary(&self, r: &mut RunResult<E::Genome>) -> String {
         let mut s = String::new();
-        s += &format!("{}\n", Stats::from_run(r, &self));
+        s += &format!("{}\n", Stats::from_run(r));
         if self.cfg.mutation == Mutation::Adaptive {
             s += "  mutation weights: ";
             for &v in r.gen.best().state.1.mutation.iter() {
