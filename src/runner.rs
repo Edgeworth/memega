@@ -11,16 +11,18 @@ pub trait RunnerFn<E: Evaluator> = Fn(Cfg) -> Runner<E> + Sync + Send + Clone + 
 
 #[derive(Debug, Copy, Clone, PartialEq, Display)]
 #[display(
-    fmt = "best: {}, mean: {}, dupes: {}, dist: {}, species: {}",
+    fmt = "best: {}, mean: {}, pop: {}, dupes: {}, dist: {}, species: {}",
     "PrettyPrintFloat(*best_fitness)",
     "PrettyPrintFloat(*mean_fitness)",
-    "num_dup",
+    pop_size,
+    num_dup,
     "PrettyPrintFloat(*mean_distance)",
-    "num_species"
+    num_species
 )]
 pub struct Stats {
     pub best_fitness: f64,
     pub mean_fitness: f64,
+    pub pop_size: usize,
     pub num_dup: usize,
     pub mean_distance: f64,
     pub num_species: usize,
@@ -34,6 +36,7 @@ impl Stats {
         Self {
             best_fitness: r.gen.best().base_fitness,
             mean_fitness: r.gen.mean_base_fitness(),
+            pop_size: r.gen.size(),
             num_dup: r.gen.num_dup(),
             mean_distance: r.gen.dists(runner.cfg(), runner.eval()).mean(),
             num_species: r.gen.num_species(),

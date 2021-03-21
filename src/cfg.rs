@@ -85,14 +85,17 @@ impl Distribution<Species> for Standard {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Stagnation {
     None,
+    // After N generations of stagnation, don't do crossover/mutation - replace with random individuals.
     NumGenerations(usize),
+    DisallowDuplicates, // Don't allow duplicate genomes in the population.
 }
 
 impl Distribution<Stagnation> for Standard {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Stagnation {
         match r.gen_range(0..2) {
             0 => Stagnation::None,
-            _ => Stagnation::NumGenerations(r.gen_range(1..100)),
+            1 => Stagnation::NumGenerations(r.gen_range(1..100)),
+            _ => Stagnation::DisallowDuplicates,
         }
     }
 }

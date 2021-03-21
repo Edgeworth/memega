@@ -1,4 +1,4 @@
-use crate::cfg::{Cfg, Crossover, Mutation, Selection, Survival};
+use crate::cfg::{Cfg, Crossover, Mutation, Selection, Stagnation, Survival};
 use crate::gen::species::DistCache;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::gen::Params;
@@ -200,23 +200,32 @@ impl<T: Genome> EvaluatedGen<T> {
         // Pick survivors:
         let mut new_states = self.survivors(cfg.survival);
         // Min here to avoid underflow - can happen if we produce too many parents.
-        let remaining = cfg.pop_size - new_states.len().min(cfg.pop_size);
-        new_states.reserve(remaining);
+        new_states.reserve(cfg.pop_size);
         if let Some(genfn) = genfn {
             // Use custom generation function, e.g. for stagnation.
-            for _ in 0..remaining {
+            while new_states.len() < cfg.pop_size {
                 new_states.push(((*genfn)(), Params::new::<E>(cfg)));
             }
         } else {
-            // Reproduce:
-            for _ in 0..((remaining + 1) / 2) {
-                let [mut s1, mut s2] = self.selection(cfg.selection);
-                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
-                    .unwrap();
-                self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
-                self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
-                new_states.push(s1);
-                new_states.push(s2);
+            // Reproduce. If DisallowDuplicates on, try up to NUM_TRIES times
+            // to fill the population up.
+            const NUM_TRIES: usize = 3;
+            for _ in 0..NUM_TRIES {
+                while new_states.len() < cfg.pop_size {
+                    let [mut s1, mut s2] = self.selection(cfg.selection);
+                    self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
+                        .unwrap();
+                    self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
+                    self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
+                    new_states.push(s1);
+                    new_states.push(s2);
+                }
+
+                // Remove duplicates if we need to.
+                if cfg.stagnation == Stagnation::DisallowDuplicates {
+                    new_states.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                    new_states.dedup_by(|a, b| a.0.eq(&b.0));
+                }
             }
         }
         Ok(UnevaluatedGen::new(new_states))
