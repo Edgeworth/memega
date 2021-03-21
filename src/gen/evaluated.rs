@@ -1,4 +1,4 @@
-use crate::cfg::{Cfg, Crossover, Mutation, Selection, Stagnation, Survival};
+use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Selection, Survival};
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::gen::Params;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
@@ -208,7 +208,7 @@ impl<T: Genome> EvaluatedGen<T> {
                 }
 
                 // Remove duplicates if we need to.
-                if cfg.stagnation == Stagnation::DisallowDuplicates {
+                if cfg.duplicates == Duplicates::DisallowDuplicates {
                     new_states.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
                     new_states.dedup_by(|a, b| a.0.eq(&b.0));
                 }
