@@ -102,7 +102,6 @@ impl<E: Evaluator> Runner<E> {
         let mut genfn = None;
         if let Stagnation::NumGenerations(count) = self.cfg.stagnation {
             if self.stagnation_count >= count {
-                println!("stagnated, regenning");
                 genfn = Some(self.rand_genome.as_mut());
                 self.stagnation_count = 0;
             }

@@ -199,7 +199,8 @@ impl<T: Genome> EvaluatedGen<T> {
     ) -> Result<UnevaluatedGen<T>> {
         // Pick survivors:
         let mut new_states = self.survivors(cfg.survival);
-        let remaining = cfg.pop_size - new_states.len();
+        // Min here to avoid underflow - can happen if we produce too many parents.
+        let remaining = cfg.pop_size - new_states.len().min(cfg.pop_size);
         new_states.reserve(remaining);
         if let Some(genfn) = genfn {
             // Use custom generation function, e.g. for stagnation.
