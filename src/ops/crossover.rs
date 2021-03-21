@@ -31,11 +31,8 @@ use std::mem::swap;
 // s1 and s2 must have the same length.
 pub fn crossover_pmx<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
     let mut r = rand::thread_rng();
-    let mut st = r.gen_range(0..s1.len());
-    let mut en = r.gen_range(0..s1.len());
-    if st > en {
-        swap(&mut st, &mut en);
-    }
+    let st = r.gen_range(0..s1.len());
+    let en = r.gen_range(st..s1.len());
     let c1 = crossover_pmx_single(s1, s2, st, en);
     let c2 = crossover_pmx_single(s2, s1, st, en);
     s1.copy_from_slice(&c1);
@@ -91,11 +88,8 @@ pub fn crossover_pmx_single<T: Copy + Hash + Default + Eq>(
 // s1 and s2 must have the same length.
 pub fn crossover_order<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
     let mut r = rand::thread_rng();
-    let mut st = r.gen_range(0..s1.len());
-    let mut en = r.gen_range(0..s1.len());
-    if st > en {
-        swap(&mut st, &mut en);
-    }
+    let st = r.gen_range(0..s1.len());
+    let en = r.gen_range(st..s1.len());
     let c1 = crossover_order_single(s1, s2, st, en);
     let c2 = crossover_order_single(s2, s1, st, en);
     s1.copy_from_slice(&c1);

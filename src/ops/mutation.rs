@@ -4,7 +4,6 @@ use rand::Rng;
 use rand_distr::uniform::SampleUniform;
 use rand_distr::{Distribution, Standard, StandardNormal};
 use std::f64::consts::E;
-use std::mem::swap;
 
 // Permutation mutation operators ////////////////////////////////////////////////
 
@@ -18,12 +17,9 @@ pub fn mutate_swap<T: Copy>(s: &mut [T]) {
 // elements in between. E.g. AbcdEfg => bcdAEfg
 pub fn mutate_insert<T: Copy>(s: &mut [T]) {
     let mut r = rand::thread_rng();
-    let mut i0 = r.gen_range(0..s.len());
-    let mut i1 = r.gen_range(0..s.len());
-    if i0 > i1 {
-        swap(&mut i0, &mut i1);
-    }
-    for i in i0..i1 {
+    let st = r.gen_range(0..s.len());
+    let en = r.gen_range(st..s.len());
+    for i in st..en {
         s.swap(i, i + 1);
     }
 }
@@ -31,12 +27,9 @@ pub fn mutate_insert<T: Copy>(s: &mut [T]) {
 // Mutate by scrambling a random substring of the input. e.g. aBCDefg => aCDBefg
 pub fn mutate_scramble<T: Copy>(s: &mut [T]) {
     let mut r = rand::thread_rng();
-    let mut i0 = r.gen_range(0..s.len());
-    let mut i1 = r.gen_range(0..s.len());
-    if i0 > i1 {
-        swap(&mut i0, &mut i1);
-    }
-    s[i0..=i1].shuffle(&mut r);
+    let st = r.gen_range(0..s.len());
+    let en = r.gen_range(st..s.len());
+    s[st..=en].shuffle(&mut r);
 }
 
 // Mutate by inverting a random substring of the input, e.g. aBCDefg => aDCBefg.
@@ -44,12 +37,9 @@ pub fn mutate_scramble<T: Copy>(s: &mut [T]) {
 // two edges (the ends where the inversion happens).
 pub fn mutate_inversion<T: Copy>(s: &mut [T]) {
     let mut r = rand::thread_rng();
-    let mut i0 = r.gen_range(0..s.len());
-    let mut i1 = r.gen_range(0..s.len());
-    if i0 > i1 {
-        swap(&mut i0, &mut i1);
-    }
-    s[i0..=i1].reverse();
+    let st = r.gen_range(0..s.len());
+    let en = r.gen_range(st..s.len());
+    s[st..=en].reverse();
 }
 
 // Discrete mutation operators ////////////////////////////////////////////////
