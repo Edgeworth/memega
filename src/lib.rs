@@ -14,7 +14,10 @@
 )]
 
 use crate::gen::Params;
+use concurrent_lru::sharded::LruCache;
+use rand::Rng;
 use std::fmt;
+use std::hash::Hash;
 
 pub mod cfg;
 pub mod distributions;
@@ -42,4 +45,53 @@ pub trait Evaluator: Send + Sync {
     fn mutate(&self, s: &mut Self::Genome, rate: f64, idx: usize);
     fn fitness(&self, s: &Self::Genome) -> f64;
     fn distance(&self, s1: &Self::Genome, s2: &Self::Genome) -> f64;
+}
+
+// Evaluator which uses an LRU cache to cache fitness and distance values.
+pub struct CachedEvaluator<E: Evaluator>
+where
+    E::Genome: Hash + Eq,
+{
+    eval: E,
+    fitness_cache: LruCache<E::Genome, f64>,
+}
+
+impl<E: Evaluator> CachedEvaluator<E>
+where
+    E::Genome: Hash + Eq,
+{
+    pub fn new(eval: E, cap: usize) -> Self {
+        Self {
+            eval,
+            fitness_cache: LruCache::new(cap as u64),
+        }
+    }
+}
+
+impl<E: Evaluator> Evaluator for CachedEvaluator<E>
+where
+    E::Genome: Hash + Eq,
+{
+    type Genome = E::Genome;
+    const NUM_CROSSOVER: usize = E::NUM_CROSSOVER;
+    const NUM_MUTATION: usize = E::NUM_MUTATION;
+
+    fn crossover(&self, s1: &mut Self::Genome, s2: &mut Self::Genome, idx: usize) {
+        self.eval.crossover(s1, s2, idx)
+    }
+
+    fn mutate(&self, s: &mut Self::Genome, rate: f64, idx: usize) {
+        self.eval.mutate(s, rate, idx)
+    }
+
+    fn fitness(&self, s: &Self::Genome) -> f64 {
+        *self
+            .fitness_cache
+            .get_or_init(s.clone(), 1, |s| self.eval.fitness(s))
+            .value()
+    }
+
+    fn distance(&self, s1: &Self::Genome, s2: &Self::Genome) -> f64 {
+        self.eval.distance(s1, s2)
+    }
 }
