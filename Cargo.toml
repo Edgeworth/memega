@@ -6,6 +6,7 @@ version = "0.1.0"
 
 [dependencies]
 color-eyre = "*"
+concurrent_lru = "*"
 derive_more = "*"
 eyre = "*"
 float-pretty-print = "*"

@@ -155,6 +155,11 @@ impl Cfg {
         Self { species, ..self }
     }
 
+    pub fn with_stagnation(self, stagnation: Stagnation) -> Self {
+        Self { stagnation, ..self }
+    }
+
+
     pub fn with_par_fitness(self, par_fitness: bool) -> Self {
         Self {
             par_fitness,
