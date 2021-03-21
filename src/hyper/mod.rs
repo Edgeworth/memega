@@ -38,7 +38,7 @@ impl HyperAlg {
 impl Evaluator for HyperAlg {
     type Genome = State;
     const NUM_CROSSOVER: usize = 4;
-    const NUM_MUTATION: usize = 11;
+    const NUM_MUTATION: usize = 12;
 
     fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
         let mut r = rand::thread_rng();
@@ -69,6 +69,9 @@ impl Evaluator for HyperAlg {
                 }
                 if r.gen::<bool>() {
                     swap(&mut s1.cfg.stagnation, &mut s2.cfg.stagnation);
+                }
+                if r.gen::<bool>() {
+                    swap(&mut s1.cfg.duplicates, &mut s2.cfg.duplicates);
                 }
             }
             2 => crossover_blx(&mut s1.crossover, &mut s2.crossover, 0.5),
@@ -163,6 +166,11 @@ impl Evaluator for HyperAlg {
             10 => {
                 if r.gen_bool(rate) {
                     s.cfg.stagnation = r.gen()
+                }
+            }
+            11 => {
+                if r.gen_bool(rate) {
+                    s.cfg.duplicates = r.gen()
                 }
             }
             _ => panic!("bug"),

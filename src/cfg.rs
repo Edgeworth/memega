@@ -87,15 +87,28 @@ pub enum Stagnation {
     None,
     // After N generations of stagnation, don't do crossover/mutation - replace with random individuals.
     NumGenerations(usize),
-    DisallowDuplicates, // Don't allow duplicate genomes in the population.
 }
 
 impl Distribution<Stagnation> for Standard {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Stagnation {
-        match r.gen_range(0..2) {
+        match r.gen_range(0..1) {
             0 => Stagnation::None,
-            1 => Stagnation::NumGenerations(r.gen_range(1..100)),
-            _ => Stagnation::DisallowDuplicates,
+            _ => Stagnation::NumGenerations(r.gen_range(1..1000)),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
+pub enum Duplicates {
+    DisallowDuplicates, // Don't allow duplicate genomes in the population.
+    AllowDuplicates,
+}
+
+impl Distribution<Duplicates> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Duplicates {
+        match r.gen_range(0..1) {
+            0 => Duplicates::DisallowDuplicates,
+            _ => Duplicates::AllowDuplicates,
         }
     }
 }
@@ -110,6 +123,7 @@ pub struct Cfg {
     pub niching: Niching,
     pub species: Species,
     pub stagnation: Stagnation,
+    pub duplicates: Duplicates,
     pub par_fitness: bool, // Run fitness computations in parallel
     pub par_dist: bool,    // Run distance computations in parallel
 }
@@ -125,6 +139,7 @@ impl Cfg {
             niching: Niching::None,
             species: Species::None,
             stagnation: Stagnation::None,
+            duplicates: Duplicates::DisallowDuplicates,
             par_fitness: false,
             par_dist: false,
         }
@@ -162,6 +177,9 @@ impl Cfg {
         Self { stagnation, ..self }
     }
 
+    pub fn with_duplicates(self, duplicates: Duplicates) -> Self {
+        Self { duplicates, ..self }
+    }
 
     pub fn with_par_fitness(self, par_fitness: bool) -> Self {
         Self {
