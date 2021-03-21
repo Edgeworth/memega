@@ -69,7 +69,7 @@ impl<T: Genome> UnevaluatedGen<T> {
         &mut self,
         cfg: &Cfg,
         eval: &E,
-    ) -> Result<EvaluatedGen<T>> {
+    ) -> Result<(EvaluatedGen<T>, f64)> {
         // First compute plain fitnesses.
         self.base_fitness = if cfg.par_fitness {
             self.states
@@ -131,15 +131,18 @@ impl<T: Genome> UnevaluatedGen<T> {
                 fitness
             }
         };
-        Ok(EvaluatedGen::new(
-            (0..self.states.len())
-                .map(|i| Member {
-                    state: self.states[i].clone(),
-                    base_fitness: self.base_fitness[i],
-                    selection_fitness: selection_fitness[i],
-                    species: *self.species.get(i).unwrap_or(&0) as usize,
-                })
-                .collect(),
+        Ok((
+            EvaluatedGen::new(
+                (0..self.states.len())
+                    .map(|i| Member {
+                        state: self.states[i].clone(),
+                        base_fitness: self.base_fitness[i],
+                        selection_fitness: selection_fitness[i],
+                        species: *self.species.get(i).unwrap_or(&0) as usize,
+                    })
+                    .collect(),
+            ),
+            self.dists.mean(),
         ))
     }
 }

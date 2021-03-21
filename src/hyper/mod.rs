@@ -264,7 +264,7 @@ impl HyperBuilder {
 
             // Get the last run that ran in time.
             if let Some(mut r) = r1 {
-                let mut stats = Stats::from_run(&mut r, &runner);
+                let mut stats = Stats::from_run(&mut r);
                 stats.best_fitness /= max_fitness;
                 stats.mean_fitness /= max_fitness;
                 Some(stats)
