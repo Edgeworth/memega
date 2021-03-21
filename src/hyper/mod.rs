@@ -4,7 +4,7 @@ use crate::examples::griewank::griewank_runner;
 use crate::examples::knapsack::knapsack_runner;
 use crate::examples::rastrigin::rastrigin_runner;
 use crate::examples::target_string::target_string_runner;
-use crate::gen::unevaluated::UnevaluatedGen;
+use crate::ops::crossover::crossover_blx;
 use crate::ops::distance::{dist2, dist_abs};
 use crate::ops::mutation::{mutate_creep, mutate_normal, mutate_rate};
 use crate::ops::util::rand_vec;
@@ -15,8 +15,6 @@ use std::mem::swap;
 use std::time::{Duration, Instant};
 
 const MAX_POP: usize = 100;
-
-// Also try with average of all example problems.
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
@@ -39,8 +37,8 @@ impl HyperAlg {
 
 impl Evaluator for HyperAlg {
     type Genome = State;
-    const NUM_CROSSOVER: usize = 2;
-    const NUM_MUTATION: usize = 10;
+    const NUM_CROSSOVER: usize = 4;
+    const NUM_MUTATION: usize = 11;
 
     fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
         let mut r = rand::thread_rng();
@@ -70,12 +68,11 @@ impl Evaluator for HyperAlg {
                     swap(&mut s1.cfg.species, &mut s2.cfg.species);
                 }
                 if r.gen::<bool>() {
-                    swap(&mut s1.crossover, &mut s2.crossover);
-                }
-                if r.gen::<bool>() {
-                    swap(&mut s1.mutation, &mut s2.mutation);
+                    swap(&mut s1.cfg.stagnation, &mut s2.cfg.stagnation);
                 }
             }
+            2 => crossover_blx(&mut s1.crossover, &mut s2.crossover, 0.5),
+            3 => crossover_blx(&mut s1.mutation, &mut s2.mutation, 0.5),
             _ => panic!("bug"),
         }
     }
@@ -163,6 +160,11 @@ impl Evaluator for HyperAlg {
                     s.cfg.pop_size = r.gen_range(2..MAX_POP)
                 }
             }
+            10 => {
+                if r.gen_bool(rate) {
+                    s.cfg.stagnation = r.gen()
+                }
+            }
             _ => panic!("bug"),
         }
     }
@@ -229,10 +231,10 @@ impl HyperBuilder {
         }
     }
 
-    fn rand_state(&self) -> State {
+    fn rand_state(num_crossover: usize, num_mutation: usize) -> State {
         let mut r = rand::thread_rng();
-        let crossover = rand_vec(self.num_crossover, || r.gen());
-        let mutation = rand_vec(self.num_mutation, || r.gen());
+        let crossover = rand_vec(num_crossover, || r.gen());
+        let mutation = rand_vec(num_mutation, || r.gen());
         let mut cfg = Cfg::new(r.gen_range(5..MAX_POP));
         cfg.survival = r.gen();
         cfg.selection = r.gen();
@@ -281,9 +283,10 @@ impl HyperBuilder {
             .with_niching(Niching::None)
             .with_par_dist(false)
             .with_par_fitness(true);
-        let initial = rand_vec(cfg.pop_size, || self.rand_state());
-        let gen = UnevaluatedGen::initial::<HyperAlg>(initial, &cfg);
-        Runner::new(HyperAlg::new(self.stat_fns), cfg, gen)
+        let num_crossover = self.num_crossover;
+        let num_mutation = self.num_mutation;
+        let genomefn = move || Self::rand_state(num_crossover, num_mutation);
+        Runner::new(HyperAlg::new(self.stat_fns), cfg, genomefn)
     }
 }
 

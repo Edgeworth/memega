@@ -1,4 +1,4 @@
-use crate::cfg::{Cfg, Crossover, Mutation, Niching, Species, EP};
+use crate::cfg::{Cfg, Niching, Species, EP};
 use crate::gen::evaluated::{EvaluatedGen, Member};
 use crate::gen::species::DistCache;
 use crate::gen::Params;
@@ -19,29 +19,9 @@ pub struct UnevaluatedGen<T: Genome> {
 
 impl<T: Genome> UnevaluatedGen<T> {
     pub fn initial<E: Evaluator>(genomes: Vec<T>, cfg: &Cfg) -> Self {
-        let mutation = if let Mutation::Fixed(v) = &cfg.mutation {
-            v.clone()
-        } else {
-            vec![0.1; E::NUM_MUTATION]
-        };
-
-        let crossover = if let Crossover::Fixed(v) = &cfg.crossover {
-            v.clone()
-        } else {
-            vec![0.1; E::NUM_CROSSOVER]
-        };
-
         let states = genomes
             .into_iter()
-            .map(|v| {
-                (
-                    v,
-                    Params {
-                        mutation: mutation.clone(),
-                        crossover: crossover.clone(),
-                    },
-                )
-            })
+            .map(|v| (v, Params::new::<E>(cfg)))
             .collect();
         Self::new(states)
     }

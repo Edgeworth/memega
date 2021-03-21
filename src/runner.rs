@@ -1,6 +1,7 @@
-use crate::cfg::{Cfg, Crossover, Mutation};
+use crate::cfg::{Cfg, Crossover, Mutation, Stagnation};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::unevaluated::UnevaluatedGen;
+use crate::ops::util::rand_vec;
 use crate::{Evaluator, Genome};
 use derive_more::Display;
 use eyre::Result;
@@ -46,22 +47,68 @@ pub struct RunResult<T: Genome> {
     pub gen: EvaluatedGen<T>,
 }
 
+pub trait RandGenome<G: Genome> = FnMut() -> G;
+
 pub struct Runner<E: Evaluator> {
     eval: E,
     cfg: Cfg,
     gen: UnevaluatedGen<E::Genome>,
+    rand_genome: Box<dyn RandGenome<E::Genome>>,
+    stagnation_count: usize,
+    stagnation_fitness: f64,
 }
 
 impl<E: Evaluator> Runner<E> {
-    pub fn new(eval: E, cfg: Cfg, gen: UnevaluatedGen<E::Genome>) -> Self {
-        Self { eval, cfg, gen }
+    pub fn from_gen(
+        eval: E,
+        cfg: Cfg,
+        gen: UnevaluatedGen<E::Genome>,
+        rand_genome: impl RandGenome<E::Genome> + 'static,
+    ) -> Self {
+        Self {
+            eval,
+            cfg,
+            gen,
+            rand_genome: Box::new(rand_genome),
+            stagnation_count: 0,
+            stagnation_fitness: 0.0,
+        }
+    }
+
+    pub fn new(eval: E, cfg: Cfg, mut rand_genome: impl RandGenome<E::Genome> + 'static) -> Self {
+        let gen = UnevaluatedGen::initial::<E>(rand_vec(cfg.pop_size, || rand_genome()), &cfg);
+        Self {
+            eval,
+            cfg,
+            gen,
+            rand_genome: Box::new(rand_genome),
+            stagnation_count: 0,
+            stagnation_fitness: 0.0,
+        }
     }
 
     pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
-        let evaluated = self.gen.evaluate(&self.cfg, &self.eval)?;
-        let mut gen = evaluated.next_gen(&self.cfg, &self.eval)?;
-        std::mem::swap(&mut gen, &mut self.gen);
-        Ok(RunResult { gen: evaluated })
+        const REL_ERR: f64 = 1e-12;
+
+        let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
+        if (gen.best().base_fitness - self.stagnation_fitness).abs() / self.stagnation_fitness
+            < REL_ERR
+        {
+            self.stagnation_count += 1;
+        } else {
+            self.stagnation_count = 0;
+        }
+        self.stagnation_fitness = gen.best().base_fitness;
+        let mut genfn = None;
+        if let Stagnation::NumGenerations(count) = self.cfg.stagnation {
+            if self.stagnation_count >= count {
+                println!("stagnated, regenning");
+                genfn = Some(self.rand_genome.as_mut());
+            }
+        }
+        let mut next = gen.next_gen(genfn, &self.cfg, &self.eval)?;
+        std::mem::swap(&mut next, &mut self.gen);
+        Ok(RunResult { gen })
     }
 
     pub fn cfg(&self) -> &Cfg {

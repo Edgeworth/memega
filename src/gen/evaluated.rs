@@ -1,8 +1,10 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Selection, Survival};
 use crate::gen::species::DistCache;
 use crate::gen::unevaluated::UnevaluatedGen;
+use crate::gen::Params;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
+use crate::runner::RandGenome;
 use crate::{Evaluator, Genome, State};
 use derive_more::Display;
 use eyre::{eyre, Result};
@@ -191,6 +193,7 @@ impl<T: Genome> EvaluatedGen<T> {
 
     pub fn next_gen<E: Evaluator<Genome = T>>(
         &self,
+        genfn: Option<&mut (dyn RandGenome<T> + '_)>,
         cfg: &Cfg,
         eval: &E,
     ) -> Result<UnevaluatedGen<T>> {
@@ -198,15 +201,22 @@ impl<T: Genome> EvaluatedGen<T> {
         let mut new_states = self.survivors(cfg.survival);
         let remaining = cfg.pop_size - new_states.len();
         new_states.reserve(remaining);
-        // Reproduce:
-        for _ in 0..((remaining + 1) / 2) {
-            let [mut s1, mut s2] = self.selection(cfg.selection);
-            self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
-                .unwrap();
-            self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
-            self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
-            new_states.push(s1);
-            new_states.push(s2);
+        if let Some(genfn) = genfn {
+            // Use custom generation function, e.g. for stagnation.
+            for _ in 0..remaining {
+                new_states.push(((*genfn)(), Params::new::<E>(cfg)));
+            }
+        } else {
+            // Reproduce:
+            for _ in 0..((remaining + 1) / 2) {
+                let [mut s1, mut s2] = self.selection(cfg.selection);
+                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
+                    .unwrap();
+                self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
+                self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
+                new_states.push(s1);
+                new_states.push(s2);
+            }
         }
         Ok(UnevaluatedGen::new(new_states))
     }

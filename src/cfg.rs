@@ -1,3 +1,4 @@
+use rand::Rng;
 use rand_distr::{Distribution, Standard};
 
 pub const EP: f64 = 1.0e-6;
@@ -28,7 +29,7 @@ pub enum Survival {
 }
 
 impl Distribution<Survival> for Standard {
-    fn sample<R: rand::Rng + ?Sized>(&self, r: &mut R) -> Survival {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Survival {
         match r.gen_range(0..2) {
             0 => Survival::TopProportion(r.gen_range(0.0..0.9)),
             _ => Survival::SpeciesTopProportion(r.gen_range(0.0..0.9)),
@@ -43,7 +44,7 @@ pub enum Selection {
 }
 
 impl Distribution<Selection> for Standard {
-    fn sample<R: rand::Rng + ?Sized>(&self, r: &mut R) -> Selection {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Selection {
         match r.gen_range(0..2) {
             0 => Selection::Sus,
             _ => Selection::Roulette,
@@ -58,7 +59,7 @@ pub enum Niching {
 }
 
 impl Distribution<Niching> for Standard {
-    fn sample<R: rand::Rng + ?Sized>(&self, r: &mut R) -> Niching {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Niching {
         match r.gen_range(0..2) {
             0 => Niching::None,
             _ => Niching::SharedFitness,
@@ -73,10 +74,25 @@ pub enum Species {
 }
 
 impl Distribution<Species> for Standard {
-    fn sample<R: rand::Rng + ?Sized>(&self, r: &mut R) -> Species {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Species {
         match r.gen_range(0..2) {
             0 => Species::None,
             _ => Species::TargetNumber(r.gen_range(1..10)),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
+pub enum Stagnation {
+    None,
+    NumGenerations(usize),
+}
+
+impl Distribution<Stagnation> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Stagnation {
+        match r.gen_range(0..2) {
+            0 => Stagnation::None,
+            _ => Stagnation::NumGenerations(r.gen_range(1..100)),
         }
     }
 }
@@ -90,6 +106,7 @@ pub struct Cfg {
     pub selection: Selection,
     pub niching: Niching,
     pub species: Species,
+    pub stagnation: Stagnation,
     pub par_fitness: bool, // Run fitness computations in parallel
     pub par_dist: bool,    // Run distance computations in parallel
 }
@@ -104,6 +121,7 @@ impl Cfg {
             selection: Selection::Sus,
             niching: Niching::None,
             species: Species::None,
+            stagnation: Stagnation::None,
             par_fitness: false,
             par_dist: false,
         }
