@@ -175,10 +175,11 @@ impl Evaluator for HyperAlg {
         for _ in 0..SAMPLES {
             for f in self.stat_fns.iter() {
                 if let Some(r) = f(s.cfg.clone()) {
-                    score += r.mean_fitness;
+                    // TODO: Need multi-objective GA here. Or at least configure
+                    // what to optimise.
+                    score += r.best_fitness;
                 }
             }
-            // TODO: Need multi-objective GA here.
         }
         score / SAMPLES as f64
     }

@@ -72,11 +72,8 @@ fn run_once<E: Evaluator>(mut runner: Runner<E>) -> Result<()> {
         let mut r = runner.run_iter()?;
         println!("Generation {}: {}", i + 1, r.gen.best().base_fitness);
         if i % 10 == 0 {
-            println!(
-                "  {:?}\n  best: {:?}",
-                Stats::from_run(&mut r, &runner),
-                r.gen.best().state
-            );
+            println!("{}", runner.summary(&mut r));
+            println!("best: {:?}", r.gen.best().state);
         }
     }
     Ok(())
