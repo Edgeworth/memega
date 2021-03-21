@@ -1,6 +1,5 @@
 use crate::cfg::Cfg;
 use crate::distributions::PrintableAscii;
-use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::crossover::crossover_kpx;
 use crate::ops::fitness::count_different;
 use crate::ops::mutation::mutate_rate;
@@ -55,9 +54,7 @@ impl Evaluator for TargetString {
 pub fn target_string_runner(cfg: Cfg) -> Runner<TargetString> {
     const TARGET: &str = "Hello world!";
     let mut r = rand::thread_rng();
-    let initial = rand_vec(cfg.pop_size, || {
+    Runner::new(TargetString::new(TARGET), cfg, move || {
         rand_vec(TARGET.len(), || r.sample::<char, _>(PrintableAscii))
-    });
-    let gen = UnevaluatedGen::initial::<TargetString>(initial, &cfg);
-    Runner::new(TargetString::new(TARGET), cfg, gen)
+    })
 }

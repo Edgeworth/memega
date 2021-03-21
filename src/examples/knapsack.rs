@@ -1,5 +1,4 @@
 use crate::cfg::Cfg;
-use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::crossover::crossover_kpx;
 use crate::ops::fitness::count_different;
 use crate::ops::mutation::mutate_rate;
@@ -65,12 +64,12 @@ pub fn knapsack_runner(cfg: Cfg) -> Runner<Knapsack> {
     const MAX_W: f64 = 100.0;
 
     let mut r = rand::thread_rng();
-    let initial = rand_vec(cfg.pop_size, || rand_vec(NUM_ITEMS, || r.gen::<bool>()));
-    let gen = UnevaluatedGen::initial::<Knapsack>(initial, &cfg);
     let items = rand_vec(NUM_ITEMS, || {
         let w = r.gen_range(0.0..MAX_W);
         let v = r.gen_range(0.1..10.0) * w;
         (w, v)
     });
-    Runner::new(Knapsack::new(MAX_W, items), cfg, gen)
+    Runner::new(Knapsack::new(MAX_W, items), cfg, move || {
+        rand_vec(NUM_ITEMS, || r.gen::<bool>())
+    })
 }

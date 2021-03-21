@@ -1,5 +1,4 @@
 use crate::cfg::Cfg;
-use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::crossover::crossover_arith;
 use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate, mutate_uniform};
@@ -57,7 +56,7 @@ pub fn func_runner<F: FitnessFn<FuncState>>(
     f: F,
     cfg: Cfg,
 ) -> Runner<FuncEvaluator<F>> {
-    let initial = rand_vec(cfg.pop_size, || rand_vec(dim, || mutate_uniform(st, en)));
-    let gen = UnevaluatedGen::initial::<FuncEvaluator<F>>(initial, &cfg);
-    Runner::new(FuncEvaluator::new(dim, st, en, f), cfg, gen)
+    Runner::new(FuncEvaluator::new(dim, st, en, f), cfg, move || {
+        rand_vec(dim, || mutate_uniform(st, en))
+    })
 }
