@@ -1,3 +1,4 @@
+use eyre::{eyre, Result};
 use num_traits::{Num, NumAssign};
 use std::mem::swap;
 
@@ -32,4 +33,55 @@ pub fn dist2(s1: &[f64], s2: &[f64]) -> f64 {
         dist += (a - b) * (a - b);
     }
     dist.sqrt()
+}
+
+// Number of different pairs
+pub fn count_different<T: PartialEq>(s1: &[T], s2: &[T]) -> usize {
+    let min = s1.len().min(s2.len());
+    let max = s1.len().max(s2.len());
+    let mut count = 0;
+    for i in 0..min {
+        if s1[i] != s2[i] {
+            count += 1;
+        }
+    }
+    count + max - min
+}
+
+// Kendall tau distance: https://en.wikipedia.org/wiki/Kendall_tau_distance
+pub fn kendall_tau<T: PartialOrd>(s1: &[T], s2: &[T]) -> Result<usize> {
+    if s1.len() != s2.len() {
+        return Err(eyre!("must be same length"));
+    }
+    let mut count = 0;
+    for i in 0..s1.len() {
+        for j in (i + 1)..s2.len() {
+            if (s1[i] < s1[j]) != (s2[i] < s2[j]) {
+                count += 1;
+            }
+        }
+    }
+    Ok(count)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_count_different() {
+        assert_eq!(count_different(&[1], &[1]), 0);
+        assert_eq!(count_different(&[1], &[2]), 1);
+        assert_eq!(count_different(&[1], &[1, 2]), 1);
+        assert_eq!(count_different(&[1, 2], &[1]), 1);
+    }
+
+    #[test]
+    fn test_kendall_tau() {
+        assert_eq!(kendall_tau(&[1], &[1]).unwrap(), 0);
+        assert_eq!(kendall_tau(&[1], &[2]).unwrap(), 0);
+        assert_eq!(kendall_tau(&[1, 2], &[1, 2]).unwrap(), 0);
+        assert_eq!(kendall_tau(&[1, 2], &[2, 1]).unwrap(), 1);
+        assert_eq!(kendall_tau(&[1, 2, 3, 4, 5], &[3, 4, 1, 2, 5]).unwrap(), 4);
+    }
 }
