@@ -15,7 +15,6 @@
 
 use crate::gen::Params;
 use concurrent_lru::sharded::LruCache;
-use rand::Rng;
 use std::fmt;
 use std::hash::Hash;
 
