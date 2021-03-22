@@ -161,10 +161,10 @@ impl<E: Evaluator> Runner<E> {
         while processed < n {
             // What we added this round.
             let mut added: Vec<(f64, usize)> = Vec::new();
-            for (species, (idx, v)) in by_species.iter_mut().enumerate() {
+            for (species_idx, (idx, v)) in by_species.iter_mut().enumerate() {
                 // Try adding this one.
                 if *idx < v.len() {
-                    added.push((v[*idx].base_fitness, species));
+                    added.push((v[*idx].base_fitness, species_idx));
                     *idx += 1;
                     processed += 1;
                 }
@@ -179,12 +179,27 @@ impl<E: Evaluator> Runner<E> {
             }
         }
 
+        // Order species by highest fitness individual.
+        by_species.sort_unstable_by(|a, b| {
+            b.1.first()
+                .unwrap()
+                .base_fitness
+                .partial_cmp(&a.1.first().unwrap().base_fitness)
+                .unwrap()
+        });
+
         for (species, (count, mems)) in by_species.iter().enumerate() {
-            s += &format!("Species {} top {}:\n", species, count);
-            for mem in mems.iter().take(*count) {
-                s += &format!("{}\n", f(&mem.state.0));
+            if *count > 0 {
+                s += &format!("Species {} top {}:\n", species, count);
+                for mem in mems.iter().take(*count) {
+                    s += &format!(
+                        "{}\n{}\n",
+                        PrettyPrintFloat(mem.base_fitness),
+                        f(&mem.state.0)
+                    );
+                }
+                s += "\n";
             }
-            s += "\n";
         }
         s.truncate(s.trim_end().len());
         s
