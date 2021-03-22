@@ -29,11 +29,10 @@ pub struct EvaluatedGen<T: Genome> {
 
 impl<T: Genome> EvaluatedGen<T> {
     pub fn new(mut mems: Vec<Member<T>>) -> Self {
-        mems.sort_unstable_by(|a, b| {
-            b.selection_fitness
-                .partial_cmp(&a.selection_fitness)
-                .unwrap()
-        });
+        // Sort by base fitness. Selection should happen using selection
+        // fitness. Generate survivors using base fitness, to make sure we keep
+        // the top individuals.
+        mems.sort_unstable_by(|a, b| b.base_fitness.partial_cmp(&a.base_fitness).unwrap());
         Self { mems }
     }
 
@@ -43,6 +42,14 @@ impl<T: Genome> EvaluatedGen<T> {
 
     pub fn nth(&self, n: usize) -> &Member<T> {
         &self.mems[n]
+    }
+
+    pub fn species(&self, n: usize) -> Vec<Member<T>> {
+        self.mems
+            .iter()
+            .filter(|v| v.species == n)
+            .cloned()
+            .collect()
     }
 
     pub fn mean_base_fitness(&self) -> f64 {

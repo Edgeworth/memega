@@ -1,5 +1,5 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Stagnation};
-use crate::gen::evaluated::EvaluatedGen;
+use crate::gen::evaluated::{EvaluatedGen, Member};
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
 use crate::{Evaluator, Genome};
@@ -137,6 +137,56 @@ impl<E: Evaluator> Runner<E> {
             }
             s += "\n";
         }
+        s
+    }
+
+    // Prints the top #n individuals. If there are multiple species, prints the
+    // top n / # species for each species. If n isn't divisble by number of
+    // species, the remainder will go to print the top n % # out of the #
+    // species.
+    pub fn summary_sample(
+        &self,
+        r: &mut RunResult<E::Genome>,
+        n: usize,
+        mut f: impl FnMut(&E::Genome) -> String,
+    ) -> String {
+        let mut s = String::new();
+        let num_species = r.gen.num_species();
+        let mut by_species: Vec<(usize, Vec<Member<E::Genome>>)> = Vec::new();
+        for i in 0..num_species {
+            by_species.push((0, r.gen.species(i)));
+        }
+
+        let mut processed = 0;
+        while processed < n {
+            // What we added this round.
+            let mut added: Vec<(f64, usize)> = Vec::new();
+            for (species, (idx, v)) in by_species.iter_mut().enumerate() {
+                // Try adding this one.
+                if *idx < v.len() {
+                    added.push((v[*idx].base_fitness, species));
+                    *idx += 1;
+                    processed += 1;
+                }
+            }
+            if processed > n {
+                // Remove |overflow| weakest individuals.
+                let overflow = processed - n;
+                added.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+                for &(_, species) in added.iter().take(overflow) {
+                    by_species[species].0 -= 1;
+                }
+            }
+        }
+
+        for (species, (count, mems)) in by_species.iter().enumerate() {
+            s += &format!("Species {} top {}:\n", species, count);
+            for mem in mems.iter().take(*count) {
+                s += &format!("{}\n", f(&mem.state.0));
+            }
+            s += "\n";
+        }
+        s.truncate(s.trim_end().len());
         s
     }
 }
