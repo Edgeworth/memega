@@ -14,8 +14,6 @@ use rand::Rng;
 use std::mem::swap;
 use std::time::{Duration, Instant};
 
-const MAX_POP: usize = 100;
-
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
     cfg: Cfg,
@@ -38,7 +36,7 @@ impl HyperAlg {
 impl Evaluator for HyperAlg {
     type Genome = State;
     const NUM_CROSSOVER: usize = 4;
-    const NUM_MUTATION: usize = 12;
+    const NUM_MUTATION: usize = 10;
 
     fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
         let mut r = rand::thread_rng();
@@ -46,9 +44,6 @@ impl Evaluator for HyperAlg {
             0 => {}
             1 => {
                 // Uniform crossover-like operation:
-                if r.gen::<bool>() {
-                    swap(&mut s1.cfg.pop_size, &mut s2.cfg.pop_size);
-                }
                 if r.gen::<bool>() {
                     swap(&mut s1.cfg.crossover, &mut s2.cfg.crossover);
                 }
@@ -155,20 +150,10 @@ impl Evaluator for HyperAlg {
             }
             8 => {
                 if r.gen_bool(rate) {
-                    s.cfg.pop_size = mutate_creep(s.cfg.pop_size, 10).clamp(2, MAX_POP);
-                }
-            }
-            9 => {
-                if r.gen_bool(rate) {
-                    s.cfg.pop_size = r.gen_range(2..MAX_POP)
-                }
-            }
-            10 => {
-                if r.gen_bool(rate) {
                     s.cfg.stagnation = r.gen()
                 }
             }
-            11 => {
+            9 => {
                 if r.gen_bool(rate) {
                     s.cfg.duplicates = r.gen()
                 }
@@ -178,7 +163,7 @@ impl Evaluator for HyperAlg {
     }
 
     fn fitness(&self, s: &State) -> f64 {
-        const SAMPLES: usize = 10;
+        const SAMPLES: usize = 30;
         let mut score = 0.0;
         for _ in 0..SAMPLES {
             for f in self.stat_fns.iter() {
@@ -193,7 +178,7 @@ impl Evaluator for HyperAlg {
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
-        let mut dist = dist_abs(s1.cfg.pop_size, s2.cfg.pop_size) as f64;
+        let mut dist = 0.0;
 
         let s1_cross = if let Crossover::Fixed(v) = &s1.cfg.crossover {
             v
@@ -225,26 +210,28 @@ impl Evaluator for HyperAlg {
 
 pub struct HyperBuilder {
     stat_fns: Vec<Box<dyn StatFn>>,
+    pop_size: usize,
     num_crossover: usize,
     num_mutation: usize,
     sample_dur: Duration,
 }
 
 impl HyperBuilder {
-    pub fn new(sample_dur: Duration) -> Self {
+    pub fn new(pop_size: usize, sample_dur: Duration) -> Self {
         Self {
             stat_fns: Vec::new(),
+            pop_size,
             num_crossover: 0,
             num_mutation: 0,
             sample_dur,
         }
     }
 
-    fn rand_state(num_crossover: usize, num_mutation: usize) -> State {
+    fn rand_state(pop_size: usize, num_crossover: usize, num_mutation: usize) -> State {
         let mut r = rand::thread_rng();
         let crossover = rand_vec(num_crossover, || r.gen());
         let mutation = rand_vec(num_mutation, || r.gen());
-        let mut cfg = Cfg::new(r.gen_range(5..MAX_POP));
+        let mut cfg = Cfg::new(pop_size);
         cfg.survival = r.gen();
         cfg.selection = r.gen();
         cfg.niching = r.gen();
@@ -292,15 +279,16 @@ impl HyperBuilder {
             .with_niching(Niching::None)
             .with_par_dist(false)
             .with_par_fitness(true);
+        let pop_size = self.pop_size;
         let num_crossover = self.num_crossover;
         let num_mutation = self.num_mutation;
-        let genomefn = move || Self::rand_state(num_crossover, num_mutation);
+        let genomefn = move || Self::rand_state(pop_size, num_crossover, num_mutation);
         Runner::new(HyperAlg::new(self.stat_fns), cfg, genomefn)
     }
 }
 
-pub fn hyper_runner(sample_dur: Duration) -> Runner<HyperAlg> {
-    let mut builder = HyperBuilder::new(sample_dur);
+pub fn hyper_runner(pop_size: usize, sample_dur: Duration) -> Runner<HyperAlg> {
+    let mut builder = HyperBuilder::new(pop_size, sample_dur);
     builder.add(1.0, &|cfg| rastrigin_runner(2, cfg));
     builder.add(1.0, &|cfg| griewank_runner(2, cfg));
     builder.add(1.0, &|cfg| ackley_runner(2, cfg));

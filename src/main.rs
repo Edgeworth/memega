@@ -73,7 +73,10 @@ fn run_once<E: Evaluator>(mut runner: Runner<E>) -> Result<()> {
         println!("Generation {}: {}", i + 1, r.gen.nth(0).base_fitness);
         if i % 10 == 0 {
             println!("{}", runner.summary(&mut r));
-            println!("best: {:?}", r.gen.nth(0).state);
+            println!(
+                "{}",
+                runner.summary_sample(&mut r, 5, |v| format!("{:?}", v))
+            );
         }
     }
     Ok(())
@@ -90,7 +93,7 @@ fn main() -> Result<()> {
     // run_grapher("ackley", cfg.clone(), &|cfg| ackley_runner(2, cfg))?;
     // run_grapher("string", cfg, &target_string_runner)?;
     // run_once(rastrigin_runner(2, all_cfg()))?;
-    run_once(hyper_runner(Duration::from_millis(10)))?;
+    run_once(hyper_runner(100, Duration::from_millis(10)))?;
     // run_once(hyper_runner(&knapsack_runner))?;
     // run_once(hyper_runner(&target_string_runner))?;
     // run_once(hyper_runner))?;
