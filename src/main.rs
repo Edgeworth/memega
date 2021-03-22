@@ -70,10 +70,10 @@ fn run_grapher<E: Evaluator>(
 fn run_once<E: Evaluator>(mut runner: Runner<E>) -> Result<()> {
     for i in 0..1000 {
         let mut r = runner.run_iter()?;
-        println!("Generation {}: {}", i + 1, r.gen.best().base_fitness);
+        println!("Generation {}: {}", i + 1, r.gen.nth(0).base_fitness);
         if i % 10 == 0 {
             println!("{}", runner.summary(&mut r));
-            println!("best: {:?}", r.gen.best().state);
+            println!("best: {:?}", r.gen.nth(0).state);
         }
     }
     Ok(())

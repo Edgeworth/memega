@@ -22,7 +22,7 @@ pub struct Member<T: Genome> {
 }
 
 #[derive(Display, Clone, PartialOrd, PartialEq)]
-#[display(fmt = "pop: {}, best: {}", "mems.len()", "self.best()")]
+#[display(fmt = "pop: {}, best: {}", "mems.len()", "self.nth(0)")]
 pub struct EvaluatedGen<T: Genome> {
     mems: Vec<Member<T>>,
 }
@@ -41,8 +41,8 @@ impl<T: Genome> EvaluatedGen<T> {
         self.mems.len()
     }
 
-    pub fn best(&self) -> Member<T> {
-        self.mems[0].clone()
+    pub fn nth(&self, n: usize) -> &Member<T> {
+        &self.mems[n]
     }
 
     pub fn mean_base_fitness(&self) -> f64 {
