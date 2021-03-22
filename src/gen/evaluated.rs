@@ -186,7 +186,7 @@ impl<T: Genome> EvaluatedGen<T> {
 
     pub fn next_gen<E: Evaluator<Genome = T>>(
         &self,
-        genfn: Option<&mut (dyn RandGenome<T> + '_)>,
+        mut genfn: Option<&mut (dyn RandGenome<T> + '_)>,
         cfg: &Cfg,
         eval: &E,
     ) -> Result<UnevaluatedGen<T>> {
@@ -194,16 +194,18 @@ impl<T: Genome> EvaluatedGen<T> {
         let mut new_states = self.survivors(cfg.survival);
         // Min here to avoid underflow - can happen if we produce too many parents.
         new_states.reserve(cfg.pop_size);
-        if let Some(genfn) = genfn {
-            // Use custom generation function, e.g. for stagnation.
-            while new_states.len() < cfg.pop_size {
-                new_states.push(((*genfn)(), Params::new::<E>(cfg)));
-            }
-        } else {
-            // Reproduce. If DisallowDuplicates on, try up to NUM_TRIES times
-            // to fill the population up.
-            const NUM_TRIES: usize = 3;
-            for _ in 0..NUM_TRIES {
+
+        // If DisallowDuplicates on, try up to NUM_TRIES times
+        // to fill the population up.
+        const NUM_TRIES: usize = 3;
+        for _ in 0..NUM_TRIES {
+            if let Some(genfn) = &mut genfn {
+                // Use custom generation function, e.g. for stagnation.
+                while new_states.len() < cfg.pop_size {
+                    new_states.push(((*genfn)(), Params::new::<E>(cfg)));
+                }
+            } else {
+                // Reproduce.
                 while new_states.len() < cfg.pop_size {
                     let [mut s1, mut s2] = self.selection(cfg.selection);
                     self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
@@ -213,12 +215,12 @@ impl<T: Genome> EvaluatedGen<T> {
                     new_states.push(s1);
                     new_states.push(s2);
                 }
+            }
 
-                // Remove duplicates if we need to.
-                if cfg.duplicates == Duplicates::DisallowDuplicates {
-                    new_states.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-                    new_states.dedup_by(|a, b| a.0.eq(&b.0));
-                }
+            // Remove duplicates if we need to.
+            if cfg.duplicates == Duplicates::DisallowDuplicates {
+                new_states.sort_unstable_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+                new_states.dedup_by(|a, b| a.0.eq(&b.0));
             }
         }
         Ok(UnevaluatedGen::new(new_states))
