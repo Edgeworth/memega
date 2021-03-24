@@ -60,12 +60,13 @@ pub struct Runner<E: Evaluator> {
 }
 
 impl<E: Evaluator> Runner<E> {
-    pub fn from_gen(
+    pub fn from_initial(
         eval: E,
         cfg: Cfg,
-        gen: UnevaluatedGen<E::Genome>,
+        gen: Vec<E::Genome>,
         rand_genome: impl RandGenome<E::Genome> + 'static,
     ) -> Self {
+        let gen = UnevaluatedGen::initial::<E>(gen, &cfg);
         Self {
             eval,
             cfg,
@@ -168,6 +169,9 @@ impl<E: Evaluator> Runner<E> {
                     *idx += 1;
                     processed += 1;
                 }
+            }
+            if added.is_empty() {
+                break;
             }
             if processed > n {
                 // Remove |overflow| weakest individuals.

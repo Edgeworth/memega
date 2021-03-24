@@ -57,7 +57,7 @@ fn target_string(c: &mut Criterion) {
 
 fn hyper(c: &mut Criterion) {
     c.bench_function("hyper", |b| {
-        let mut r = hyper_runner(Duration::from_millis(1));
+        let mut r = hyper_runner(100, Duration::from_millis(1));
         b.iter(|| r.run_iter())
     });
 }
