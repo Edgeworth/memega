@@ -73,23 +73,30 @@ impl<T: Genome> EvaluatedGen<T> {
         self.mems.iter().map(|mem| mem.species).max().unwrap_or(0) + 1
     }
 
-    fn take_proportion(mems: &[Member<T>], prop: f64) -> Vec<State<T>> {
-        // Ceiling so we don't miss keeping things for small sizes.
-        let num = (mems.len() as f64 * prop).ceil() as usize;
+    fn take(mems: &[Member<T>], num: usize) -> Vec<State<T>> {
         mems.iter().map(|v| &v.state).cloned().take(num).collect()
     }
 
-    fn survivors(&self, survival: Survival) -> Vec<State<T>> {
+    fn survivors(&self, survival: Survival, cfg: &Cfg) -> Vec<State<T>> {
         match survival {
-            Survival::TopProportion(prop) => Self::take_proportion(&self.mems, prop),
+            Survival::TopProportion(prop) => {
+                // Ceiling so we don't miss keeping things for small sizes.
+                // Use the target population size rather than the size of the
+                // current generation so small generations don't have a smaller
+                // number of survivors selected from them. This is useful for
+                // with a small number of individuals.
+                let num = (cfg.pop_size as f64 * prop).ceil() as usize;
+                Self::take(&self.mems, num)
+            }
             Survival::SpeciesTopProportion(prop) => {
                 let mut by_species = vec![Vec::new(); self.num_species()];
+                let num = (cfg.pop_size as f64 * prop / by_species.len() as f64).ceil() as usize;
                 self.mems
                     .iter()
                     .for_each(|mem| by_species[mem.species].push(mem.clone()));
                 by_species
                     .into_iter()
-                    .map(|v| Self::take_proportion(&v, prop))
+                    .map(|v| Self::take(&v, num))
                     .flatten()
                     .collect()
             }
@@ -191,7 +198,7 @@ impl<T: Genome> EvaluatedGen<T> {
         eval: &E,
     ) -> Result<UnevaluatedGen<T>> {
         // Pick survivors:
-        let mut new_states = self.survivors(cfg.survival);
+        let mut new_states = self.survivors(cfg.survival, cfg);
         // Min here to avoid underflow - can happen if we produce too many parents.
         new_states.reserve(cfg.pop_size);
 
