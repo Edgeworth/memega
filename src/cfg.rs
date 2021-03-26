@@ -52,17 +52,19 @@ impl Distribution<Selection> for Standard {
     }
 }
 
-#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Niching {
     None,
-    SharedFitness,
+    SharedFitness(f64),   // Takes a distance for fitness sharing
+    SpeciesSharedFitness, // Derives sharing distance from species information.
 }
 
 impl Distribution<Niching> for Standard {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Niching {
-        match r.gen_range(0..2) {
+        match r.gen_range(0..3) {
             0 => Niching::None,
-            _ => Niching::SharedFitness,
+            1 => Niching::SharedFitness(r.gen_range(0.0..100.0)), // TODO: Hardcoded.
+            _ => Niching::SpeciesSharedFitness,
         }
     }
 }
@@ -77,7 +79,7 @@ impl Distribution<Species> for Standard {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Species {
         match r.gen_range(0..2) {
             0 => Species::None,
-            _ => Species::TargetNumber(r.gen_range(1..10)),
+            _ => Species::TargetNumber(r.gen_range(1..10)), // TODO: Hardcoded.
         }
     }
 }

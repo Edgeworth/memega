@@ -62,6 +62,7 @@ impl DistCache {
 
     // TODO: Use species representatives - ones with the highest fitness, and
     // maybe re-speciate other ones.
+    // Also choose closest one when selecting species, not first one within dist.
     pub fn speciate<G: Genome>(&self, s: &[State<G>], radius: f64) -> SpeciesInfo {
         // Copy any existing species over.
         let mut ids: Vec<u64> = s.iter().map(|v| v.species).collect();
@@ -127,23 +128,27 @@ impl DistCache {
         SpeciesInfo { ids, num, radius }
     }
 
-    pub fn shared_fitness(&self, base_fitness: &[f64], species: &SpeciesInfo) -> Vec<f64> {
-        // Compute alpha as: radius / num_species ^ (1 / dimensionality)
-        let alpha = species.radius / species.num as f64;
+    pub fn shared_fitness(&self, base_fitness: &[f64], radius: f64, alpha: f64) -> Vec<f64> {
         let mut fitness = base_fitness.to_vec();
 
         // Compute fitness as F'(i) = F(i) / sum of 1 - (d(i, j) / species_radius) ^ alpha.
-        for i in 0..species.ids.len() {
+        for i in 0..fitness.len() {
             let mut sum = 0.0;
-            for j in 0..species.ids.len() {
+            for j in 0..fitness.len() {
                 let d = self[(i, j)];
-                if d < species.radius {
-                    sum += 1.0 - (d / species.radius).powf(alpha)
+                if d < radius {
+                    sum += 1.0 - (d / radius).powf(alpha)
                 }
             }
             fitness[i] /= sum;
         }
         fitness
+    }
+
+    pub fn species_shared_fitness(&self, base_fitness: &[f64], species: &SpeciesInfo) -> Vec<f64> {
+        // Compute alpha as: radius / num_species ^ (1 / dimensionality)
+        let alpha = species.radius / species.num as f64;
+        self.shared_fitness(base_fitness, species.radius, alpha)
     }
 
     pub fn is_empty(&self) -> bool {
