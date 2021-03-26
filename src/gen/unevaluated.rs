@@ -1,6 +1,6 @@
 use crate::cfg::{Cfg, Niching, Species, EP};
 use crate::gen::evaluated::{EvaluatedGen, Member};
-use crate::gen::species::DistCache;
+use crate::gen::species::{DistCache, SpeciesInfo, NO_SPECIES};
 use crate::gen::Params;
 use crate::{Evaluator, Genome, State};
 use eyre::{eyre, Result};
@@ -11,9 +11,7 @@ use std::cmp::Ordering;
 pub struct UnevaluatedGen<T: Genome> {
     states: Vec<State<T>>,
     base_fitness: Vec<f64>,
-    species: Vec<i32>,
-    num_species: usize,
-    species_radius: f64,
+    species: SpeciesInfo,
     dists: DistCache,
 }
 
@@ -21,7 +19,11 @@ impl<T: Genome> UnevaluatedGen<T> {
     pub fn initial<E: Evaluator>(genomes: Vec<T>, cfg: &Cfg) -> Self {
         let states = genomes
             .into_iter()
-            .map(|v| (v, Params::new::<E>(cfg)))
+            .map(|genome| State {
+                genome,
+                params: Params::new::<E>(cfg),
+                species: NO_SPECIES,
+            })
             .collect();
         Self::new(states)
     }
@@ -30,39 +32,13 @@ impl<T: Genome> UnevaluatedGen<T> {
         if states.is_empty() {
             panic!("Generation must not be empty");
         }
+        let species = SpeciesInfo::new(states.len());
         Self {
             states,
             base_fitness: Vec::new(),
-            species: Vec::new(),
-            num_species: 1,
-            species_radius: 1.0,
-            dists: DistCache::empty(),
+            species,
+            dists: DistCache::new(),
         }
-    }
-
-    fn ensure_dists<E: Evaluator<Genome = T>>(&mut self, cfg: &Cfg, eval: &E) {
-        if self.dists.is_empty() {
-            self.dists = DistCache::new(eval, &self.states, cfg.par_dist);
-        }
-    }
-
-    fn assign_species(&mut self, dist: f64) -> usize {
-        let n = self.states.len();
-        self.species = vec![-1; n];
-        let mut num_species = 0;
-        for i in 0..n {
-            if self.species[i] != -1 {
-                continue;
-            }
-            self.species[i] = num_species as i32;
-            for j in (i + 1)..n {
-                if self.dists[(i, j)] <= dist {
-                    self.species[j] = num_species as i32;
-                }
-            }
-            num_species += 1;
-        }
-        num_species
     }
 
     pub fn evaluate<E: Evaluator<Genome = T>>(
@@ -74,10 +50,13 @@ impl<T: Genome> UnevaluatedGen<T> {
         self.base_fitness = if cfg.par_fitness {
             self.states
                 .par_iter_mut()
-                .map(|s| eval.fitness(&s.0))
+                .map(|s| eval.fitness(&s.genome))
                 .collect()
         } else {
-            self.states.iter_mut().map(|s| eval.fitness(&s.0)).collect()
+            self.states
+                .iter_mut()
+                .map(|s| eval.fitness(&s.genome))
+                .collect()
         };
 
         // Check fitnesses are non-negative.
@@ -89,17 +68,16 @@ impl<T: Genome> UnevaluatedGen<T> {
         match cfg.species {
             Species::None => {}
             Species::TargetNumber(target) => {
-                self.ensure_dists(cfg, eval);
+                self.dists.ensure(&self.states, cfg.par_dist, eval);
                 let mut lo = 0.0;
                 let mut hi = self.dists.max();
-                // TODO: tests
                 while hi - lo > EP {
-                    self.species_radius = (lo + hi) / 2.0;
-                    self.num_species = self.assign_species(self.species_radius);
-                    match self.num_species.cmp(&target) {
-                        Ordering::Less => hi = self.species_radius,
+                    let r = (lo + hi) / 2.0;
+                    self.species = self.dists.speciate(&self.states, r);
+                    match self.species.num.cmp(&target) {
+                        Ordering::Less => hi = self.species.radius,
                         Ordering::Equal => break,
-                        Ordering::Greater => lo = self.species_radius,
+                        Ordering::Greater => lo = self.species.radius,
                     }
                 }
             }
@@ -110,27 +88,16 @@ impl<T: Genome> UnevaluatedGen<T> {
         let selection_fitness = match cfg.niching {
             Niching::None => self.base_fitness.clone(),
             Niching::SharedFitness => {
-                self.ensure_dists(cfg, eval);
-
-                // Compute alpha as: radius / num_species ^ (1 / dimensionality)
-                let alpha = self.species_radius / self.num_species as f64;
-                let n = self.states.len();
-                let mut fitness = self.base_fitness.clone();
-
-                // Compute fitness as F'(i) = F(i) / sum of 1 - (d(i, j) / species_radius) ^ alpha.
-                for i in 0..n {
-                    let mut sum = 0.0;
-                    for j in 0..n {
-                        let d = self.dists[(i, j)];
-                        if d < self.species_radius {
-                            sum += 1.0 - (d / self.species_radius).powf(alpha)
-                        }
-                    }
-                    fitness[i] /= sum;
-                }
-                fitness
+                self.dists.ensure(&self.states, cfg.par_dist, eval);
+                self.dists.shared_fitness(&self.base_fitness, &self.species)
             }
         };
+
+        // Assign species into states if speciated.
+        for (i, &id) in self.species.ids.iter().enumerate() {
+            self.states[i].species = id;
+        }
+
         Ok((
             EvaluatedGen::new(
                 (0..self.states.len())
@@ -138,7 +105,6 @@ impl<T: Genome> UnevaluatedGen<T> {
                         state: self.states[i].clone(),
                         base_fitness: self.base_fitness[i],
                         selection_fitness: selection_fitness[i],
-                        species: *self.species.get(i).unwrap_or(&0) as usize,
                     })
                     .collect(),
             ),

@@ -70,7 +70,7 @@ impl Distribution<Niching> for Standard {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Species {
     None,
-    TargetNumber(usize), // Target number of species.
+    TargetNumber(u64), // Target number of species.
 }
 
 impl Distribution<Species> for Standard {

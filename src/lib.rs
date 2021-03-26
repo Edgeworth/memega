@@ -29,7 +29,12 @@ pub mod runner;
 pub trait Genome = Clone + Send + Sync + PartialOrd + PartialEq + fmt::Debug;
 pub trait FitnessFn<G: Genome> = Fn(&G) -> f64 + Sync + Send + Clone;
 
-pub type State<T> = (T, Params);
+#[derive(Clone, PartialOrd, PartialEq, Debug)]
+pub struct State<T: Genome> {
+    pub genome: T,      // Actual genome.
+    pub params: Params, // Adaptively evolved parameters
+    pub species: u64,   // Species index
+}
 
 pub trait Evaluator: Send + Sync {
     type Genome: Genome;

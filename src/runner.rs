@@ -36,7 +36,7 @@ impl Stats {
             pop_size: r.gen.size(),
             num_dup: r.gen.num_dup(),
             mean_distance: r.mean_distance,
-            num_species: r.gen.num_species(),
+            num_species: r.gen.species().len(),
         }
     }
 }
@@ -126,14 +126,14 @@ impl<E: Evaluator> Runner<E> {
         s += &format!("{}\n", Stats::from_run(r));
         if self.cfg.mutation == Mutation::Adaptive {
             s += "  mutation weights: ";
-            for &v in r.gen.nth(0).state.1.mutation.iter() {
+            for &v in r.gen.nth(0).state.params.mutation.iter() {
                 s += &format!("{}, ", PrettyPrintFloat(v));
             }
             s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
             s += "  crossover weights: ";
-            for &v in r.gen.nth(0).state.1.crossover.iter() {
+            for &v in r.gen.nth(0).state.params.crossover.iter() {
                 s += &format!("{}, ", PrettyPrintFloat(v));
             }
             s += "\n";
@@ -152,10 +152,10 @@ impl<E: Evaluator> Runner<E> {
         mut f: impl FnMut(&E::Genome) -> String,
     ) -> String {
         let mut s = String::new();
-        let num_species = r.gen.num_species();
+        let species = r.gen.species();
         let mut by_species: Vec<(usize, Vec<Member<E::Genome>>)> = Vec::new();
-        for i in 0..num_species {
-            by_species.push((0, r.gen.species(i)));
+        for &id in species.iter() {
+            by_species.push((0, r.gen.species_mems(id)));
         }
 
         let mut processed = 0;
@@ -192,14 +192,14 @@ impl<E: Evaluator> Runner<E> {
                 .unwrap()
         });
 
-        for (species, (count, mems)) in by_species.iter().enumerate() {
+        for (count, mems) in by_species.iter() {
             if *count > 0 {
-                s += &format!("Species {} top {}:\n", species, count);
+                s += &format!("Species {} top {}:\n", mems[0].state.species, count);
                 for mem in mems.iter().take(*count) {
                     s += &format!(
                         "{}\n{}\n",
                         PrettyPrintFloat(mem.base_fitness),
-                        f(&mem.state.0)
+                        f(&mem.state.genome)
                     );
                 }
                 s += "\n";
