@@ -84,7 +84,6 @@ impl<T: Genome> UnevaluatedGen<T> {
         }
 
         // Transform fitness if necessary.
-        // TODO: tests
         let selection_fitness = match cfg.niching {
             Niching::None => self.base_fitness.clone(),
             Niching::SharedFitness => {

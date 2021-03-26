@@ -1,5 +1,6 @@
 use crate::{Evaluator, Genome, State};
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use std::collections::HashSet;
 use std::ops::Index;
 
 pub const NO_SPECIES: u64 = 0;
@@ -37,21 +38,21 @@ impl DistCache {
 
     pub fn ensure<E: Evaluator>(&mut self, s: &[State<E::Genome>], par: bool, eval: &E) {
         if self.is_empty() {
-            let n = s.len();
+            self.n = s.len();
             self.cache = if par {
-                (0..n * n)
+                (0..self.n * self.n)
                     .into_par_iter()
                     .map(|v| {
-                        let i = v / n;
-                        let j = v % n;
+                        let i = v / self.n;
+                        let j = v % self.n;
                         eval.distance(&s[i].genome, &s[j].genome)
                     })
                     .collect()
             } else {
-                let mut cache = vec![0.0; n * n];
-                for i in 0..n {
-                    for j in 0..n {
-                        cache[i * n + j] = eval.distance(&s[i].genome, &s[j].genome);
+                let mut cache = vec![0.0; self.n * self.n];
+                for i in 0..self.n {
+                    for j in 0..self.n {
+                        cache[i * self.n + j] = eval.distance(&s[i].genome, &s[j].genome);
                     }
                 }
                 cache
@@ -59,27 +60,70 @@ impl DistCache {
         }
     }
 
+    // TODO: Use species representatives - ones with the highest fitness, and
+    // maybe re-speciate other ones.
     pub fn speciate<G: Genome>(&self, s: &[State<G>], radius: f64) -> SpeciesInfo {
         // Copy any existing species over.
         let mut ids: Vec<u64> = s.iter().map(|v| v.species).collect();
+
+
+        // Split assigned and unassigned individuals.
+        let mut assigned: HashSet<usize> = HashSet::new();
+        let mut unassigned: HashSet<usize> = HashSet::new();
+        for (i, &id) in ids.iter().enumerate() {
+            if id == NO_SPECIES {
+                unassigned.insert(i);
+            } else {
+                assigned.insert(i);
+            }
+        }
+
         let mut sorted_ids = ids.clone();
         sorted_ids.sort_unstable();
         sorted_ids.dedup();
         let mut num = sorted_ids.len() as u64;
         let mut next_id = sorted_ids.last().copied().unwrap_or(NO_SPECIES) + 1;
-        for i in 0..s.len() {
-            if ids[i] != NO_SPECIES {
-                continue;
-            }
-            ids[i] = next_id;
-            for j in (i + 1)..s.len() {
-                if self[(i, j)] <= radius {
-                    ids[j] = next_id;
+
+        while !unassigned.is_empty() {
+            // Try to assign to existing species.
+            while !unassigned.is_empty() {
+                // Assign to existing species:
+                let mut remaining: HashSet<usize> = HashSet::new();
+                for &cand_idx in unassigned.iter() {
+                    let mut cand_species = NO_SPECIES;
+                    for &rep_idx in assigned.iter() {
+                        if self[(rep_idx, cand_idx)] <= radius {
+                            cand_species = ids[rep_idx];
+                            break;
+                        }
+                    }
+                    if cand_species == NO_SPECIES {
+                        remaining.insert(cand_idx);
+                    } else {
+                        ids[cand_idx] = cand_species;
+                    }
                 }
+                // Could not assign any more existing species.
+                if unassigned == remaining {
+                    break;
+                }
+                unassigned = remaining;
             }
-            num += 1;
-            next_id += 1;
+            // We tried to match everything in |assigned|, now throw them away.
+            assigned.clear();
+
+            // Create new species for the next remaining unassigned individual.
+            if let Some(&new_idx) = unassigned.iter().next() {
+                ids[new_idx] = next_id;
+                unassigned.remove(&new_idx);
+                assigned.insert(new_idx);
+                num += 1;
+                next_id += 1;
+            }
         }
+
+
+        // Assign species to ones not assigned yet.
         SpeciesInfo { ids, num, radius }
     }
 
