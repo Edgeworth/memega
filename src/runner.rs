@@ -1,8 +1,9 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Stagnation};
-use crate::gen::evaluated::{EvaluatedGen, Member};
+use crate::gen::evaluated::EvaluatedGen;
+use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
-use crate::{Evaluator, Genome};
+use crate::{Evaluator, Genome, Mem};
 use derive_more::Display;
 use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;
@@ -17,7 +18,7 @@ pub trait RunnerFn<E: Evaluator> = Fn(Cfg) -> Runner<E> + Sync + Send + Clone + 
     pop_size,
     num_dup,
     "PrettyPrintFloat(*mean_distance)",
-    num_species
+    species
 )]
 pub struct Stats {
     pub best_fitness: f64,
@@ -25,27 +26,58 @@ pub struct Stats {
     pub pop_size: usize,
     pub num_dup: usize,
     pub mean_distance: f64,
-    pub num_species: usize,
+    pub species: SpeciesInfo,
 }
 
 impl Stats {
-    pub fn from_run<T: Genome>(r: &mut RunResult<T>) -> Self {
+    pub fn from_run<G: Genome>(r: &mut RunResult<G>) -> Self {
         Self {
-            best_fitness: r.gen.nth(0).base_fitness,
-            mean_fitness: r.gen.mean_base_fitness(),
-            pop_size: r.gen.size(),
-            num_dup: r.gen.num_dup(),
-            mean_distance: r.mean_distance,
-            num_species: r.gen.species().len(),
+            best_fitness: r.nth(0).base_fitness,
+            mean_fitness: r.mean_fitness(),
+            pop_size: r.size(),
+            num_dup: r.num_dup(),
+            mean_distance: r.mean_distance(),
+            species: r.unevaluated.species,
         }
     }
 }
 
 #[derive(Display, Clone, PartialEq)]
 #[display(fmt = "Run({})", gen)]
-pub struct RunResult<T: Genome> {
-    pub gen: EvaluatedGen<T>,
-    pub mean_distance: f64,
+pub struct RunResult<G: Genome> {
+    pub unevaluated: UnevaluatedGen<G>,
+    pub gen: EvaluatedGen<G>,
+}
+
+impl<G: Genome> RunResult<G> {
+    pub fn size(&self) -> usize {
+        self.gen.mems.len()
+    }
+
+    pub fn nth(&self, n: usize) -> &Mem<G> {
+        &self.gen.mems[n]
+    }
+
+    pub fn mean_fitness(&self) -> f64 {
+        self.gen.mems.iter().map(|v| v.base_fitness).sum::<f64>() / self.gen.mems.len() as f64
+    }
+
+    pub fn mean_distance(&self) -> f64 {
+        self.unevaluated.dists.mean()
+    }
+
+    pub fn num_dup(&self) -> usize {
+        let mut mems_copy = self
+            .gen
+            .mems
+            .iter()
+            .map(|v| &v.genome)
+            .cloned()
+            .collect::<Vec<_>>();
+        mems_copy.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+        mems_copy.dedup();
+        self.gen.mems.len() - mems_copy.len()
+    }
 }
 
 pub trait RandGenome<G: Genome> = FnMut() -> G;
@@ -98,15 +130,15 @@ impl<E: Evaluator> Runner<E> {
     pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
         const REL_ERR: f64 = 1e-12;
 
-        let (gen, mean_distance) = self.gen.evaluate(&self.cfg, &self.eval)?;
-        if (gen.nth(0).base_fitness - self.stagnation_fitness).abs() / self.stagnation_fitness
+        let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
+        if (gen.mems[0].base_fitness - self.stagnation_fitness).abs() / self.stagnation_fitness
             < REL_ERR
         {
             self.stagnation_count += 1;
         } else {
             self.stagnation_count = 0;
         }
-        self.stagnation_fitness = gen.nth(0).base_fitness;
+        self.stagnation_fitness = gen.mems[0].base_fitness;
         let mut genfn = None;
         if let Stagnation::NumGenerations(count) = self.cfg.stagnation {
             if self.stagnation_count >= count {
@@ -116,7 +148,10 @@ impl<E: Evaluator> Runner<E> {
         }
         let mut next = gen.next_gen(genfn, &self.cfg, &self.eval)?;
         std::mem::swap(&mut next, &mut self.gen);
-        Ok(RunResult { gen, mean_distance })
+        Ok(RunResult {
+            unevaluated: next,
+            gen,
+        })
     }
 
     pub fn cfg(&self) -> &Cfg {
@@ -132,14 +167,14 @@ impl<E: Evaluator> Runner<E> {
         s += &format!("{}\n", Stats::from_run(r));
         if self.cfg.mutation == Mutation::Adaptive {
             s += "  mutation weights: ";
-            for &v in r.gen.nth(0).state.params.mutation.iter() {
+            for &v in r.nth(0).params.mutation.iter() {
                 s += &format!("{}, ", PrettyPrintFloat(v));
             }
             s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
             s += "  crossover weights: ";
-            for &v in r.gen.nth(0).state.params.crossover.iter() {
+            for &v in r.nth(0).params.crossover.iter() {
                 s += &format!("{}, ", PrettyPrintFloat(v));
             }
             s += "\n";
@@ -159,7 +194,7 @@ impl<E: Evaluator> Runner<E> {
     ) -> String {
         let mut s = String::new();
         let species = r.gen.species();
-        let mut by_species: Vec<(usize, Vec<Member<E::Genome>>)> = Vec::new();
+        let mut by_species: Vec<(usize, Vec<Mem<E::Genome>>)> = Vec::new();
         for &id in species.iter() {
             by_species.push((0, r.gen.species_mems(id)));
         }
@@ -168,11 +203,11 @@ impl<E: Evaluator> Runner<E> {
         while processed < n {
             // What we added this round.
             let mut added: Vec<(f64, usize)> = Vec::new();
-            for (species_idx, (idx, v)) in by_species.iter_mut().enumerate() {
+            for (idx, (pointer, v)) in by_species.iter_mut().enumerate() {
                 // Try adding this one.
-                if *idx < v.len() {
-                    added.push((v[*idx].base_fitness, species_idx));
-                    *idx += 1;
+                if *pointer < v.len() {
+                    added.push((v[*pointer].base_fitness, idx));
+                    *pointer += 1;
                     processed += 1;
                 }
             }
@@ -200,12 +235,12 @@ impl<E: Evaluator> Runner<E> {
 
         for (count, mems) in by_species.iter() {
             if *count > 0 {
-                s += &format!("Species {} top {}:\n", mems[0].state.species, count);
+                s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
                     s += &format!(
                         "{}\n{}\n",
                         PrettyPrintFloat(mem.base_fitness),
-                        f(&mem.state.genome)
+                        f(&mem.genome)
                     );
                 }
                 s += "\n";

@@ -1,119 +1,106 @@
 use crate::cfg::{Cfg, Niching, Species, EP};
-use crate::gen::evaluated::{EvaluatedGen, Member};
-use crate::gen::species::{DistCache, SpeciesInfo, NO_SPECIES};
-use crate::gen::Params;
-use crate::{Evaluator, Genome, State};
+use crate::gen::evaluated::EvaluatedGen;
+use crate::gen::species::{DistCache, SpeciesInfo};
+use crate::{Evaluator, Genome, Mem};
 use eyre::{eyre, Result};
 use rayon::prelude::*;
 use std::cmp::Ordering;
 
 #[derive(Clone, PartialOrd, PartialEq)]
-pub struct UnevaluatedGen<T: Genome> {
-    states: Vec<State<T>>,
-    base_fitness: Vec<f64>,
-    species: SpeciesInfo,
-    dists: DistCache,
+pub struct UnevaluatedGen<G: Genome> {
+    pub(crate) mems: Vec<Mem<G>>,
+    pub(crate) species: SpeciesInfo,
+    pub(crate) dists: DistCache,
 }
 
-impl<T: Genome> UnevaluatedGen<T> {
-    pub fn initial<E: Evaluator>(genomes: Vec<T>, cfg: &Cfg) -> Self {
-        let states = genomes
+impl<G: Genome> UnevaluatedGen<G> {
+    pub fn initial<E: Evaluator>(genomes: Vec<G>, cfg: &Cfg) -> Self {
+        let mems = genomes
             .into_iter()
-            .map(|genome| State {
-                genome,
-                params: Params::new::<E>(cfg),
-                species: NO_SPECIES,
-            })
+            .map(|genome| Mem::new::<E>(genome, cfg))
             .collect();
-        Self::new(states)
+        Self::new(mems)
     }
 
-    pub fn new(states: Vec<State<T>>) -> Self {
-        if states.is_empty() {
+    pub fn new(mems: Vec<Mem<G>>) -> Self {
+        if mems.is_empty() {
             panic!("Generation must not be empty");
         }
-        let species = SpeciesInfo::new(states.len());
         Self {
-            states,
-            base_fitness: Vec::new(),
-            species,
+            mems,
+            species: SpeciesInfo::new(),
             dists: DistCache::new(),
         }
     }
 
-    pub fn evaluate<E: Evaluator<Genome = T>>(
+    pub fn evaluate<E: Evaluator<Genome = G>>(
         &mut self,
         cfg: &Cfg,
         eval: &E,
-    ) -> Result<(EvaluatedGen<T>, f64)> {
+    ) -> Result<EvaluatedGen<G>> {
         // First compute plain fitnesses.
-        self.base_fitness = if cfg.par_fitness {
-            self.states
+        if cfg.par_fitness {
+            self.mems
                 .par_iter_mut()
-                .map(|s| eval.fitness(&s.genome))
-                .collect()
+                .for_each(|s| s.base_fitness = eval.fitness(&s.genome))
         } else {
-            self.states
+            self.mems
                 .iter_mut()
-                .map(|s| eval.fitness(&s.genome))
-                .collect()
+                .for_each(|s| s.base_fitness = eval.fitness(&s.genome))
         };
 
         // Check fitnesses are non-negative.
-        if !self.base_fitness.iter().all(|&v| v >= 0.0) {
+        if !self.mems.iter().map(|v| v.base_fitness).all(|v| v >= 0.0) {
             return Err(eyre!("got negative fitness"));
         }
+
+        // Sort by fitnesses.
+        self.mems
+            .sort_unstable_by(|a, b| b.base_fitness.partial_cmp(&a.base_fitness).unwrap());
 
         // Speciate if necessary.
         match cfg.species {
             Species::None => {}
             Species::TargetNumber(target) => {
-                self.dists.ensure(&self.states, cfg.par_dist, eval);
+                self.dists.ensure(&self.mems, cfg.par_dist, eval);
                 let mut lo = 0.0;
                 let mut hi = self.dists.max();
+                let mut ids = Vec::new();
                 while hi - lo > EP {
                     let r = (lo + hi) / 2.0;
-                    self.species = self.dists.speciate(&self.states, r);
+                    (ids, self.species) = self.dists.speciate(&self.mems, r);
                     match self.species.num.cmp(&target) {
                         Ordering::Less => hi = self.species.radius,
                         Ordering::Equal => break,
                         Ordering::Greater => lo = self.species.radius,
                     }
                 }
+                // Assign species into mems if speciated.
+                for (i, &id) in ids.iter().enumerate() {
+                    self.mems[i].species = id;
+                }
             }
         }
 
         // Transform fitness if necessary.
-        let selection_fitness = match cfg.niching {
-            Niching::None => self.base_fitness.clone(),
+        match cfg.niching {
+            Niching::None => {
+                for v in self.mems.iter_mut() {
+                    v.selection_fitness = v.base_fitness;
+                }
+            }
             Niching::SharedFitness(radius) => {
                 const ALPHA: f64 = 6.0; // Default alpha between 5 and 10.
-                self.dists.ensure(&self.states, cfg.par_dist, eval);
-                self.dists.shared_fitness(&self.base_fitness, radius, ALPHA)
+                self.dists.ensure(&self.mems, cfg.par_dist, eval);
+                self.dists.shared_fitness(&mut self.mems, radius, ALPHA);
             }
             Niching::SpeciesSharedFitness => {
-                self.dists.ensure(&self.states, cfg.par_dist, eval);
+                self.dists.ensure(&self.mems, cfg.par_dist, eval);
                 self.dists
-                    .species_shared_fitness(&self.base_fitness, &self.species)
+                    .species_shared_fitness(&mut self.mems, &self.species);
             }
         };
 
-        // Assign species into states if speciated.
-        for (i, &id) in self.species.ids.iter().enumerate() {
-            self.states[i].species = id;
-        }
-
-        Ok((
-            EvaluatedGen::new(
-                (0..self.states.len())
-                    .map(|i| Member {
-                        state: self.states[i].clone(),
-                        base_fitness: self.base_fitness[i],
-                        selection_fitness: selection_fitness[i],
-                    })
-                    .collect(),
-            ),
-            self.dists.mean(),
-        ))
+        Ok(EvaluatedGen::new(self.mems.clone()))
     }
 }

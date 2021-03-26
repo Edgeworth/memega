@@ -5,7 +5,7 @@ use crate::ops::util::rand_vec;
 use crate::Evaluator;
 
 pub mod evaluated;
-mod species;
+pub mod species;
 pub mod unevaluated;
 
 // Potentially self-adaptive parameters per state.
