@@ -13,7 +13,7 @@ pub fn all_cfg() -> Cfg {
         .with_crossover(Crossover::Adaptive)
         .with_survival(Survival::SpeciesTopProportion(0.1))
         .with_species(Species::TargetNumber(10))
-        .with_niching(Niching::SharedFitness)
+        .with_niching(Niching::SpeciesSharedFitness)
 }
 
 pub fn none_cfg() -> Cfg {

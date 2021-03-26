@@ -86,9 +86,15 @@ impl<T: Genome> UnevaluatedGen<T> {
         // Transform fitness if necessary.
         let selection_fitness = match cfg.niching {
             Niching::None => self.base_fitness.clone(),
-            Niching::SharedFitness => {
+            Niching::SharedFitness(radius) => {
+                const ALPHA: f64 = 6.0; // Default alpha between 5 and 10.
                 self.dists.ensure(&self.states, cfg.par_dist, eval);
-                self.dists.shared_fitness(&self.base_fitness, &self.species)
+                self.dists.shared_fitness(&self.base_fitness, radius, ALPHA)
+            }
+            Niching::SpeciesSharedFitness => {
+                self.dists.ensure(&self.states, cfg.par_dist, eval);
+                self.dists
+                    .species_shared_fitness(&self.base_fitness, &self.species)
             }
         };
 
