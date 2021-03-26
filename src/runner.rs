@@ -63,9 +63,15 @@ impl<E: Evaluator> Runner<E> {
     pub fn from_initial(
         eval: E,
         cfg: Cfg,
-        gen: Vec<E::Genome>,
-        rand_genome: impl RandGenome<E::Genome> + 'static,
+        mut gen: Vec<E::Genome>,
+        mut rand_genome: impl RandGenome<E::Genome> + 'static,
     ) -> Self {
+        // Fill out the rest of |gen| if it's smaller than pop_size.
+        // If speciation is on, this lets more random species be generated at
+        // the beginning.
+        while gen.len() < cfg.pop_size {
+            gen.push(rand_genome());
+        }
         let gen = UnevaluatedGen::initial::<E>(gen, &cfg);
         Self {
             eval,
