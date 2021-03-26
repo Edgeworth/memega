@@ -1,6 +1,8 @@
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
 
+use crate::gen::species::SpeciesId;
+
 pub const EP: f64 = 1.0e-6;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -72,7 +74,7 @@ impl Distribution<Niching> for Standard {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Species {
     None,
-    TargetNumber(u64), // Target number of species.
+    TargetNumber(SpeciesId), // Target number of species.
 }
 
 impl Distribution<Species> for Standard {
