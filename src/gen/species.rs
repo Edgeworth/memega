@@ -1,13 +1,15 @@
 use crate::{Evaluator, Genome, Mem};
 use derive_more::Display;
+use float_pretty_print::PrettyPrintFloat;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 use std::ops::Index;
 
-pub const NO_SPECIES: u64 = 0;
+pub type SpeciesId = u64;
+pub const NO_SPECIES: SpeciesId = 0;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "num: {} radius: {}", num, radius)]
+#[display(fmt = "num: {} radius: {}", num, "PrettyPrintFloat(*radius)")]
 pub struct SpeciesInfo {
     pub num: u64,
     pub radius: f64,
@@ -66,66 +68,29 @@ impl DistCache {
         }
     }
 
-    // TODO: Use species representatives - ones with the highest fitness, and
-    // maybe re-speciate other ones.
-    // Also choose closest one when selecting species, not first one within dist.
-    pub fn speciate<G: Genome>(&self, s: &[Mem<G>], radius: f64) -> (Vec<u64>, SpeciesInfo) {
+    pub fn speciate<G: Genome>(&self, s: &[Mem<G>], radius: f64) -> (Vec<SpeciesId>, SpeciesInfo) {
         // Copy any existing species over.
-        let mut ids: Vec<u64> = s.iter().map(|v| v.species).collect();
-
-        // Split assigned and unassigned individuals.
-        let mut assigned: HashSet<usize> = HashSet::new();
-        let mut unassigned: HashSet<usize> = HashSet::new();
-        for (i, &id) in ids.iter().enumerate() {
-            if id == NO_SPECIES {
-                unassigned.insert(i);
-            } else {
-                assigned.insert(i);
-            }
-        }
-
-        let mut sorted_ids = ids.clone();
-        sorted_ids.sort_unstable();
-        sorted_ids.dedup();
-        let mut num = sorted_ids.len() as u64;
-        let mut next_id = sorted_ids.last().copied().unwrap_or(NO_SPECIES) + 1;
-
+        assert!(
+            s.is_sorted_by_key(|v| -v.base_fitness),
+            "Must be sorted by fitness (bug)"
+        );
+        let mut ids: Vec<SpeciesId> = vec![NO_SPECIES; s.len()];
+        let mut unassigned: BTreeSet<usize> = (0..s.len()).collect();
+        let mut num = 1;
         while !unassigned.is_empty() {
-            // Try to assign to existing species.
-            while !unassigned.is_empty() {
-                // Assign to existing species:
-                let mut remaining: HashSet<usize> = HashSet::new();
-                for &cand_idx in unassigned.iter() {
-                    let mut cand_species = NO_SPECIES;
-                    for &rep_idx in assigned.iter() {
-                        if self[(rep_idx, cand_idx)] <= radius {
-                            cand_species = ids[rep_idx];
-                            break;
-                        }
-                    }
-                    if cand_species == NO_SPECIES {
-                        remaining.insert(cand_idx);
-                    } else {
-                        ids[cand_idx] = cand_species;
-                    }
-                }
-                // Could not assign any more existing species.
-                if unassigned == remaining {
-                    break;
-                }
-                unassigned = remaining;
-            }
-            // We tried to match everything in |assigned|, now throw them away.
-            assigned.clear();
+            // Take next highest fitness to define the next species.
+            let next = unassigned.pop_first().unwrap();
+            ids[next] = num;
 
-            // Create new species for the next remaining unassigned individual.
-            if let Some(&new_idx) = unassigned.iter().next() {
-                ids[new_idx] = next_id;
-                unassigned.remove(&new_idx);
-                assigned.insert(new_idx);
-                num += 1;
-                next_id += 1;
-            }
+            unassigned.retain(|&v| {
+                if self[(next, v)] <= radius {
+                    ids[v] = num;
+                    false
+                } else {
+                    true
+                }
+            });
+            num += 1;
         }
 
         // Assign species to ones not assigned yet.

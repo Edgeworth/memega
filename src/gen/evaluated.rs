@@ -1,5 +1,5 @@
 use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Selection, Survival};
-use crate::gen::species::NO_SPECIES;
+use crate::gen::species::{SpeciesId, NO_SPECIES};
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::gen::Params;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
@@ -24,7 +24,7 @@ impl<G: Genome> EvaluatedGen<G> {
         Self { mems }
     }
 
-    pub fn species_mems(&self, n: u64) -> Vec<Mem<G>> {
+    pub fn species_mems(&self, n: SpeciesId) -> Vec<Mem<G>> {
         self.mems
             .iter()
             .filter(|v| v.species == n)
@@ -33,7 +33,7 @@ impl<G: Genome> EvaluatedGen<G> {
     }
 
     // Get list of species.
-    pub fn species(&self) -> Vec<u64> {
+    pub fn species(&self) -> Vec<SpeciesId> {
         // Relies on species index assignment to be contigous from zero.
         let mut species: Vec<_> = self.mems.iter().map(|mem| mem.species).collect();
         species.sort_unstable();

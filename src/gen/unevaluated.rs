@@ -23,9 +23,7 @@ impl<G: Genome> UnevaluatedGen<G> {
     }
 
     pub fn new(mems: Vec<Mem<G>>) -> Self {
-        if mems.is_empty() {
-            panic!("Generation must not be empty");
-        }
+        assert!(!mems.is_empty(), "Generation must not be empty");
         Self {
             mems,
             species: SpeciesInfo::new(),
