@@ -47,7 +47,7 @@ fn eval_run<E: Evaluator>(
             g.add(
                 &format!("{}:{}:species", name, cfg_name),
                 run_id,
-                r.num_species as f64,
+                r.species.num as f64,
             );
         }
     }
@@ -70,7 +70,7 @@ fn run_grapher<E: Evaluator>(
 fn run_once<E: Evaluator>(mut runner: Runner<E>) -> Result<()> {
     for i in 0..1000 {
         let mut r = runner.run_iter()?;
-        println!("Generation {}: {}", i + 1, r.gen.nth(0).base_fitness);
+        println!("Generation {}: {}", i + 1, r.nth(0).base_fitness);
         if i % 10 == 0 {
             println!("{}", runner.summary(&mut r));
             println!(

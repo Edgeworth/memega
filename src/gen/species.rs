@@ -1,24 +1,30 @@
-use crate::{Evaluator, Genome, State};
+use crate::{Evaluator, Genome, Mem};
+use derive_more::Display;
 use rayon::iter::{IntoParallelIterator, ParallelIterator};
 use std::collections::HashSet;
 use std::ops::Index;
 
 pub const NO_SPECIES: u64 = 0;
 
-#[derive(Clone, PartialOrd, PartialEq, Debug)]
+#[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
+#[display(fmt = "num: {} radius: {}", num, radius)]
 pub struct SpeciesInfo {
-    pub ids: Vec<u64>,
     pub num: u64,
     pub radius: f64,
 }
 
 impl SpeciesInfo {
-    pub fn new(n: usize) -> Self {
+    pub fn new() -> Self {
         Self {
-            ids: vec![NO_SPECIES; n],
             num: 1,
             radius: 1.0,
         }
+    }
+}
+
+impl Default for SpeciesInfo {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
@@ -36,7 +42,7 @@ impl DistCache {
         }
     }
 
-    pub fn ensure<E: Evaluator>(&mut self, s: &[State<E::Genome>], par: bool, eval: &E) {
+    pub fn ensure<E: Evaluator>(&mut self, s: &[Mem<E::Genome>], par: bool, eval: &E) {
         if self.is_empty() {
             self.n = s.len();
             self.cache = if par {
@@ -63,10 +69,9 @@ impl DistCache {
     // TODO: Use species representatives - ones with the highest fitness, and
     // maybe re-speciate other ones.
     // Also choose closest one when selecting species, not first one within dist.
-    pub fn speciate<G: Genome>(&self, s: &[State<G>], radius: f64) -> SpeciesInfo {
+    pub fn speciate<G: Genome>(&self, s: &[Mem<G>], radius: f64) -> (Vec<u64>, SpeciesInfo) {
         // Copy any existing species over.
         let mut ids: Vec<u64> = s.iter().map(|v| v.species).collect();
-
 
         // Split assigned and unassigned individuals.
         let mut assigned: HashSet<usize> = HashSet::new();
@@ -123,32 +128,28 @@ impl DistCache {
             }
         }
 
-
         // Assign species to ones not assigned yet.
-        SpeciesInfo { ids, num, radius }
+        (ids, SpeciesInfo { num, radius })
     }
 
-    pub fn shared_fitness(&self, base_fitness: &[f64], radius: f64, alpha: f64) -> Vec<f64> {
-        let mut fitness = base_fitness.to_vec();
-
+    pub fn shared_fitness<G: Genome>(&self, s: &mut [Mem<G>], radius: f64, alpha: f64) {
         // Compute fitness as F'(i) = F(i) / sum of 1 - (d(i, j) / species_radius) ^ alpha.
-        for i in 0..fitness.len() {
+        for i in 0..s.len() {
             let mut sum = 0.0;
-            for j in 0..fitness.len() {
+            for j in 0..s.len() {
                 let d = self[(i, j)];
                 if d < radius {
                     sum += 1.0 - (d / radius).powf(alpha)
                 }
             }
-            fitness[i] /= sum;
+            s[i].selection_fitness = s[i].base_fitness / sum;
         }
-        fitness
     }
 
-    pub fn species_shared_fitness(&self, base_fitness: &[f64], species: &SpeciesInfo) -> Vec<f64> {
+    pub fn species_shared_fitness<G: Genome>(&self, s: &mut [Mem<G>], species: &SpeciesInfo) {
         // Compute alpha as: radius / num_species ^ (1 / dimensionality)
         let alpha = species.radius / species.num as f64;
-        self.shared_fitness(base_fitness, species.radius, alpha)
+        self.shared_fitness(s, species.radius, alpha)
     }
 
     pub fn is_empty(&self) -> bool {
@@ -161,6 +162,12 @@ impl DistCache {
 
     pub fn max(&self) -> f64 {
         self.cache.iter().fold(0.0, |a: f64, &b| a.max(b))
+    }
+}
+
+impl Default for DistCache {
+    fn default() -> Self {
+        Self::new()
     }
 }
 
