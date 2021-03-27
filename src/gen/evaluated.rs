@@ -151,7 +151,8 @@ impl<G: Genome> EvaluatedGen<G> {
 
     pub fn next_gen<E: Evaluator<Genome = G>>(
         &self,
-        mut genfn: Option<&mut (dyn RandGenome<G> + '_)>,
+        genfn: &mut (dyn RandGenome<G> + '_),
+        stagnant: bool,
         cfg: &Cfg,
         eval: &E,
     ) -> Result<UnevaluatedGen<G>> {
@@ -164,16 +165,10 @@ impl<G: Genome> EvaluatedGen<G> {
         // to fill the population up.
         const NUM_TRIES: usize = 3;
         for _ in 0..NUM_TRIES {
-            if let Some(genfn) = &mut genfn {
+            if stagnant {
                 // Use custom generation function, e.g. for stagnation.
                 while new_mems.len() < cfg.pop_size {
-                    new_mems.push(Mem {
-                        genome: (*genfn)(),
-                        params: Params::new::<E>(cfg),
-                        species: NO_SPECIES,
-                        base_fitness: 0.0,
-                        selection_fitness: 0.0,
-                    });
+                    new_mems.push(Mem::new::<E>((*genfn)(), cfg));
                 }
             } else {
                 // Reproduce.
