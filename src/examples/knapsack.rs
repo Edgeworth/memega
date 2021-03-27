@@ -70,6 +70,7 @@ pub fn knapsack_runner(cfg: Cfg) -> Runner<Knapsack> {
         (w, v)
     });
     Runner::new(Knapsack::new(MAX_W, items), cfg, move || {
+        let mut r = rand::thread_rng();
         rand_vec(NUM_ITEMS, || r.gen::<bool>())
     })
 }
