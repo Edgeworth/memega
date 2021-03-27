@@ -53,8 +53,8 @@ impl Evaluator for TargetString {
 
 pub fn target_string_runner(cfg: Cfg) -> Runner<TargetString> {
     const TARGET: &str = "Hello world!";
-    let mut r = rand::thread_rng();
     Runner::new(TargetString::new(TARGET), cfg, move || {
+        let mut r = rand::thread_rng();
         rand_vec(TARGET.len(), || r.sample::<char, _>(PrintableAscii))
     })
 }

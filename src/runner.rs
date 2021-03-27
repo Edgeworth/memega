@@ -84,11 +84,11 @@ impl<G: Genome> RunResult<G> {
     }
 }
 
-pub trait RandGenome<G: Genome> = FnMut() -> G;
+pub trait RandGenome<G: Genome> = FnMut() -> G + Send;
 
 pub struct Runner<E: Evaluator> {
+    pub cfg: Cfg,
     eval: E,
-    cfg: Cfg,
     gen: UnevaluatedGen<E::Genome>,
     rand_genome: Box<dyn RandGenome<E::Genome>>,
     stagnation_count: usize,
@@ -110,8 +110,8 @@ impl<E: Evaluator> Runner<E> {
         }
         let gen = UnevaluatedGen::initial::<E>(gen, &cfg);
         Self {
-            eval,
             cfg,
+            eval,
             gen,
             rand_genome: Box::new(rand_genome),
             stagnation_count: 0,
