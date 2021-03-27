@@ -88,7 +88,7 @@ pub struct Runner<E: Evaluator> {
     gen: UnevaluatedGen<E::Genome>,
     rand_genome: Box<dyn RandGenome<E::Genome>>,
     stagnation_count: usize,
-    stagnation_fitness: f64,
+    last_fitness: f64,
 }
 
 impl<E: Evaluator> Runner<E> {
@@ -111,7 +111,7 @@ impl<E: Evaluator> Runner<E> {
             gen,
             rand_genome: Box::new(rand_genome),
             stagnation_count: 0,
-            stagnation_fitness: 0.0,
+            last_fitness: 0.0,
         }
     }
 
@@ -123,7 +123,7 @@ impl<E: Evaluator> Runner<E> {
             gen,
             rand_genome: Box::new(rand_genome),
             stagnation_count: 0,
-            stagnation_fitness: 0.0,
+            last_fitness: 0.0,
         }
     }
 
@@ -131,22 +131,27 @@ impl<E: Evaluator> Runner<E> {
         const REL_ERR: f64 = 1e-12;
 
         let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
-        if (gen.mems[0].base_fitness - self.stagnation_fitness).abs() / self.stagnation_fitness
-            < REL_ERR
-        {
+        if (gen.mems[0].base_fitness - self.last_fitness).abs() / self.last_fitness < REL_ERR {
             self.stagnation_count += 1;
         } else {
             self.stagnation_count = 0;
         }
-        self.stagnation_fitness = gen.mems[0].base_fitness;
-        let mut genfn = None;
-        if let Stagnation::NumGenerations(count) = self.cfg.stagnation {
-            if self.stagnation_count >= count {
-                genfn = Some(self.rand_genome.as_mut());
-                self.stagnation_count = 0;
+        self.last_fitness = gen.mems[0].base_fitness;
+
+        // TODO: Reset generations vs keep replacing proportion with random?
+        let stagnant = match self.cfg.stagnation {
+            Stagnation::None => false,
+            Stagnation::NumGenerations(count) => {
+                if self.stagnation_count >= count {
+                    self.stagnation_count = 0;
+                    true
+                } else {
+                    false
+                }
             }
-        }
-        let mut next = gen.next_gen(genfn, &self.cfg, &self.eval)?;
+        };
+
+        let mut next = gen.next_gen(self.rand_genome.as_mut(), stagnant, &self.cfg, &self.eval)?;
         std::mem::swap(&mut next, &mut self.gen);
         Ok(RunResult {
             unevaluated: next,
