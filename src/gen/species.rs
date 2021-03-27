@@ -2,7 +2,7 @@ use crate::{Evaluator, Genome, Mem};
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
-use std::collections::BTreeSet;
+use std::collections::VecDeque;
 use std::ops::Index;
 
 pub type SpeciesId = u64;
@@ -87,11 +87,11 @@ impl DistCache {
             "Must be sorted by fitness (bug)"
         );
         let mut ids: Vec<SpeciesId> = vec![NO_SPECIES; s.len()];
-        let mut unassigned: BTreeSet<usize> = (0..s.len()).collect();
+        let mut unassigned: VecDeque<usize> = (0..s.len()).collect();
         let mut num = 1;
         while !unassigned.is_empty() {
             // Take next highest fitness to define the next species.
-            let next = unassigned.pop_first().unwrap();
+            let next = unassigned.pop_front().unwrap();
             ids[next] = num;
 
             unassigned.retain(|&v| {
