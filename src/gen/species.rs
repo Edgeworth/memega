@@ -1,4 +1,4 @@
-use crate::{Evaluator, Genome, Mem};
+use crate::eval::{Evaluator, Genome, Mem};
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};

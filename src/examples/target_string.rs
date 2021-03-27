@@ -1,11 +1,11 @@
 use crate::cfg::Cfg;
 use crate::distributions::PrintableAscii;
+use crate::eval::Evaluator;
 use crate::ops::crossover::crossover_kpx;
 use crate::ops::distance::count_different;
 use crate::ops::mutation::mutate_rate;
 use crate::ops::util::{rand_vec, str_to_vec};
 use crate::runner::Runner;
-use crate::Evaluator;
 use rand::Rng;
 
 type State = Vec<char>;

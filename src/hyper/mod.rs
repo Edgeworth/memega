@@ -1,4 +1,5 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
+use crate::eval::Evaluator;
 use crate::examples::ackley::ackley_runner;
 use crate::examples::griewank::griewank_runner;
 use crate::examples::knapsack::knapsack_runner;
@@ -9,7 +10,6 @@ use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate};
 use crate::ops::util::rand_vec;
 use crate::runner::{Runner, RunnerFn, Stats};
-use crate::Evaluator;
 use rand::Rng;
 use std::mem::swap;
 use std::time::{Duration, Instant};

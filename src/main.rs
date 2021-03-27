@@ -2,10 +2,10 @@ use std::time::Duration;
 
 use eyre::Result;
 use memega::cfg::Cfg;
+use memega::eval::Evaluator;
 use memega::examples::all_cfg;
 use memega::hyper::hyper_runner;
 use memega::runner::{Runner, RunnerFn, Stats};
-use memega::Evaluator;
 use memestat::Grapher;
 
 fn eval_run<E: Evaluator>(

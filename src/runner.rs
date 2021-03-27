@@ -1,9 +1,9 @@
 use crate::cfg::{Cfg, Crossover, Mutation, Stagnation};
+use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
-use crate::{Evaluator, Genome, Mem};
 use derive_more::Display;
 use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;

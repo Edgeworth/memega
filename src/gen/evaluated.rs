@@ -1,10 +1,10 @@
 use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Replacement, Selection, Survival};
+use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::species::SpeciesId;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 use crate::runner::RandGenome;
-use crate::{Evaluator, Genome, Mem};
 use derive_more::Display;
 use eyre::{eyre, Result};
 

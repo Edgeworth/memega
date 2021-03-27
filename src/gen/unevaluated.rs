@@ -1,7 +1,7 @@
 use crate::cfg::{Cfg, Niching, Species, EP};
+use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::{DistCache, SpeciesInfo};
-use crate::{Evaluator, Genome, Mem};
 use eyre::{eyre, Result};
 use rayon::prelude::*;
 use std::cmp::Ordering;
