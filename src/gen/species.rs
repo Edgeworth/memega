@@ -1,7 +1,7 @@
 use crate::{Evaluator, Genome, Mem};
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
+use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 use std::collections::BTreeSet;
 use std::ops::Index;
 
@@ -34,6 +34,8 @@ impl Default for SpeciesInfo {
 pub struct DistCache {
     n: usize,
     cache: Vec<f64>,
+    max: f64,
+    sum: f64,
 }
 
 impl DistCache {
@@ -41,6 +43,8 @@ impl DistCache {
         Self {
             n: 0,
             cache: Vec::new(),
+            max: 0.0,
+            sum: 0.0,
         }
     }
 
@@ -48,19 +52,27 @@ impl DistCache {
         if self.is_empty() {
             self.n = s.len();
             self.cache = if par {
-                (0..self.n * self.n)
+                let cache: Vec<f64> = (0..self.n * self.n)
                     .into_par_iter()
                     .map(|v| {
                         let i = v / self.n;
                         let j = v % self.n;
                         eval.distance(&s[i].genome, &s[j].genome)
                     })
-                    .collect()
+                    .collect();
+                (self.max, self.sum) = cache
+                    .par_iter()
+                    .fold(|| (0.0, 0.0), |(m, s): (f64, f64), &v| (m.max(v), s + v))
+                    .reduce(|| (0.0, 0.0), |(m0, s0), (m1, s1)| (m0.max(m1), s0 + s1));
+                cache
             } else {
                 let mut cache = vec![0.0; self.n * self.n];
                 for i in 0..self.n {
                     for j in 0..self.n {
-                        cache[i * self.n + j] = eval.distance(&s[i].genome, &s[j].genome);
+                        let dist = eval.distance(&s[i].genome, &s[j].genome);
+                        cache[i * self.n + j] = dist;
+                        self.max = self.max.max(dist);
+                        self.sum += dist;
                     }
                 }
                 cache
@@ -122,11 +134,11 @@ impl DistCache {
     }
 
     pub fn mean(&self) -> f64 {
-        self.cache.iter().sum::<f64>() / ((self.n * self.n) as f64)
+        self.sum / ((self.n * self.n) as f64)
     }
 
     pub fn max(&self) -> f64 {
-        self.cache.iter().fold(0.0, |a: f64, &b| a.max(b))
+        self.max
     }
 }
 
