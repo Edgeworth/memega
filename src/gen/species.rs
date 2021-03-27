@@ -9,7 +9,7 @@ pub type SpeciesId = u64;
 pub const NO_SPECIES: SpeciesId = 0;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "num: {} radius: {}", num, "PrettyPrintFloat(*radius)")]
+#[display(fmt = "{}, radius: {}", num, "PrettyPrintFloat(*radius)")]
 pub struct SpeciesInfo {
     pub num: u64,
     pub radius: f64,

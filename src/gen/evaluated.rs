@@ -1,7 +1,6 @@
-use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Selection, Survival};
-use crate::gen::species::{SpeciesId, NO_SPECIES};
+use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Replacement, Selection, Survival};
+use crate::gen::species::SpeciesId;
 use crate::gen::unevaluated::UnevaluatedGen;
-use crate::gen::Params;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 use crate::runner::RandGenome;
@@ -161,26 +160,32 @@ impl<G: Genome> EvaluatedGen<G> {
         // Min here to avoid underflow - can happen if we produce too many parents.
         new_mems.reserve(cfg.pop_size);
 
+        // If stagnant, fill with random individuals.
+        if stagnant {
+            let num = match cfg.replacement {
+                Replacement::ReplaceChildren(prop) => {
+                    let remaining = cfg.pop_size as f64 - new_mems.len() as f64;
+                    (prop * remaining).ceil().max(0.0) as usize
+                }
+            };
+            for _ in 0..num {
+                new_mems.push(Mem::new::<E>((*genfn)(), cfg));
+            }
+        }
+
         // If DisallowDuplicates on, try up to NUM_TRIES times
         // to fill the population up.
         const NUM_TRIES: usize = 3;
         for _ in 0..NUM_TRIES {
-            if stagnant {
-                // Use custom generation function, e.g. for stagnation.
-                while new_mems.len() < cfg.pop_size {
-                    new_mems.push(Mem::new::<E>((*genfn)(), cfg));
-                }
-            } else {
-                // Reproduce.
-                while new_mems.len() < cfg.pop_size {
-                    let [mut s1, mut s2] = self.selection(cfg.selection);
-                    self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
-                        .unwrap();
-                    self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
-                    self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
-                    new_mems.push(s1);
-                    new_mems.push(s2);
-                }
+            // Reproduce.
+            while new_mems.len() < cfg.pop_size {
+                let [mut s1, mut s2] = self.selection(cfg.selection);
+                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
+                    .unwrap();
+                self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
+                self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
+                new_mems.push(s1);
+                new_mems.push(s2);
             }
 
             // Remove duplicates if we need to.

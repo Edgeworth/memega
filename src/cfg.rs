@@ -89,15 +89,33 @@ impl Distribution<Species> for Standard {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Stagnation {
     None,
-    // After N generations of stagnation, don't do crossover/mutation - replace with random individuals.
-    NumGenerations(usize),
+    // After N generations of the same best fitness, trigger stagnation once.
+    OneShotAfter(usize),
+    // Stagnation continuously after N generations of the same best fitness.
+    ContinuousAfter(usize),
 }
 
 impl Distribution<Stagnation> for Standard {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Stagnation {
-        match r.gen_range(0..1) {
+        match r.gen_range(0..2) {
             0 => Stagnation::None,
-            _ => Stagnation::NumGenerations(r.gen_range(1..1000)),
+            1 => Stagnation::OneShotAfter(r.gen_range(1..1000)),
+            _ => Stagnation::ContinuousAfter(r.gen_range(1..1000)),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub enum Replacement {
+    // During stagnation make a proportion of the children random individuals.
+    ReplaceChildren(f64),
+}
+
+impl Distribution<Replacement> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Replacement {
+        match r.gen_range(0..1) {
+            0 => Replacement::ReplaceChildren(r.gen()),
+            _ => Replacement::ReplaceChildren(r.gen()),
         }
     }
 }
@@ -127,6 +145,7 @@ pub struct Cfg {
     pub niching: Niching,
     pub species: Species,
     pub stagnation: Stagnation,
+    pub replacement: Replacement,
     pub duplicates: Duplicates,
     pub par_fitness: bool, // Run fitness computations in parallel
     pub par_dist: bool,    // Run distance computations in parallel
@@ -143,6 +162,7 @@ impl Cfg {
             niching: Niching::None,
             species: Species::None,
             stagnation: Stagnation::None,
+            replacement: Replacement::ReplaceChildren(0.2),
             duplicates: Duplicates::DisallowDuplicates,
             par_fitness: false,
             par_dist: false,
@@ -179,6 +199,13 @@ impl Cfg {
 
     pub fn with_stagnation(self, stagnation: Stagnation) -> Self {
         Self { stagnation, ..self }
+    }
+
+    pub fn with_replacement(self, replacement: Replacement) -> Self {
+        Self {
+            replacement,
+            ..self
+        }
     }
 
     pub fn with_duplicates(self, duplicates: Duplicates) -> Self {
