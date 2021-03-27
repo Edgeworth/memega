@@ -12,12 +12,13 @@ pub trait RunnerFn<E: Evaluator> = Fn(Cfg) -> Runner<E> + Sync + Send + Clone + 
 
 #[derive(Debug, Copy, Clone, PartialEq, Display)]
 #[display(
-    fmt = "best: {}, mean: {}, pop: {}, dupes: {}, dist: {}, species: {}",
+    fmt = "best: {}, mean: {}, pop: {}, dupes: {}, dist: {}, stagnant: {}, species: {}",
     "PrettyPrintFloat(*best_fitness)",
     "PrettyPrintFloat(*mean_fitness)",
     pop_size,
     num_dup,
     "PrettyPrintFloat(*mean_distance)",
+    stagnant,
     species
 )]
 pub struct Stats {
@@ -26,6 +27,7 @@ pub struct Stats {
     pub pop_size: usize,
     pub num_dup: usize,
     pub mean_distance: f64,
+    pub stagnant: bool,
     pub species: SpeciesInfo,
 }
 
@@ -37,6 +39,7 @@ impl Stats {
             pop_size: r.size(),
             num_dup: r.num_dup(),
             mean_distance: r.mean_distance(),
+            stagnant: r.stagnant,
             species: r.unevaluated.species,
         }
     }
@@ -47,6 +50,7 @@ impl Stats {
 pub struct RunResult<G: Genome> {
     pub unevaluated: UnevaluatedGen<G>,
     pub gen: EvaluatedGen<G>,
+    pub stagnant: bool,
 }
 
 impl<G: Genome> RunResult<G> {
@@ -138,10 +142,9 @@ impl<E: Evaluator> Runner<E> {
         }
         self.last_fitness = gen.mems[0].base_fitness;
 
-        // TODO: Reset generations vs keep replacing proportion with random?
         let stagnant = match self.cfg.stagnation {
             Stagnation::None => false,
-            Stagnation::NumGenerations(count) => {
+            Stagnation::OneShotAfter(count) => {
                 if self.stagnation_count >= count {
                     self.stagnation_count = 0;
                     true
@@ -149,6 +152,7 @@ impl<E: Evaluator> Runner<E> {
                     false
                 }
             }
+            Stagnation::ContinuousAfter(count) => self.stagnation_count >= count,
         };
 
         let mut next = gen.next_gen(self.rand_genome.as_mut(), stagnant, &self.cfg, &self.eval)?;
@@ -156,6 +160,7 @@ impl<E: Evaluator> Runner<E> {
         Ok(RunResult {
             unevaluated: next,
             gen,
+            stagnant,
         })
     }
 
