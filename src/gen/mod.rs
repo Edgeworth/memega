@@ -1,8 +1,8 @@
 use rand::Rng;
 
 use crate::cfg::{Cfg, Crossover, Mutation};
+use crate::eval::Evaluator;
 use crate::ops::util::rand_vec;
-use crate::Evaluator;
 
 pub mod evaluated;
 pub mod species;
