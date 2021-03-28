@@ -1,7 +1,8 @@
-use crate::cfg::{Cfg, Niching, Species, EP};
+use crate::cfg::{Cfg, Niching, Species};
 use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::{DistCache, SpeciesInfo};
+use approx::relative_eq;
 use eyre::{eyre, Result};
 use rayon::prelude::*;
 use std::cmp::Ordering;
@@ -64,7 +65,7 @@ impl<G: Genome> UnevaluatedGen<G> {
                 let mut lo = 0.0;
                 let mut hi = self.dists.max();
                 let mut ids = Vec::new();
-                while hi - lo > EP {
+                while !relative_eq!(lo, hi, epsilon = 1.0e-6) {
                     let r = (lo + hi) / 2.0;
                     (ids, self.species) = self.dists.speciate(&self.mems, r);
                     match self.species.num.cmp(&target) {

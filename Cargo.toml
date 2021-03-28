@@ -5,6 +5,7 @@ name = "memega"
 version = "0.1.0"
 
 [dependencies]
+approx = "*"
 color-eyre = "*"
 concurrent_lru = "*"
 derive_more = "*"
