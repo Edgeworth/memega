@@ -4,6 +4,7 @@ use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
+use approx::relative_eq;
 use derive_more::Display;
 use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;
@@ -132,10 +133,8 @@ impl<E: Evaluator> Runner<E> {
     }
 
     pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
-        const REL_ERR: f64 = 1e-12;
-
         let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
-        if (gen.mems[0].base_fitness - self.last_fitness).abs() / self.last_fitness < REL_ERR {
+        if relative_eq!(gen.mems[0].base_fitness, self.last_fitness) {
             self.stagnation_count += 1;
         } else {
             self.stagnation_count = 0;

@@ -1,9 +1,6 @@
+use crate::gen::species::SpeciesId;
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
-
-use crate::gen::species::SpeciesId;
-
-pub const EP: f64 = 1.0e-6;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 // Only one crossover function will be applied at a time.

@@ -3,16 +3,13 @@
     array_chunks,
     array_windows,
     bool_to_option,
-    btree_retain,
     const_fn,
     destructuring_assignment,
     is_sorted,
     map_first_last,
     option_result_contains,
-    option_unwrap_none,
     stmt_expr_attributes,
-    trait_alias,
-    type_alias_impl_trait
+    trait_alias
 )]
 
 pub mod cfg;
