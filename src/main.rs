@@ -24,31 +24,11 @@ fn eval_run<E: Evaluator>(
                 runner.run_iter()?;
             }
             let r = Stats::from_run(&mut runner.run_iter()?);
-            g.add(
-                &format!("{}:{}:best fitness", name, cfg_name),
-                run_id,
-                r.best_fitness,
-            );
-            g.add(
-                &format!("{}:{}:mean fitness", name, cfg_name),
-                run_id,
-                r.mean_fitness,
-            );
-            g.add(
-                &format!("{}:{}:dupes", name, cfg_name),
-                run_id,
-                r.num_dup as f64,
-            );
-            g.add(
-                &format!("{}:{}:mean dist", name, cfg_name),
-                run_id,
-                r.mean_distance,
-            );
-            g.add(
-                &format!("{}:{}:species", name, cfg_name),
-                run_id,
-                r.species.num as f64,
-            );
+            g.add(&format!("{}:{}:best fitness", name, cfg_name), run_id, r.best_fitness);
+            g.add(&format!("{}:{}:mean fitness", name, cfg_name), run_id, r.mean_fitness);
+            g.add(&format!("{}:{}:dupes", name, cfg_name), run_id, r.num_dup as f64);
+            g.add(&format!("{}:{}:mean dist", name, cfg_name), run_id, r.mean_distance);
+            g.add(&format!("{}:{}:species", name, cfg_name), run_id, r.species.num as f64);
         }
     }
     Ok(())
@@ -73,10 +53,7 @@ fn run_once<E: Evaluator>(mut runner: Runner<E>) -> Result<()> {
         println!("Generation {}: {}", i + 1, r.nth(0).base_fitness);
         if i % 10 == 0 {
             println!("{}", runner.summary(&mut r));
-            println!(
-                "{}",
-                runner.summary_sample(&mut r, 5, |v| format!("{:?}", v))
-            );
+            println!("{}", runner.summary_sample(&mut r, 5, |v| format!("{:?}", v)));
         }
     }
     Ok(())

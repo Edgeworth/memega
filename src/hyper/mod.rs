@@ -1,3 +1,8 @@
+use std::mem::swap;
+use std::time::{Duration, Instant};
+
+use rand::Rng;
+
 use crate::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
 use crate::eval::Evaluator;
 use crate::examples::ackley::ackley_runner;
@@ -10,9 +15,6 @@ use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate};
 use crate::ops::util::rand_vec;
 use crate::runner::{Runner, RunnerFn, Stats};
-use rand::Rng;
-use std::mem::swap;
-use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
@@ -180,28 +182,12 @@ impl Evaluator for HyperAlg {
     fn distance(&self, s1: &State, s2: &State) -> f64 {
         let mut dist = 0.0;
 
-        let s1_cross = if let Crossover::Fixed(v) = &s1.cfg.crossover {
-            v
-        } else {
-            &s1.crossover
-        };
-        let s2_cross = if let Crossover::Fixed(v) = &s2.cfg.crossover {
-            v
-        } else {
-            &s2.crossover
-        };
+        let s1_cross = if let Crossover::Fixed(v) = &s1.cfg.crossover { v } else { &s1.crossover };
+        let s2_cross = if let Crossover::Fixed(v) = &s2.cfg.crossover { v } else { &s2.crossover };
         dist += dist2(s1_cross, s2_cross);
 
-        let s1_mutation = if let Mutation::Fixed(v) = &s1.cfg.mutation {
-            v
-        } else {
-            &s1.mutation
-        };
-        let s2_mutation = if let Mutation::Fixed(v) = &s2.cfg.mutation {
-            v
-        } else {
-            &s2.mutation
-        };
+        let s1_mutation = if let Mutation::Fixed(v) = &s1.cfg.mutation { v } else { &s1.mutation };
+        let s2_mutation = if let Mutation::Fixed(v) = &s2.cfg.mutation { v } else { &s2.mutation };
         dist += dist2(s1_mutation, s2_mutation);
 
         dist
@@ -218,13 +204,7 @@ pub struct HyperBuilder {
 
 impl HyperBuilder {
     pub fn new(pop_size: usize, sample_dur: Duration) -> Self {
-        Self {
-            stat_fns: Vec::new(),
-            pop_size,
-            num_crossover: 0,
-            num_mutation: 0,
-            sample_dur,
-        }
+        Self { stat_fns: Vec::new(), pop_size, num_crossover: 0, num_mutation: 0, sample_dur }
     }
 
     fn rand_state(pop_size: usize, num_crossover: usize, num_mutation: usize) -> State {
@@ -236,11 +216,7 @@ impl HyperBuilder {
         cfg.selection = r.gen();
         cfg.niching = r.gen();
         cfg.species = r.gen();
-        State {
-            cfg,
-            crossover,
-            mutation,
-        }
+        State { cfg, crossover, mutation }
     }
 
     pub fn add<F: RunnerFn<E>, E: Evaluator>(&mut self, max_fitness: f64, f: F) {

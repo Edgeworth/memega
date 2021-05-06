@@ -1,9 +1,10 @@
-use rand::prelude::IteratorRandom;
-use rand::Rng;
-use smallvec::SmallVec;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::mem::swap;
+
+use rand::prelude::IteratorRandom;
+use rand::Rng;
+use smallvec::SmallVec;
 
 // Permutation crossover operators ////////////////////////////////////////////
 
@@ -255,9 +256,10 @@ pub fn crossover_blx(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
 
 #[cfg(test)]
 mod tests {
+    use rand::rngs::mock::StepRng;
+
     use super::*;
     use crate::ops::util::{str_to_vec, vec_to_str};
-    use rand::rngs::mock::StepRng;
 
     #[test]
     fn test_crossover_pmx() {
@@ -271,10 +273,7 @@ mod tests {
 
         let a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         let b = [9, 3, 7, 8, 2, 6, 5, 1, 4];
-        assert_eq!(
-            crossover_pmx_single(&a, &b, 3, 6),
-            [9, 3, 2, 4, 5, 6, 7, 1, 8]
-        );
+        assert_eq!(crossover_pmx_single(&a, &b, 3, 6), [9, 3, 2, 4, 5, 6, 7, 1, 8]);
 
         let a = str_to_vec("abcdefghi");
         let b = str_to_vec("icghbfead");
@@ -301,17 +300,11 @@ mod tests {
 
         let a = [1, 2, 3, 4, 5, 6, 7, 8, 9];
         let b = [9, 3, 7, 8, 2, 6, 5, 1, 4];
-        assert_eq!(
-            crossover_order_single(&a, &b, 3, 6),
-            [3, 8, 2, 4, 5, 6, 7, 1, 9]
-        );
+        assert_eq!(crossover_order_single(&a, &b, 3, 6), [3, 8, 2, 4, 5, 6, 7, 1, 9]);
 
         let a = str_to_vec("abcdefghi");
         let b = str_to_vec("icghbfead");
-        assert_eq!(
-            vec_to_str(&crossover_order_single(&a, &b, 3, 6)),
-            "chbdefgai"
-        );
+        assert_eq!(vec_to_str(&crossover_order_single(&a, &b, 3, 6)), "chbdefgai");
 
         let a = [1, 1, 1, 1, 1];
         let b = [1, 1, 1, 1, 1];

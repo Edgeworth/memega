@@ -1,9 +1,11 @@
-use crate::eval::{Evaluator, Genome, Mem};
+use std::collections::VecDeque;
+use std::ops::Index;
+
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
-use std::collections::VecDeque;
-use std::ops::Index;
+
+use crate::eval::{Evaluator, Genome, Mem};
 
 pub type SpeciesId = u64;
 pub const NO_SPECIES: SpeciesId = 0;
@@ -17,10 +19,7 @@ pub struct SpeciesInfo {
 
 impl SpeciesInfo {
     pub fn new() -> Self {
-        Self {
-            num: 1,
-            radius: 1.0,
-        }
+        Self { num: 1, radius: 1.0 }
     }
 }
 
@@ -40,12 +39,7 @@ pub struct DistCache {
 
 impl DistCache {
     pub fn new() -> Self {
-        Self {
-            n: 0,
-            cache: Vec::new(),
-            max: 0.0,
-            sum: 0.0,
-        }
+        Self { n: 0, cache: Vec::new(), max: 0.0, sum: 0.0 }
     }
 
     pub fn ensure<E: Evaluator>(&mut self, s: &[Mem<E::Genome>], par: bool, eval: &E) {
@@ -82,10 +76,7 @@ impl DistCache {
 
     pub fn speciate<G: Genome>(&self, s: &[Mem<G>], radius: f64) -> (Vec<SpeciesId>, SpeciesInfo) {
         // Copy any existing species over.
-        assert!(
-            s.is_sorted_by_key(|v| -v.base_fitness),
-            "Must be sorted by fitness (bug)"
-        );
+        assert!(s.is_sorted_by_key(|v| -v.base_fitness), "Must be sorted by fitness (bug)");
         let mut ids: Vec<SpeciesId> = vec![NO_SPECIES; s.len()];
         let mut unassigned: VecDeque<usize> = (0..s.len()).collect();
         let mut num = 1;

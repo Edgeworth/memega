@@ -1,8 +1,9 @@
+use std::f64::consts::PI;
+
 use crate::cfg::Cfg;
 use crate::eval::FitnessFn;
 use crate::examples::func::{func_runner, FuncEvaluator, FuncState};
 use crate::runner::Runner;
-use std::f64::consts::PI;
 
 pub fn rastrigin_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl FitnessFn<FuncState>>> {
     func_runner(

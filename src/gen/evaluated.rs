@@ -1,3 +1,6 @@
+use derive_more::Display;
+use eyre::{eyre, Result};
+
 use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Replacement, Selection, Survival};
 use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::species::SpeciesId;
@@ -5,8 +8,6 @@ use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 use crate::runner::RandGenome;
-use derive_more::Display;
-use eyre::{eyre, Result};
 
 #[derive(Display, Clone, PartialOrd, PartialEq)]
 #[display(fmt = "pop: {}, best: {}", "mems.len()", "self.mems[0]")]
@@ -24,11 +25,7 @@ impl<G: Genome> EvaluatedGen<G> {
     }
 
     pub fn species_mems(&self, n: SpeciesId) -> Vec<Mem<G>> {
-        self.mems
-            .iter()
-            .filter(|v| v.species == n)
-            .cloned()
-            .collect()
+        self.mems.iter().filter(|v| v.species == n).cloned().collect()
     }
 
     // Get list of species.
@@ -64,11 +61,7 @@ impl<G: Genome> EvaluatedGen<G> {
     }
 
     fn selection(&self, selection: Selection) -> [Mem<G>; 2] {
-        let fitnesses = self
-            .mems
-            .iter()
-            .map(|v| v.selection_fitness)
-            .collect::<Vec<_>>();
+        let fitnesses = self.mems.iter().map(|v| v.selection_fitness).collect::<Vec<_>>();
         let idxs = match selection {
             Selection::Sus => sus(&fitnesses, 2),
             Selection::Roulette => multi_rws(&fitnesses, 2),
@@ -78,11 +71,7 @@ impl<G: Genome> EvaluatedGen<G> {
 
     fn check_weights(weights: &[f64], l: usize) -> Result<()> {
         if weights.len() != l {
-            return Err(eyre!(
-                "number of fixed weights {} doesn't match {}",
-                weights.len(),
-                l
-            ));
+            return Err(eyre!("number of fixed weights {} doesn't match {}", weights.len(), l));
         }
         for &v in weights.iter() {
             if v < 0.0 {
@@ -106,12 +95,8 @@ impl<G: Genome> EvaluatedGen<G> {
             }
             Crossover::Adaptive => {
                 let lrate = 1.0 / (self.mems.len() as f64).sqrt();
-                mutate_rate(&mut s1.params.crossover, 1.0, |v| {
-                    mutate_normal(v, lrate).max(0.0)
-                });
-                mutate_rate(&mut s2.params.crossover, 1.0, |v| {
-                    mutate_normal(v, lrate).max(0.0)
-                });
+                mutate_rate(&mut s1.params.crossover, 1.0, |v| mutate_normal(v, lrate).max(0.0));
+                mutate_rate(&mut s2.params.crossover, 1.0, |v| mutate_normal(v, lrate).max(0.0));
             }
         };
         Self::check_weights(&s1.params.crossover, E::NUM_CROSSOVER)?;
@@ -180,8 +165,7 @@ impl<G: Genome> EvaluatedGen<G> {
             // Reproduce.
             while new_mems.len() < cfg.pop_size {
                 let [mut s1, mut s2] = self.selection(cfg.selection);
-                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)
-                    .unwrap();
+                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2).unwrap();
                 self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
                 self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
                 new_mems.push(s1);

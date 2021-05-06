@@ -1,6 +1,7 @@
-use crate::gen::species::SpeciesId;
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
+
+use crate::gen::species::SpeciesId;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 // Only one crossover function will be applied at a time.
@@ -199,10 +200,7 @@ impl Cfg {
     }
 
     pub fn with_replacement(self, replacement: Replacement) -> Self {
-        Self {
-            replacement,
-            ..self
-        }
+        Self { replacement, ..self }
     }
 
     pub fn with_duplicates(self, duplicates: Duplicates) -> Self {
@@ -210,10 +208,7 @@ impl Cfg {
     }
 
     pub fn with_par_fitness(self, par_fitness: bool) -> Self {
-        Self {
-            par_fitness,
-            ..self
-        }
+        Self { par_fitness, ..self }
     }
 
     pub fn with_par_dist(self, par_dist: bool) -> Self {

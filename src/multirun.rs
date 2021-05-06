@@ -1,7 +1,8 @@
+use rayon::iter::{IntoParallelIterator, ParallelIterator};
+
 use crate::cfg::Cfg;
 use crate::eval::Evaluator;
 use crate::runner::{RunResult, Runner, RunnerFn};
-use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 pub fn multirun<F: RunnerFn<E>, E: Evaluator + Sized>(
     num_runs: usize,

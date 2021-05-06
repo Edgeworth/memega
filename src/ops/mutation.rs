@@ -1,9 +1,10 @@
+use std::f64::consts::E;
+
 use num_traits::Num;
 use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
 use rand_distr::uniform::SampleUniform;
 use rand_distr::{Distribution, Standard, StandardNormal};
-use std::f64::consts::E;
 
 // Permutation mutation operators ////////////////////////////////////////////////
 

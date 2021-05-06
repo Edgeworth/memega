@@ -1,3 +1,5 @@
+use rand::Rng;
+
 use crate::cfg::Cfg;
 use crate::distributions::PrintableAscii;
 use crate::eval::Evaluator;
@@ -6,7 +8,6 @@ use crate::ops::distance::count_different;
 use crate::ops::mutation::mutate_rate;
 use crate::ops::util::{rand_vec, str_to_vec};
 use crate::runner::Runner;
-use rand::Rng;
 
 type State = Vec<char>;
 
@@ -17,9 +18,7 @@ pub struct TargetString {
 
 impl TargetString {
     fn new(target: &str) -> Self {
-        Self {
-            target: str_to_vec(target),
-        }
+        Self { target: str_to_vec(target) }
     }
 }
 

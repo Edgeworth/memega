@@ -31,9 +31,6 @@ impl Params {
             rand_vec(E::NUM_CROSSOVER, || r.gen())
         };
 
-        Self {
-            mutation,
-            crossover,
-        }
+        Self { mutation, crossover }
     }
 }
