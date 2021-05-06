@@ -1,11 +1,13 @@
+use std::cmp::Ordering;
+
+use approx::relative_eq;
+use eyre::{eyre, Result};
+use rayon::prelude::*;
+
 use crate::cfg::{Cfg, Niching, Species};
 use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::{DistCache, SpeciesInfo};
-use approx::relative_eq;
-use eyre::{eyre, Result};
-use rayon::prelude::*;
-use std::cmp::Ordering;
 
 #[derive(Clone, PartialOrd, PartialEq)]
 pub struct UnevaluatedGen<G: Genome> {
@@ -16,20 +18,13 @@ pub struct UnevaluatedGen<G: Genome> {
 
 impl<G: Genome> UnevaluatedGen<G> {
     pub fn initial<E: Evaluator>(genomes: Vec<G>, cfg: &Cfg) -> Self {
-        let mems = genomes
-            .into_iter()
-            .map(|genome| Mem::new::<E>(genome, cfg))
-            .collect();
+        let mems = genomes.into_iter().map(|genome| Mem::new::<E>(genome, cfg)).collect();
         Self::new(mems)
     }
 
     pub fn new(mems: Vec<Mem<G>>) -> Self {
         assert!(!mems.is_empty(), "Generation must not be empty");
-        Self {
-            mems,
-            species: SpeciesInfo::new(),
-            dists: DistCache::new(),
-        }
+        Self { mems, species: SpeciesInfo::new(), dists: DistCache::new() }
     }
 
     pub fn evaluate<E: Evaluator<Genome = G>>(
@@ -39,13 +34,9 @@ impl<G: Genome> UnevaluatedGen<G> {
     ) -> Result<EvaluatedGen<G>> {
         // First compute plain fitnesses.
         if cfg.par_fitness {
-            self.mems
-                .par_iter_mut()
-                .for_each(|s| s.base_fitness = eval.fitness(&s.genome))
+            self.mems.par_iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome))
         } else {
-            self.mems
-                .iter_mut()
-                .for_each(|s| s.base_fitness = eval.fitness(&s.genome))
+            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome))
         };
 
         // Check fitnesses are non-negative.
@@ -54,8 +45,7 @@ impl<G: Genome> UnevaluatedGen<G> {
         }
 
         // Sort by fitnesses.
-        self.mems
-            .sort_unstable_by(|a, b| b.base_fitness.partial_cmp(&a.base_fitness).unwrap());
+        self.mems.sort_unstable_by(|a, b| b.base_fitness.partial_cmp(&a.base_fitness).unwrap());
 
         // Speciate if necessary.
         match cfg.species {
@@ -95,8 +85,7 @@ impl<G: Genome> UnevaluatedGen<G> {
             }
             Niching::SpeciesSharedFitness => {
                 self.dists.ensure(&self.mems, cfg.par_dist, eval);
-                self.dists
-                    .species_shared_fitness(&mut self.mems, &self.species);
+                self.dists.species_shared_fitness(&mut self.mems, &self.species);
             }
         };
 

@@ -1,21 +1,19 @@
-use crate::cfg::Cfg;
-use crate::gen::species::{SpeciesId, NO_SPECIES};
-use crate::gen::Params;
+use std::fmt;
+use std::hash::Hash;
+
 use concurrent_lru::sharded::LruCache;
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
-use std::fmt;
-use std::hash::Hash;
+
+use crate::cfg::Cfg;
+use crate::gen::species::{SpeciesId, NO_SPECIES};
+use crate::gen::Params;
 
 pub trait Genome = Clone + Send + Sync + PartialOrd + PartialEq + fmt::Debug;
 pub trait FitnessFn<G: Genome> = Fn(&G) -> f64 + Sync + Send + Clone;
 
 #[derive(Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(
-    fmt = "fitness {} species {}",
-    "PrettyPrintFloat(*base_fitness)",
-    species
-)]
+#[display(fmt = "fitness {} species {}", "PrettyPrintFloat(*base_fitness)", species)]
 pub struct Mem<G: Genome> {
     pub genome: G,              // Actual genome.
     pub params: Params,         // Adaptively evolved parameters
@@ -65,10 +63,7 @@ where
     E::Genome: Hash + Eq,
 {
     pub fn new(eval: E, cap: usize) -> Self {
-        Self {
-            eval,
-            fitness_cache: LruCache::new(cap as u64),
-        }
+        Self { eval, fitness_cache: LruCache::new(cap as u64) }
     }
 }
 
@@ -89,10 +84,7 @@ where
     }
 
     fn fitness(&self, s: &Self::Genome) -> f64 {
-        *self
-            .fitness_cache
-            .get_or_init(s.clone(), 1, |s| self.eval.fitness(s))
-            .value()
+        *self.fitness_cache.get_or_init(s.clone(), 1, |s| self.eval.fitness(s)).value()
     }
 
     fn distance(&self, s1: &Self::Genome, s2: &Self::Genome) -> f64 {

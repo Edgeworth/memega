@@ -1,6 +1,7 @@
+use std::mem::swap;
+
 use eyre::{eyre, Result};
 use num_traits::{Num, NumAssign};
-use std::mem::swap;
 
 // Norm 1 distance
 pub fn dist_abs<T: Num + NumAssign + Copy + PartialOrd>(mut a: T, mut b: T) -> T {

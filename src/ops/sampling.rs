@@ -1,6 +1,7 @@
+use std::iter::Iterator;
+
 use rand::prelude::IteratorRandom;
 use rand::Rng;
-use std::iter::Iterator;
 
 // Roulette wheel selection:
 pub fn rws(w: &[f64]) -> Option<usize> {
@@ -69,8 +70,9 @@ pub fn sus_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use rand::rngs::mock::StepRng;
+
+    use super::*;
 
     #[test]
     fn test_rws() {

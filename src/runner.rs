@@ -1,13 +1,14 @@
+use approx::relative_eq;
+use derive_more::Display;
+use eyre::Result;
+use float_pretty_print::PrettyPrintFloat;
+
 use crate::cfg::{Cfg, Crossover, Mutation, Stagnation};
 use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
-use approx::relative_eq;
-use derive_more::Display;
-use eyre::Result;
-use float_pretty_print::PrettyPrintFloat;
 
 pub trait RunnerFn<E: Evaluator> = Fn(Cfg) -> Runner<E> + Sync + Send + Clone + 'static;
 
@@ -72,13 +73,7 @@ impl<G: Genome> RunResult<G> {
     }
 
     pub fn num_dup(&self) -> usize {
-        let mut mems_copy = self
-            .gen
-            .mems
-            .iter()
-            .map(|v| &v.genome)
-            .cloned()
-            .collect::<Vec<_>>();
+        let mut mems_copy = self.gen.mems.iter().map(|v| &v.genome).cloned().collect::<Vec<_>>();
         mems_copy.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
         mems_copy.dedup();
         self.gen.mems.len() - mems_copy.len()
@@ -156,11 +151,7 @@ impl<E: Evaluator> Runner<E> {
 
         let mut next = gen.next_gen(self.rand_genome.as_mut(), stagnant, &self.cfg, &self.eval)?;
         std::mem::swap(&mut next, &mut self.gen);
-        Ok(RunResult {
-            unevaluated: next,
-            gen,
-            stagnant,
-        })
+        Ok(RunResult { unevaluated: next, gen, stagnant })
     }
 
     pub fn cfg(&self) -> &Cfg {
@@ -246,11 +237,7 @@ impl<E: Evaluator> Runner<E> {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
-                    s += &format!(
-                        "{}\n{}\n",
-                        PrettyPrintFloat(mem.base_fitness),
-                        f(&mem.genome)
-                    );
+                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.base_fitness), f(&mem.genome));
                 }
                 s += "\n";
             }
