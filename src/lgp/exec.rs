@@ -164,7 +164,7 @@ impl LgpExec {
         self.pc >= self.code.len()
     }
 
-    pub fn exec(&mut self) {
+    pub fn run(&mut self) {
         for _ in 0..self.max_iter {
             if self.step() {
                 break;
