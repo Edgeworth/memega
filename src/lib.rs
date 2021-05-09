@@ -18,6 +18,7 @@ pub mod eval;
 pub mod examples;
 pub mod gen;
 pub mod hyper;
+pub mod lgp;
 pub mod multirun;
 pub mod ops;
 pub mod runner;
