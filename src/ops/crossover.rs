@@ -184,10 +184,10 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
 
 // Discrete crossover operators  //////////////////////////////////////////////
 
-// Random point K-point crossover.
+// Random point K-point crossover. Lengths of s1 and s2 can be different.
 pub fn crossover_kpx<T>(s1: &mut [T], s2: &mut [T], k: usize) {
     let mut r = rand::thread_rng();
-    let xpoints = (0..s1.len()).choose_multiple(&mut r, k);
+    let xpoints = (0..s1.len().min(s2.len())).choose_multiple(&mut r, k);
     crossover_kpx_pts(s1, s2, &xpoints)
 }
 

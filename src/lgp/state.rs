@@ -1,7 +1,10 @@
+use std::fmt;
+
 use rand::Rng;
 
 use crate::cfg::Cfg;
 use crate::eval::Evaluator;
+use crate::lgp::disasm::LgpDisasm;
 use crate::lgp::exec::LgpExec;
 use crate::ops::crossover::{crossover_cycle, crossover_kpx, crossover_order, crossover_pmx};
 use crate::ops::distance::dist1;
@@ -12,42 +15,41 @@ use crate::runner::Runner;
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
     ops: Vec<u8>, // Contains program code for linear genetic programming.
+    num_reg: usize,
+}
+
+impl fmt::Display for State {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut ds = LgpDisasm::new(&self.ops, self.num_reg);
+        f.write_str(&ds.disasm())
+    }
 }
 
 impl State {
-    pub fn new(ops: Vec<u8>) -> Self {
-        Self { ops }
+    pub fn new(ops: Vec<u8>, num_reg: usize) -> Self {
+        Self { ops, num_reg }
     }
 }
 
 pub struct LgpGenome {
-    initial_reg: Vec<f64>,
+    max_code: usize,
 }
 
 impl LgpGenome {
-    pub fn new(initial_reg: &[f64]) -> Self {
-        Self { initial_reg: initial_reg.to_vec() }
+    pub fn new(max_code: usize) -> Self {
+        Self { max_code }
     }
 }
 
 impl Evaluator for LgpGenome {
     type Genome = State;
-    const NUM_CROSSOVER: usize = 5;
-    const NUM_MUTATION: usize = 4;
+    const NUM_CROSSOVER: usize = 2;
+    const NUM_MUTATION: usize = 5;
 
     fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
         match idx {
             0 => {} // Do nothing.
             1 => {
-                crossover_pmx(&mut s1.ops, &mut s2.ops);
-            }
-            2 => {
-                crossover_order(&mut s1.ops, &mut s2.ops);
-            }
-            3 => {
-                crossover_cycle(&mut s1.ops, &mut s2.ops);
-            }
-            4 => {
                 crossover_kpx(&mut s1.ops, &mut s2.ops, 2);
             }
             _ => panic!("unknown crossover strategy"),
@@ -73,26 +75,50 @@ impl Evaluator for LgpGenome {
                     mutate_reset(&mut s.ops, mutate_gen());
                 }
             }
+            3 => {
+                if mutate && s.ops.len() < self.max_code {
+                    s.ops.push(mutate_gen());
+                }
+            }
+            4 => {
+                if mutate {
+                    s.ops.pop();
+                }
+            }
             _ => panic!("unknown mutation strategy"),
         }
     }
 
     fn fitness(&self, s: &State) -> f64 {
-        let mut r = rand::thread_rng();
-        let reg = rand_vec(8, move || r.gen::<f64>());
-        let mut exec = LgpExec::new(&reg, &s.ops, 200);
-        exec.run();
-        // Test: Just compute sum of 1/ri for i in 0 to 8
-        let ans: f64 = reg.iter().map(|v| 1.0 / v).sum();
-        (ans - exec.reg(8)).abs()
+        let mut fitness = 0.0;
+        for _ in 0..1000 {
+            let mut r = rand::thread_rng();
+            let mut reg = vec![0.0, 0.0, 0.0, 0.0, 0.0]; // Space for work and answer.
+            let vals = rand_vec(5, move || r.gen_range(0.05..5.0));
+            reg.extend(&vals);
+            if reg.len() != s.num_reg {
+                panic!("ASDF");
+            }
+            let mut exec = LgpExec::new(&reg, &s.ops, 200);
+            exec.run();
+            let ans: f64 = vals.iter().sum::<f64>();
+            fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs())
+        }
+        fitness + 1.0 / (1.0 + s.ops.len() as f64)
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
-        // TODO: Treat different instructions differently to different constants?
-        dist1(&s1.ops, &s2.ops) as f64
+        // TODO: Treat different instructions differently to different
+        // constants?
+        let s1ops: Vec<f64> = s1.ops.iter().map(|&v| v as f64).collect();
+        let s2ops: Vec<f64> = s2.ops.iter().map(|&v| v as f64).collect();
+        dist1(&s1ops, &s2ops)
     }
 }
 
-pub fn lgp_runner(code_len: usize, cfg: Cfg) -> Runner<LgpGenome> {
-    Runner::new(LgpGenome::new(&[]), cfg, move || State::new(rand_vec(code_len, mutate_gen::<u8>)))
+pub fn lgp_runner(max_code: usize, cfg: Cfg) -> Runner<LgpGenome> {
+    // TODO: num reg here.
+    Runner::new(LgpGenome::new(max_code), cfg, move || {
+        State::new(rand_vec(max_code, mutate_gen::<u8>), 10)
+    })
 }

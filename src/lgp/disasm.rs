@@ -1,78 +1,80 @@
 use crate::lgp::exec::Opcode;
+use crate::lgp::u8_to_opcode;
 
 // Disassembler for lgp code.
 #[derive(Debug, Clone)]
 pub struct LgpDisasm {
     pc: usize,
+    num_reg: usize,
     code: Vec<u8>,
     prog: String,
 }
 
 impl LgpDisasm {
-    pub fn new(code: &[u8]) -> Self {
-        Self { pc: 0, code: code.to_vec(), prog: String::new() }
+    pub fn new(code: &[u8], num_reg: usize) -> Self {
+        Self { pc: 0, num_reg, code: code.to_vec(), prog: String::new() }
     }
 
     fn fetch(&mut self) -> u8 {
         // Check if we finished the program. Return 0 if we overrun.
-        let v = if self.pc > self.code.len() { 0 } else { self.code[self.pc] };
+        let v = if self.pc >= self.code.len() { 0 } else { self.code[self.pc] };
         self.pc += 1;
         v
     }
 
     // Returns true iff finished.
     fn step(&mut self) -> bool {
-        let op: Opcode = self.fetch().into();
+        let op = u8_to_opcode(self.fetch());
         match op {
             Opcode::Nop => {
                 self.prog += "nop";
             }
             Opcode::Add => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} += r{}", rx, ry);
             }
             Opcode::Sub => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} -= r{}", rx, ry);
             }
             Opcode::Mul => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} *= r{}", rx, ry);
             }
             Opcode::Div => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} /= r{}", rx, ry);
             }
             Opcode::Abs => {
-                let rx = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} = |r{}|", rx, rx);
             }
             Opcode::Neg => {
-                let rx = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} = -r{}", rx, rx);
             }
             Opcode::Pow => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} = r{} ** r{}", rx, rx, ry);
             }
             Opcode::Log => {
-                let rx = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} = ln(r{})", rx, rx);
             }
             Opcode::Load => {
-                let rx = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
                 let lo = self.fetch();
                 let hi = self.fetch();
                 self.prog += &format!("[r{}] = {}", rx, (hi as f64) + (lo as f64) / 256.0);
             }
             Opcode::Copy => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 self.prog += &format!("r{} = r{}", rx, ry);
             }
             Opcode::Jmp => {
@@ -80,20 +82,20 @@ impl LgpDisasm {
                 self.prog += &format!("jmp {}", imm);
             }
             Opcode::Jlt => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 let imm = self.fetch() as i8;
                 self.prog += &format!("if r{} < r{}: jmp {}", rx, ry, imm);
             }
             Opcode::Jle => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 let imm = self.fetch() as i8;
                 self.prog += &format!("if r{} <= r{}: jmp {}", rx, ry, imm);
             }
             Opcode::Jeq => {
-                let rx = self.fetch();
-                let ry = self.fetch();
+                let rx = self.fetch() % self.num_reg as u8;
+                let ry = self.fetch() % self.num_reg as u8;
                 let imm = self.fetch() as i8;
                 self.prog += &format!("if r{} == r{}: jmp {}", rx, ry, imm);
             }
@@ -115,7 +117,7 @@ mod tests {
 
     #[test]
     fn basic_disasm() {
-        let mut ds = LgpDisasm::new(&[0, 1, 2, 3]);
+        let mut ds = LgpDisasm::new(&[0, 1, 2, 3], 10);
         assert_eq!("nop\nr2 += r3\n", ds.disasm())
     }
 }

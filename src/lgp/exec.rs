@@ -1,23 +1,26 @@
-use num_enum::{FromPrimitive, IntoPrimitive};
+use num_enum::{IntoPrimitive, TryFromPrimitive};
+use strum_macros::EnumCount;
+
+use crate::lgp::u8_to_opcode;
 
 const EP: f64 = 1.0e-6;
 
 // Machine consists of N registers (up to 256) that contain f64 values.
 // Note that floating point comparisons are done using an epsilon.
 // Opcodes are 8 bit and have variable number of operands.
+// If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
 // Accessing register k will access register k % N if k >= N.
-#[derive(Debug, Clone, PartialEq, PartialOrd, IntoPrimitive, FromPrimitive)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount)]
 #[repr(u8)]
 pub enum Opcode {
-    #[num_enum(default)]
-    Nop = 0, // no operation - 0 and all uncovered opcodes
+    Nop = 0,   // no operation - 0
     Add = 1,   // add rx, ry: rx = rx + ry
     Sub = 2,   // sub rx, ry: rx = rx - ry
     Mul = 3,   // mul rx, ry: rx = rx * ry
     Div = 4,   // div rx, ry: rx = rx / ry - Div by zero => max value
     Abs = 5,   // abs rx: rx = |rx|
     Neg = 6,   // neg rx: rx = -rx
-    Pow = 7,   // pow rx, ry: rx = rx ^ ry
+    Pow = 7,   // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
     Log = 8,   // log rx: rx = ln(rx)
     Load = 9,  // load rx, f8:8: rx = immediate fixed point 8:8, little endian
     Copy = 10, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
@@ -50,12 +53,15 @@ impl LgpExec {
 
     fn set_reg(&mut self, idx: u8, v: f64) {
         let idx = (idx as usize) % self.reg.len();
+        if !v.is_finite() {
+            panic!("NAN: {}", v);
+        }
         self.reg[idx] = v;
     }
 
     fn fetch(&mut self) -> u8 {
         // Check if we finished the program. Return 0 if we overrun.
-        let v = if self.pc > self.code.len() { 0 } else { self.code[self.pc] };
+        let v = if self.pc >= self.code.len() { 0 } else { self.code[self.pc] };
         self.pc += 1;
         v
     }
@@ -73,31 +79,39 @@ impl LgpExec {
 
     // Returns true iff finished.
     fn step(&mut self) -> bool {
-        let op: Opcode = self.fetch().into();
+        let op = u8_to_opcode(self.fetch());
         match op {
             Opcode::Nop => {} // Do nothing
             Opcode::Add => {
                 let rx = self.fetch();
                 let ry = self.fetch();
-                self.set_reg(rx, self.reg(rx) + self.reg(ry));
+                let v = self.reg(rx) + self.reg(ry);
+                if v.is_finite() {
+                    self.set_reg(rx, v);
+                }
             }
             Opcode::Sub => {
                 let rx = self.fetch();
                 let ry = self.fetch();
-                self.set_reg(rx, self.reg(rx) - self.reg(ry));
+                let v = self.reg(rx) - self.reg(ry);
+                if v.is_finite() {
+                    self.set_reg(rx, v);
+                }
             }
             Opcode::Mul => {
                 let rx = self.fetch();
                 let ry = self.fetch();
-                self.set_reg(rx, self.reg(rx) * self.reg(ry));
+                let v = self.reg(rx) * self.reg(ry);
+                if v.is_finite() {
+                    self.set_reg(rx, v);
+                }
             }
             Opcode::Div => {
                 let rx = self.fetch();
                 let ry = self.fetch();
-                let ryv = self.reg(ry);
-                // Skip division by zero.
-                if ryv != 0.0 {
-                    self.set_reg(rx, self.reg(rx) / ryv);
+                let v = self.reg(rx) / self.reg(ry);
+                if v.is_finite() {
+                    self.set_reg(rx, v);
                 }
             }
             Opcode::Abs => {
@@ -111,14 +125,16 @@ impl LgpExec {
             Opcode::Pow => {
                 let rx = self.fetch();
                 let ry = self.fetch();
-                self.set_reg(rx, self.reg(rx).powf(self.reg(ry)));
+                let v = self.reg(rx).powf(self.reg(ry));
+                if v.is_finite() {
+                    self.set_reg(rx, v);
+                }
             }
             Opcode::Log => {
                 let rx = self.fetch();
-                let rxv = self.reg(rx);
-                // Skip if it would produce NaN.
-                if rxv > 0.0 {
-                    self.set_reg(rx, rxv.ln());
+                let v = self.reg(rx).ln();
+                if v.is_finite() {
+                    self.set_reg(rx, v);
                 }
             }
             Opcode::Load => {
