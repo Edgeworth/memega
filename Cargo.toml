@@ -20,6 +20,8 @@ rand = "*"
 rand_distr = "*"
 rayon = "*"
 smallvec = "*"
+strum = "*"
+strum_macros = "*"
 
 [dev-dependencies]
 criterion = {version = "*", features = ["real_blackbox"]}
