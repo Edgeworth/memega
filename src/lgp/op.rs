@@ -32,6 +32,54 @@ pub enum Opcode {
     Jeq = 13,  // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
 }
 
+impl Opcode {
+    pub fn operand(&self, idx: usize) -> Operand {
+        match self {
+            // Zero operands
+            Opcode::Nop => Operand::None,
+            // Two reg operands
+            Opcode::Add | Opcode::Sub | Opcode::Mul | Opcode::Div | Opcode::Copy | Opcode::Pow => {
+                if idx <= 1 {
+                    Operand::Register
+                } else {
+                    Operand::None
+                }
+            }
+            // One reg operand
+            Opcode::Abs | Opcode::Neg | Opcode::Log => {
+                if idx == 0 {
+                    Operand::Register
+                } else {
+                    Operand::None
+                }
+            }
+            // One reg operand, two immediate
+            Opcode::Load => {
+                if idx == 0 {
+                    Operand::Register
+                } else {
+                    Operand::Immediate
+                }
+            }
+            // Two reg operand, one immediate
+            Opcode::Jlt | Opcode::Jle | Opcode::Jeq => {
+                if idx == 2 {
+                    Operand::Immediate
+                } else {
+                    Operand::Register
+                }
+            }
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub enum Operand {
+    None,
+    Register,
+    Immediate,
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct Op {
     pub op: Opcode,
@@ -88,57 +136,39 @@ impl Op {
     pub fn rand(num_reg: usize) -> Self {
         let mut r = rand::thread_rng();
         let opcode = r.gen::<Opcode>();
-        let rx = r.gen_range(0..num_reg) as u8;
-        let ry = r.gen_range(0..num_reg) as u8;
-        let imm0 = r.gen::<u8>();
-        let imm1 = r.gen::<u8>();
-        let data = match opcode {
-            Opcode::Nop => [0, 0, 0],
-            Opcode::Add => [rx, ry, 0],
-            Opcode::Sub => [rx, ry, 0],
-            Opcode::Mul => [rx, ry, 0],
-            Opcode::Div => [rx, ry, 0],
-            Opcode::Abs => [rx, 0, 0],
-            Opcode::Neg => [rx, 0, 0],
-            Opcode::Pow => [rx, ry, 0],
-            Opcode::Log => [rx, 0, 0],
-            Opcode::Load => [rx, imm0, imm1],
-            Opcode::Copy => [rx, ry, 0],
-            Opcode::Jlt => [rx, ry, imm0],
-            Opcode::Jle => [rx, ry, imm0],
-            Opcode::Jeq => [rx, ry, imm0],
-        };
+        let mut data = [0, 0, 0];
+        for i in 0..data.len() {
+            match opcode.operand(i) {
+                Operand::None => {}
+                Operand::Register => data[i] = r.gen_range(0..num_reg) as u8,
+                Operand::Immediate => data[i] = r.gen::<u8>(),
+            }
+        }
         Op::new(opcode, data)
     }
 
     pub fn num_operands(&self) -> usize {
-        match self.op {
-            Opcode::Nop => 0,
-            Opcode::Add => 2,
-            Opcode::Sub => 2,
-            Opcode::Mul => 2,
-            Opcode::Div => 2,
-            Opcode::Abs => 1,
-            Opcode::Neg => 1,
-            Opcode::Pow => 2,
-            Opcode::Log => 1,
-            Opcode::Load => 3,
-            Opcode::Copy => 2,
-            Opcode::Jlt => 3,
-            Opcode::Jle => 3,
-            Opcode::Jeq => 3,
+        for i in 0..self.data.len() {
+            if self.op.operand(i) == Operand::None {
+                return i;
+            }
         }
+        self.data.len()
     }
 
     // Micro-mutation of the instruction without changing the opcode.
-    pub fn mutate(&mut self) {
+    pub fn mutate(&mut self, num_reg: usize) {
         let mut r = rand::thread_rng();
         let num_operands = self.num_operands();
         if num_operands == 0 {
             return;
         }
         let idx = r.gen_range(0..num_operands);
-        self.data[idx] = mutate_creep(self.data[idx], 64);
+        match self.op.operand(idx) {
+            Operand::None => {}
+            Operand::Register => self.data[idx] = r.gen_range(0..num_reg) as u8,
+            Operand::Immediate => self.data[idx] = mutate_creep(self.data[idx], 64),
+        }
     }
 
     // Computes some distance metric between operations.

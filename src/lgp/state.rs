@@ -63,18 +63,10 @@ impl Evaluator for LgpGenome {
             return;
         }
         match idx {
-            0 => {
-                mutate_swap(&mut s.ops);
-            }
-            1 => {
-                mutate_insert(&mut s.ops);
-            }
-            2 => {
-                mutate_reset(&mut s.ops, Op::rand(s.num_reg));
-            }
-            3 => {
-                mutate_scramble(&mut s.ops);
-            }
+            0 => mutate_swap(&mut s.ops),
+            1 => mutate_insert(&mut s.ops),
+            2 => mutate_reset(&mut s.ops, Op::rand(s.num_reg)),
+            3 => mutate_scramble(&mut s.ops),
             4 => {
                 // Add new random instruction.
                 if s.ops.len() < self.max_code {
@@ -89,7 +81,7 @@ impl Evaluator for LgpGenome {
             }
             6 => {
                 // Micro-mutation
-                s.ops.choose_mut(&mut r).unwrap().mutate();
+                s.ops.choose_mut(&mut r).unwrap().mutate(s.num_reg);
             }
             _ => panic!("unknown mutation strategy"),
         }
@@ -99,8 +91,9 @@ impl Evaluator for LgpGenome {
         let mut fitness = 0.0;
         for _ in 0..1000 {
             let mut r = rand::thread_rng();
-            let mut reg = vec![0.0]; // Space for work and answer.
-            let vals = rand_vec(5, move || r.gen_range(-200.0..200.0));
+            let mut reg = vec![0.0, 1.0, -1.0]; // Space for work and answer.
+            // let vals = rand_vec(1, move || r.gen_range(-200.0..200.0));
+            let vals = vec![r.gen_range(1..12) as f64];
             reg.extend(&vals);
             if reg.len() != s.num_reg {
                 panic!("ASDF");
@@ -108,10 +101,14 @@ impl Evaluator for LgpGenome {
             let mut exec = LgpExec::new(&reg, &s.ops, 200);
             exec.run();
 
-            let ans: f64 = vals.iter().sum();
+            // let ans: f64 = vals[0].sin();
+            let mut ans = 1.0;
+            for i in 1..=(vals[0] as i32) {
+                ans *= i as f64;
+            }
             fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs())
         }
-        fitness + 1.0 / (1.0 + s.ops.len() as f64)
+        fitness + 0.0001 / (1.0 + s.ops.len() as f64)
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
@@ -121,7 +118,7 @@ impl Evaluator for LgpGenome {
 
 pub fn lgp_runner(max_code: usize, cfg: Cfg) -> Runner<LgpGenome> {
     // TODO: num reg here.
-    let num_reg = 6;
+    let num_reg = 4;
     Runner::new(LgpGenome::new(max_code), cfg, move || {
         State::new(rand_vec(max_code, || Op::rand(num_reg)), num_reg)
     })
