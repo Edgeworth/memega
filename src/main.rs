@@ -1,9 +1,9 @@
 use std::fmt::Display;
 
 use eyre::Result;
-use memega::cfg::{Cfg, Crossover, Mutation, Niching, Species, Survival};
+use memega::cfg::{Cfg, Crossover, Mutation, Niching, Replacement, Species, Stagnation, Survival};
 use memega::eval::Evaluator;
-use memega::examples::{all_cfg, none_cfg};
+use memega::examples::all_cfg;
 use memega::lgp::state::lgp_runner;
 use memega::runner::{Runner, RunnerFn, Stats};
 use memestat::Grapher;
@@ -69,6 +69,8 @@ fn lgp_cfg() -> Cfg {
         .with_survival(Survival::TopProportion(0.1))
         .with_species(Species::None)
         .with_niching(Niching::None)
+        .with_stagnation(Stagnation::ContinuousAfter(100))
+        .with_replacement(Replacement::ReplaceChildren(0.5))
         .with_par_fitness(true)
     // Cfg::new(100)
     //     .with_mutation(Mutation::Adaptive)

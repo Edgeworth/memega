@@ -1,46 +1,18 @@
-use num_enum::{IntoPrimitive, TryFromPrimitive};
-use strum_macros::EnumCount;
-
-use crate::lgp::u8_to_opcode;
+use crate::lgp::op::{Op, Opcode};
 
 const EP: f64 = 1.0e-6;
-
-// Machine consists of N registers (up to 256) that contain f64 values.
-// Note that floating point comparisons are done using an epsilon.
-// Opcodes are 8 bit and have variable number of operands.
-// If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
-// Accessing register k will access register k % N if k >= N.
-#[derive(Debug, Clone, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount)]
-#[repr(u8)]
-pub enum Opcode {
-    Nop = 0,   // no operation - 0
-    Add = 1,   // add rx, ry: rx = rx + ry
-    Sub = 2,   // sub rx, ry: rx = rx - ry
-    Mul = 3,   // mul rx, ry: rx = rx * ry
-    Div = 4,   // div rx, ry: rx = rx / ry - Div by zero => max value
-    Abs = 5,   // abs rx: rx = |rx|
-    Neg = 6,   // neg rx: rx = -rx
-    Pow = 7,   // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
-    Log = 8,   // log rx: rx = ln(rx)
-    Load = 9,  // load rx, f8:8: rx = immediate fixed point 8:8, little endian
-    Copy = 10, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
-    Jmp = 11,  // jmp i8: pc += immediate value; relative jump
-    Jlt = 12,  // jlt rx, ry, i8: if rx < ry pc += immediate; relative conditional
-    Jle = 13,  // jle rx, ry, i8: if rx <= ry pc += immediate; relative conditional
-    Jeq = 14,  // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
-}
 
 // Virtual machine for lgp code.
 #[derive(Debug, Clone)]
 pub struct LgpExec {
     pc: usize,
     reg: Vec<f64>,
-    code: Vec<u8>,
+    code: Vec<Op>,
     max_iter: usize,
 }
 
 impl LgpExec {
-    pub fn new(reg: &[f64], code: &[u8], max_iter: usize) -> Self {
+    pub fn new(reg: &[f64], code: &[Op], max_iter: usize) -> Self {
         if reg.len() > 256 {
             panic!("cannot use more than 256 registers");
         }
@@ -53,15 +25,12 @@ impl LgpExec {
 
     fn set_reg(&mut self, idx: u8, v: f64) {
         let idx = (idx as usize) % self.reg.len();
-        if !v.is_finite() {
-            panic!("NAN: {}", v);
-        }
         self.reg[idx] = v;
     }
 
-    fn fetch(&mut self) -> u8 {
+    fn fetch(&mut self) -> Option<Op> {
         // Check if we finished the program. Return 0 if we overrun.
-        let v = if self.pc >= self.code.len() { 0 } else { self.code[self.pc] };
+        let v = if self.pc >= self.code.len() { None } else { Some(self.code[self.pc]) };
         self.pc += 1;
         v
     }
@@ -79,105 +48,84 @@ impl LgpExec {
 
     // Returns true iff finished.
     fn step(&mut self) -> bool {
-        let op = u8_to_opcode(self.fetch());
-        match op {
-            Opcode::Nop => {} // Do nothing
-            Opcode::Add => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let v = self.reg(rx) + self.reg(ry);
-                if v.is_finite() {
-                    self.set_reg(rx, v);
+        if let Some(op) = self.fetch() {
+            let rx = op.data[0];
+            let ry = op.data[1];
+            match op.op {
+                Opcode::Nop => {} // Do nothing
+                Opcode::Add => {
+                    let v = self.reg(rx) + self.reg(ry);
+                    if v.is_finite() {
+                        self.set_reg(rx, v);
+                    }
+                }
+                Opcode::Sub => {
+                    let v = self.reg(rx) - self.reg(ry);
+                    if v.is_finite() {
+                        self.set_reg(rx, v);
+                    }
+                }
+                Opcode::Mul => {
+                    let v = self.reg(rx) * self.reg(ry);
+                    if v.is_finite() {
+                        self.set_reg(rx, v);
+                    }
+                }
+                Opcode::Div => {
+                    let v = self.reg(rx) / self.reg(ry);
+                    if v.is_finite() {
+                        self.set_reg(rx, v);
+                    }
+                }
+                Opcode::Abs => {
+                    self.set_reg(rx, self.reg(rx).abs());
+                }
+                Opcode::Neg => {
+                    self.set_reg(rx, -self.reg(rx));
+                }
+                Opcode::Pow => {
+                    let v = self.reg(rx).powf(self.reg(ry));
+                    if v.is_finite() {
+                        self.set_reg(rx, v);
+                    }
+                }
+                Opcode::Log => {
+                    let v = self.reg(rx).ln();
+                    if v.is_finite() {
+                        self.set_reg(rx, v);
+                    }
+                }
+                Opcode::Load => {
+                    let lo = op.data[1];
+                    let hi = op.data[2];
+                    self.set_reg(rx, (hi as f64) + (lo as f64) / 256.0);
+                }
+                Opcode::Copy => {
+                    self.set_reg(self.f64_to_reg(self.reg(rx)), self.reg(ry));
+                }
+                Opcode::Jlt => {
+                    let imm = op.data[2] as i8;
+                    if self.reg(rx) < self.reg(ry) - EP {
+                        self.rel_jmp(imm);
+                    }
+                }
+                Opcode::Jle => {
+                    let imm = op.data[2] as i8;
+                    if self.reg(rx) <= self.reg(ry) + EP {
+                        self.rel_jmp(imm);
+                    }
+                }
+                Opcode::Jeq => {
+                    let imm = op.data[2] as i8;
+                    if (self.reg(rx) - self.reg(ry)).abs() < EP {
+                        self.rel_jmp(imm);
+                    }
                 }
             }
-            Opcode::Sub => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let v = self.reg(rx) - self.reg(ry);
-                if v.is_finite() {
-                    self.set_reg(rx, v);
-                }
-            }
-            Opcode::Mul => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let v = self.reg(rx) * self.reg(ry);
-                if v.is_finite() {
-                    self.set_reg(rx, v);
-                }
-            }
-            Opcode::Div => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let v = self.reg(rx) / self.reg(ry);
-                if v.is_finite() {
-                    self.set_reg(rx, v);
-                }
-            }
-            Opcode::Abs => {
-                let rx = self.fetch();
-                self.set_reg(rx, self.reg(rx).abs());
-            }
-            Opcode::Neg => {
-                let rx = self.fetch();
-                self.set_reg(rx, -self.reg(rx));
-            }
-            Opcode::Pow => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let v = self.reg(rx).powf(self.reg(ry));
-                if v.is_finite() {
-                    self.set_reg(rx, v);
-                }
-            }
-            Opcode::Log => {
-                let rx = self.fetch();
-                let v = self.reg(rx).ln();
-                if v.is_finite() {
-                    self.set_reg(rx, v);
-                }
-            }
-            Opcode::Load => {
-                let rx = self.fetch();
-                let lo = self.fetch();
-                let hi = self.fetch();
-                self.set_reg(rx, (hi as f64) + (lo as f64) / 256.0);
-            }
-            Opcode::Copy => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                self.set_reg(self.f64_to_reg(self.reg(rx)), self.reg(ry));
-            }
-            Opcode::Jmp => {
-                let imm = self.fetch() as i8;
-                self.rel_jmp(imm);
-            }
-            Opcode::Jlt => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let imm = self.fetch() as i8;
-                if self.reg(rx) < self.reg(ry) - EP {
-                    self.rel_jmp(imm);
-                }
-            }
-            Opcode::Jle => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let imm = self.fetch() as i8;
-                if self.reg(rx) <= self.reg(ry) + EP {
-                    self.rel_jmp(imm);
-                }
-            }
-            Opcode::Jeq => {
-                let rx = self.fetch();
-                let ry = self.fetch();
-                let imm = self.fetch() as i8;
-                if (self.reg(rx) - self.reg(ry)).abs() < EP {
-                    self.rel_jmp(imm);
-                }
-            }
+            false
+        } else {
+            true
         }
-        self.pc >= self.code.len()
     }
 
     pub fn run(&mut self) {

@@ -1,6 +1,6 @@
 use std::f64::consts::E;
 
-use num_traits::Num;
+use num_traits::{Num, Saturating};
 use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
 use rand_distr::uniform::SampleUniform;
@@ -95,8 +95,8 @@ pub fn mutate_lognorm(v: f64, std: f64) -> f64 {
 }
 
 // Number mutation operators:
-pub fn mutate_creep<T: Num + SampleUniform + PartialOrd>(v: T, max_diff: T) -> T {
+pub fn mutate_creep<T: Num + Saturating + SampleUniform + PartialOrd>(v: T, max_diff: T) -> T {
     let mut r = rand::thread_rng();
     let diff = r.gen_range(T::zero()..max_diff);
-    if r.gen::<bool>() { v - diff } else { v + diff }
+    if r.gen::<bool>() { v.saturating_sub(diff) } else { v.saturating_add(diff) }
 }

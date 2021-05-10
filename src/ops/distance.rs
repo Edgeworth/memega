@@ -3,6 +3,17 @@ use std::mem::swap;
 use eyre::{eyre, Result};
 use num_traits::{Num, NumAssign};
 
+// Generalised distance - add missing * difference in lengths distance if the
+// arrays are different distances.
+pub fn dist_fn<T>(s1: &[T], s2: &[T], missing: f64, mut f: impl FnMut(&T, &T) -> f64) -> f64 {
+    let min = s1.len().min(s2.len());
+    let mut dist = (s1.len() as f64 - s2.len() as f64).abs() * missing;
+    for i in 0..min {
+        dist += f(&s1[i], &s2[i]);
+    }
+    dist
+}
+
 // Norm 1 distance
 pub fn dist_abs<T: Num + NumAssign + Copy + PartialOrd>(mut a: T, mut b: T) -> T {
     if a < b {

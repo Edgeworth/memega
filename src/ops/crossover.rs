@@ -157,7 +157,7 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
     let mut c2: Vec<T> = vec![Default::default(); s1.len()];
     // Build map from values in s1 to positions.
     let mut m: HashMap<T, usize> = HashMap::new();
-    for i in 0..s2.len() {
+    for i in 0..s1.len() {
         m.entry(s1[i]).or_insert(i);
     }
     let mut seen = vec![false; s1.len()];
