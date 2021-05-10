@@ -1,32 +1,33 @@
 use std::fmt;
 
+use rand::prelude::SliceRandom;
 use rand::Rng;
 
 use crate::cfg::Cfg;
 use crate::eval::Evaluator;
-use crate::lgp::disasm::LgpDisasm;
+use crate::lgp::disasm::lgp_disasm;
 use crate::lgp::exec::LgpExec;
-use crate::ops::crossover::{crossover_cycle, crossover_kpx, crossover_order, crossover_pmx};
-use crate::ops::distance::dist1;
-use crate::ops::mutation::{mutate_gen, mutate_insert, mutate_reset, mutate_swap};
+use crate::lgp::op::Op;
+use crate::ops::crossover::crossover_kpx;
+use crate::ops::distance::dist_fn;
+use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_swap};
 use crate::ops::util::rand_vec;
 use crate::runner::Runner;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
-    ops: Vec<u8>, // Contains program code for linear genetic programming.
+    ops: Vec<Op>, // Contains program code for linear genetic programming.
     num_reg: usize,
 }
 
 impl fmt::Display for State {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let mut ds = LgpDisasm::new(&self.ops, self.num_reg);
-        f.write_str(&ds.disasm())
+        f.write_str(&lgp_disasm(&self.ops))
     }
 }
 
 impl State {
-    pub fn new(ops: Vec<u8>, num_reg: usize) -> Self {
+    pub fn new(ops: Vec<Op>, num_reg: usize) -> Self {
         Self { ops, num_reg }
     }
 }
@@ -44,7 +45,7 @@ impl LgpGenome {
 impl Evaluator for LgpGenome {
     type Genome = State;
     const NUM_CROSSOVER: usize = 2;
-    const NUM_MUTATION: usize = 5;
+    const NUM_MUTATION: usize = 7;
 
     fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
         match idx {
@@ -58,32 +59,37 @@ impl Evaluator for LgpGenome {
 
     fn mutate(&self, s: &mut State, rate: f64, idx: usize) {
         let mut r = rand::thread_rng();
-        let mutate = r.gen::<f64>() < rate;
+        if r.gen::<f64>() > rate {
+            return;
+        }
         match idx {
             0 => {
-                if mutate {
-                    mutate_swap(&mut s.ops);
-                }
+                mutate_swap(&mut s.ops);
             }
             1 => {
-                if mutate {
-                    mutate_insert(&mut s.ops);
-                }
+                mutate_insert(&mut s.ops);
             }
             2 => {
-                if mutate {
-                    mutate_reset(&mut s.ops, mutate_gen());
-                }
+                mutate_reset(&mut s.ops, Op::rand(s.num_reg));
             }
             3 => {
-                if mutate && s.ops.len() < self.max_code {
-                    s.ops.push(mutate_gen());
-                }
+                mutate_scramble(&mut s.ops);
             }
             4 => {
-                if mutate {
-                    s.ops.pop();
+                // Add new random instruction.
+                if s.ops.len() < self.max_code {
+                    s.ops.push(Op::rand(s.num_reg));
                 }
+            }
+            5 => {
+                // Remove random instruction.
+                if s.ops.len() > 1 {
+                    s.ops.remove(r.gen_range(0..s.ops.len()));
+                }
+            }
+            6 => {
+                // Micro-mutation
+                s.ops.choose_mut(&mut r).unwrap().mutate();
             }
             _ => panic!("unknown mutation strategy"),
         }
@@ -93,32 +99,30 @@ impl Evaluator for LgpGenome {
         let mut fitness = 0.0;
         for _ in 0..1000 {
             let mut r = rand::thread_rng();
-            let mut reg = vec![0.0, 0.0, 0.0, 0.0, 0.0]; // Space for work and answer.
-            let vals = rand_vec(5, move || r.gen_range(0.05..5.0));
+            let mut reg = vec![0.0]; // Space for work and answer.
+            let vals = rand_vec(5, move || r.gen_range(-200.0..200.0));
             reg.extend(&vals);
             if reg.len() != s.num_reg {
                 panic!("ASDF");
             }
             let mut exec = LgpExec::new(&reg, &s.ops, 200);
             exec.run();
-            let ans: f64 = vals.iter().sum::<f64>();
+
+            let ans: f64 = vals.iter().sum();
             fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs())
         }
         fitness + 1.0 / (1.0 + s.ops.len() as f64)
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
-        // TODO: Treat different instructions differently to different
-        // constants?
-        let s1ops: Vec<f64> = s1.ops.iter().map(|&v| v as f64).collect();
-        let s2ops: Vec<f64> = s2.ops.iter().map(|&v| v as f64).collect();
-        dist1(&s1ops, &s2ops)
+        dist_fn(&s1.ops, &s2.ops, 1.0, |a, b| Op::dist(a, b))
     }
 }
 
 pub fn lgp_runner(max_code: usize, cfg: Cfg) -> Runner<LgpGenome> {
     // TODO: num reg here.
+    let num_reg = 6;
     Runner::new(LgpGenome::new(max_code), cfg, move || {
-        State::new(rand_vec(max_code, mutate_gen::<u8>), 10)
+        State::new(rand_vec(max_code, || Op::rand(num_reg)), num_reg)
     })
 }
