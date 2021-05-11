@@ -32,9 +32,14 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
                 idx += 1;
             }
             Operand::Immediate => {
-                let tok = tokens.next().ok_or_else(|| eyre!("missing immediate"))?;
-                data[idx] = tok.parse::<i8>()? as u8;
+                let tok = tokens.next().ok_or_else(|| eyre!("missing immediate for {:?}", op))?;
+                let tok = tok.parse::<f64>()?;
+                data[idx] = tok.floor() as u8;
                 idx += 1;
+                data[idx] = (tok.fract() * 256.0).floor() as u8;
+                idx += 1;
+                // TODO: Hacky
+                return Ok(Op::new(op, data));
             }
             Operand::Relative => {
                 let tok = tokens.next().ok_or_else(|| eyre!("missing relative jump immediate"))?;

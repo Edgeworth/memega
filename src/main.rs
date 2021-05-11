@@ -57,7 +57,7 @@ fn run_once<E: Evaluator>(mut runner: Runner<E>, print_gen: i32, print_summary: 
 where
     E::Genome: Display,
 {
-    for i in 0..10000 {
+    for i in 0..100000 {
         let mut r = runner.run_iter()?;
         if i % print_gen == 0 {
             println!("Generation {}: {}", i, r.nth(0).base_fitness);
@@ -91,23 +91,50 @@ fn lgp_cfg() -> Cfg {
 }
 
 fn run_lgp() -> Result<()> {
+    use plotters::prelude::*;
+
     let code = lgp_asm(
-        "mov r0, r3
-abs r3
-abs r2
-jle r3, r2, -2
-pow r2, r3
-add r1, r1
-div r1, r3
-div r0, r3
-add r3, r1
-jle r3, r3, -8",
+        "neg r2
+jlt r0, r3, 4
+load r3, 22.22265625
+jle r0, r2, 2
+pow r2, r1
+nop
+pow r1, r2
+pow r2, r2",
     )?;
 
-    let x = PI / 7.0;
-    let mut lgp = LgpExec::new(&[0.0, -1.0, 1.0, x], &code, 200);
-    lgp.run();
-    println!("result: {}", lgp.reg(0));
+    let xleft = -PI;
+    let xright = PI;
+
+    let root = BitMapBackend::new("test.png", (640, 480)).into_drawing_area();
+    root.fill(&WHITE)?;
+    let mut chart = ChartBuilder::on(&root)
+        .caption("stuff", ("sans-serif", 50).into_font())
+        .margin(5)
+        .x_label_area_size(30)
+        .y_label_area_size(30)
+        .build_cartesian_2d(xleft..xright, -1.5..1.5)?;
+
+    chart.configure_mesh().draw()?;
+
+    chart
+        .draw_series(LineSeries::new(
+            (-50..=50).map(|x| x as f64 / 50.0 * (xright - xleft)).map(|x| {
+                let mut lgp = LgpExec::new(&[0.0, -1.0, 1.0, x], &code, 200);
+                lgp.run();
+                (x, lgp.reg(0))
+            }),
+            &RED,
+        ))?
+        .label("y = stuff");
+
+    chart
+        .configure_series_labels()
+        .background_style(&WHITE.mix(0.8))
+        .border_style(&BLACK)
+        .draw()?;
+
     Ok(())
 }
 
@@ -127,6 +154,6 @@ fn main() -> Result<()> {
 
     let cfg = lgp_cfg();
     run_once(lgp_runner(10, cfg), 10, 100)?;
-    // run_lgp()?;
+    run_lgp()?;
     Ok(())
 }

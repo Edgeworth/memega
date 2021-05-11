@@ -15,6 +15,7 @@ log = "*"
 memestat = {path = "../memestat"}
 num-traits = "*"
 num_enum = "*"
+plotters = "*"
 pretty_env_logger = "*"
 rand = "*"
 rand_distr = "*"
