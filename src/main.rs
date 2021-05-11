@@ -1,9 +1,15 @@
+use std::f64::consts::PI;
 use std::fmt::Display;
 
 use eyre::Result;
-use memega::cfg::{Cfg, Crossover, Mutation, Niching, Replacement, Species, Stagnation, Survival};
+use memega::cfg::{
+    Cfg, Crossover, Mutation, Niching, Replacement, Species, Stagnation, StagnationCondition,
+    Survival,
+};
 use memega::eval::Evaluator;
 use memega::examples::all_cfg;
+use memega::lgp::asm::lgp_asm;
+use memega::lgp::exec::LgpExec;
 use memega::lgp::state::lgp_runner;
 use memega::runner::{Runner, RunnerFn, Stats};
 use memestat::Grapher;
@@ -47,14 +53,16 @@ fn run_grapher<E: Evaluator>(
     Ok(())
 }
 
-fn run_once<E: Evaluator>(mut runner: Runner<E>) -> Result<()>
+fn run_once<E: Evaluator>(mut runner: Runner<E>, print_gen: i32, print_summary: i32) -> Result<()>
 where
     E::Genome: Display,
 {
     for i in 0..10000 {
         let mut r = runner.run_iter()?;
-        println!("Generation {}: {}", i + 1, r.nth(0).base_fitness);
-        if i % 10 == 0 {
+        if i % print_gen == 0 {
+            println!("Generation {}: {}", i, r.nth(0).base_fitness);
+        }
+        if i % print_summary == 0 {
             println!("{}", runner.summary(&mut r));
             println!("{}", runner.summary_sample(&mut r, 5, |v| format!("{}", v)));
         }
@@ -63,13 +71,14 @@ where
 }
 
 fn lgp_cfg() -> Cfg {
-    Cfg::new(1000)
+    Cfg::new(2000)
         .with_mutation(Mutation::Adaptive)
         .with_crossover(Crossover::Adaptive)
         .with_survival(Survival::TopProportion(0.1))
         .with_species(Species::None)
         .with_niching(Niching::None)
         .with_stagnation(Stagnation::ContinuousAfter(100))
+        .with_stagnation_condition(StagnationCondition::Epsilon(2.0))
         .with_replacement(Replacement::ReplaceChildren(0.5))
         .with_par_fitness(true)
     // Cfg::new(100)
@@ -79,6 +88,27 @@ fn lgp_cfg() -> Cfg {
     //     .with_species(Species::TargetNumber(10))
     //     .with_niching(Niching::None)
     //     .with_par_fitness(true)
+}
+
+fn run_lgp() -> Result<()> {
+    let code = lgp_asm(
+        "mov r0, r3
+abs r3
+abs r2
+jle r3, r2, -2
+pow r2, r3
+add r1, r1
+div r1, r3
+div r0, r3
+add r3, r1
+jle r3, r3, -8",
+    )?;
+
+    let x = PI / 7.0;
+    let mut lgp = LgpExec::new(&[0.0, -1.0, 1.0, x], &code, 200);
+    lgp.run();
+    println!("result: {}", lgp.reg(0));
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -91,10 +121,12 @@ fn main() -> Result<()> {
     // run_grapher("string", cfg, &target_string_runner)?;
     // run_once(rastrigin_runner(2, all_cfg()))?;
     // run_once(hyper_runner(100, Duration::from_millis(10)))?;
-    let cfg = lgp_cfg();
-    run_once(lgp_runner(32, cfg))?;
     // run_once(hyper_runner(&knapsack_runner))?;
     // run_once(hyper_runner(&target_string_runner))?;
     // run_once(hyper_runner))?;
+
+    let cfg = lgp_cfg();
+    run_once(lgp_runner(10, cfg), 10, 100)?;
+    // run_lgp()?;
     Ok(())
 }

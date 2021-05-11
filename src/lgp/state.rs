@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use std::fmt;
 
 use rand::prelude::SliceRandom;
@@ -62,26 +63,27 @@ impl Evaluator for LgpGenome {
         if r.gen::<f64>() > rate {
             return;
         }
+        let code_size = s.ops.len();
         match idx {
             0 => mutate_swap(&mut s.ops),
             1 => mutate_insert(&mut s.ops),
-            2 => mutate_reset(&mut s.ops, Op::rand(s.num_reg)),
+            2 => mutate_reset(&mut s.ops, Op::rand(s.num_reg, code_size)),
             3 => mutate_scramble(&mut s.ops),
             4 => {
                 // Add new random instruction.
-                if s.ops.len() < self.max_code {
-                    s.ops.push(Op::rand(s.num_reg));
+                if code_size < self.max_code {
+                    s.ops.insert(r.gen_range(0..code_size), Op::rand(s.num_reg, code_size));
                 }
             }
             5 => {
                 // Remove random instruction.
-                if s.ops.len() > 1 {
-                    s.ops.remove(r.gen_range(0..s.ops.len()));
+                if code_size > 1 {
+                    s.ops.remove(r.gen_range(0..code_size));
                 }
             }
             6 => {
                 // Micro-mutation
-                s.ops.choose_mut(&mut r).unwrap().mutate(s.num_reg);
+                s.ops.choose_mut(&mut r).unwrap().mutate(s.num_reg, code_size);
             }
             _ => panic!("unknown mutation strategy"),
         }
@@ -89,11 +91,12 @@ impl Evaluator for LgpGenome {
 
     fn fitness(&self, s: &State) -> f64 {
         let mut fitness = 0.0;
-        for _ in 0..1000 {
+        for _ in 0..100 {
             let mut r = rand::thread_rng();
-            let mut reg = vec![0.0, 1.0, -1.0]; // Space for work and answer.
-            // let vals = rand_vec(1, move || r.gen_range(-200.0..200.0));
-            let vals = vec![r.gen_range(1..12) as f64];
+            let mut reg = vec![0.0, -1.0, 1.0]; // Space for work and answer.
+            // let vals = rand_vec(4, move || r.gen_range(-100.0..100.0));
+            // let vals = vec![r.gen_range(1..12) as f64];
+            let vals = vec![r.gen_range(-PI..PI)];
             reg.extend(&vals);
             if reg.len() != s.num_reg {
                 panic!("ASDF");
@@ -101,14 +104,16 @@ impl Evaluator for LgpGenome {
             let mut exec = LgpExec::new(&reg, &s.ops, 200);
             exec.run();
 
-            // let ans: f64 = vals[0].sin();
-            let mut ans = 1.0;
-            for i in 1..=(vals[0] as i32) {
-                ans *= i as f64;
-            }
+            // let mut ans: f64 = vals[0];
+            // for &v in vals.iter() {
+            //     if v < ans {
+            //         ans = v;
+            //     }
+            // }
+            let ans = vals[0].sin();
             fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs())
         }
-        fitness + 0.0001 / (1.0 + s.ops.len() as f64)
+        fitness + 1.0 / (1.0 + s.ops.len() as f64)
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
@@ -120,6 +125,6 @@ pub fn lgp_runner(max_code: usize, cfg: Cfg) -> Runner<LgpGenome> {
     // TODO: num reg here.
     let num_reg = 4;
     Runner::new(LgpGenome::new(max_code), cfg, move || {
-        State::new(rand_vec(max_code, || Op::rand(num_reg)), num_reg)
+        State::new(rand_vec(max_code, || Op::rand(num_reg, max_code)), num_reg)
     })
 }
