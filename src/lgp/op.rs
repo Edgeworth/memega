@@ -64,7 +64,7 @@ impl Opcode {
             // Two reg operand, one immediate
             Opcode::Jlt | Opcode::Jle | Opcode::Jeq => {
                 if idx == 2 {
-                    Operand::Immediate
+                    Operand::Relative
                 } else {
                     Operand::Register
                 }
@@ -78,6 +78,7 @@ pub enum Operand {
     None,
     Register,
     Immediate,
+    Relative, // Relative jump
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
@@ -92,31 +93,31 @@ impl fmt::Display for Op {
         let ry = self.data[1];
         match self.op {
             Opcode::Nop => f.write_fmt(format_args!("nop")),
-            Opcode::Add => f.write_fmt(format_args!("r{} += r{}", rx, ry)),
-            Opcode::Sub => f.write_fmt(format_args!("r{} -= r{}", rx, ry)),
-            Opcode::Mul => f.write_fmt(format_args!("r{} *= r{}", rx, ry)),
-            Opcode::Div => f.write_fmt(format_args!("r{} /= r{}", rx, ry)),
-            Opcode::Abs => f.write_fmt(format_args!("r{} = |r{}|", rx, rx)),
-            Opcode::Neg => f.write_fmt(format_args!("r{} = -r{}", rx, rx)),
-            Opcode::Pow => f.write_fmt(format_args!("r{} = r{} ** r{}", rx, rx, ry)),
-            Opcode::Log => f.write_fmt(format_args!("r{} = ln(r{})", rx, rx)),
+            Opcode::Add => f.write_fmt(format_args!("add r{}, r{}", rx, ry)),
+            Opcode::Sub => f.write_fmt(format_args!("sub r{}, r{}", rx, ry)),
+            Opcode::Mul => f.write_fmt(format_args!("mul r{}, r{}", rx, ry)),
+            Opcode::Div => f.write_fmt(format_args!("div r{}, r{}", rx, ry)),
+            Opcode::Abs => f.write_fmt(format_args!("abs r{}", rx)),
+            Opcode::Neg => f.write_fmt(format_args!("neg r{}", rx)),
+            Opcode::Pow => f.write_fmt(format_args!("pow r{}, r{}", rx, ry)),
+            Opcode::Log => f.write_fmt(format_args!("ln r{}", rx)),
             Opcode::Load => {
                 let lo = self.data[1];
                 let hi = self.data[2];
-                f.write_fmt(format_args!("[r{}] = {}", rx, (hi as f64) + (lo as f64) / 256.0))
+                f.write_fmt(format_args!("load r{}, {}", rx, (hi as f64) + (lo as f64) / 256.0))
             }
-            Opcode::Copy => f.write_fmt(format_args!("r{} = r{}", rx, ry)),
+            Opcode::Copy => f.write_fmt(format_args!("mov r{}, r{}", rx, ry)),
             Opcode::Jlt => {
                 let imm = self.data[2] as i8;
-                f.write_fmt(format_args!("if r{} < r{}: jmp {}", rx, ry, imm))
+                f.write_fmt(format_args!("jlt r{}, r{}, {}", rx, ry, imm))
             }
             Opcode::Jle => {
                 let imm = self.data[2] as i8;
-                f.write_fmt(format_args!("if r{} <= r{}: jmp {}", rx, ry, imm))
+                f.write_fmt(format_args!("jle r{}, r{}, {}", rx, ry, imm))
             }
             Opcode::Jeq => {
                 let imm = self.data[2] as i8;
-                f.write_fmt(format_args!("if r{} == r{}: jmp {}", rx, ry, imm))
+                f.write_fmt(format_args!("jeq r{}, r{}, {}", rx, ry, imm))
             }
         }
     }
@@ -133,15 +134,17 @@ impl Op {
         Self { op, data }
     }
 
-    pub fn rand(num_reg: usize) -> Self {
+    pub fn rand(num_reg: usize, code_size: usize) -> Self {
         let mut r = rand::thread_rng();
         let opcode = r.gen::<Opcode>();
         let mut data = [0, 0, 0];
+        let code_size = code_size.clamp(0, i8::MAX as usize) as i32;
         for i in 0..data.len() {
             match opcode.operand(i) {
                 Operand::None => {}
                 Operand::Register => data[i] = r.gen_range(0..num_reg) as u8,
                 Operand::Immediate => data[i] = r.gen::<u8>(),
+                Operand::Relative => data[i] = r.gen_range(-code_size..=code_size) as u8,
             }
         }
         Op::new(opcode, data)
@@ -157,17 +160,22 @@ impl Op {
     }
 
     // Micro-mutation of the instruction without changing the opcode.
-    pub fn mutate(&mut self, num_reg: usize) {
+    pub fn mutate(&mut self, num_reg: usize, code_size: usize) {
         let mut r = rand::thread_rng();
         let num_operands = self.num_operands();
         if num_operands == 0 {
             return;
         }
         let idx = r.gen_range(0..num_operands);
+        let code_size = code_size.clamp(0, i8::MAX as usize) as i8;
         match self.op.operand(idx) {
             Operand::None => {}
             Operand::Register => self.data[idx] = r.gen_range(0..num_reg) as u8,
             Operand::Immediate => self.data[idx] = mutate_creep(self.data[idx], 64),
+            Operand::Relative => {
+                self.data[idx] = mutate_creep(self.data[idx] as i8, code_size)
+                    .clamp(-code_size, code_size) as u8;
+            }
         }
     }
 

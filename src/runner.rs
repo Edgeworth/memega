@@ -1,9 +1,9 @@
-use approx::relative_eq;
+use approx::{abs_diff_eq, relative_eq};
 use derive_more::Display;
 use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;
 
-use crate::cfg::{Cfg, Crossover, Mutation, Stagnation};
+use crate::cfg::{Cfg, Crossover, Mutation, Stagnation, StagnationCondition};
 use crate::eval::{Evaluator, Genome, Mem};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::species::SpeciesInfo;
@@ -129,7 +129,15 @@ impl<E: Evaluator> Runner<E> {
 
     pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
         let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
-        if relative_eq!(gen.mems[0].base_fitness, self.last_fitness) {
+        let stagnant = match self.cfg.stagnation_condition {
+            StagnationCondition::Default => {
+                relative_eq!(gen.mems[0].base_fitness, self.last_fitness)
+            }
+            StagnationCondition::Epsilon(ep) => {
+                abs_diff_eq!(gen.mems[0].base_fitness, self.last_fitness, epsilon = ep)
+            }
+        };
+        if stagnant {
             self.stagnation_count += 1;
         } else {
             self.stagnation_count = 0;

@@ -104,6 +104,23 @@ impl Distribution<Stagnation> for Standard {
 }
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub enum StagnationCondition {
+    // Use default epsilon and relative comparison to determine stagnation.
+    Default,
+    // Compare fitnesses to determine stagnation with this epsilon. Useful if
+    // the fitness is somewhat random.
+    Epsilon(f64),
+}
+
+impl Distribution<StagnationCondition> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, _: &mut R) -> StagnationCondition {
+        // Just return default for now - evolving a stagnation condition epsilon
+        // probably not that useful.
+        StagnationCondition::Default
+    }
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Replacement {
     // During stagnation make a proportion of the children random individuals.
     ReplaceChildren(f64),
@@ -143,6 +160,7 @@ pub struct Cfg {
     pub niching: Niching,
     pub species: Species,
     pub stagnation: Stagnation,
+    pub stagnation_condition: StagnationCondition,
     pub replacement: Replacement,
     pub duplicates: Duplicates,
     pub par_fitness: bool, // Run fitness computations in parallel
@@ -160,6 +178,7 @@ impl Cfg {
             niching: Niching::None,
             species: Species::None,
             stagnation: Stagnation::None,
+            stagnation_condition: StagnationCondition::Default,
             replacement: Replacement::ReplaceChildren(0.2),
             duplicates: Duplicates::DisallowDuplicates,
             par_fitness: false,
@@ -197,6 +216,10 @@ impl Cfg {
 
     pub fn with_stagnation(self, stagnation: Stagnation) -> Self {
         Self { stagnation, ..self }
+    }
+
+    pub fn with_stagnation_condition(self, stagnation_condition: StagnationCondition) -> Self {
+        Self { stagnation_condition, ..self }
     }
 
     pub fn with_replacement(self, replacement: Replacement) -> Self {
