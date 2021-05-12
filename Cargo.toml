@@ -15,7 +15,6 @@ log = "*"
 memestat = {path = "../memestat"}
 num-traits = "*"
 num_enum = "*"
-plotters = "*"
 pretty_env_logger = "*"
 rand = "*"
 rand_distr = "*"
@@ -26,6 +25,7 @@ strum_macros = "*"
 
 [dev-dependencies]
 criterion = {version = "*", features = ["real_blackbox"]}
+plotters = "*"
 
 [[bench]]
 harness = false
