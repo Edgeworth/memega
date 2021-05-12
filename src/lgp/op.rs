@@ -3,7 +3,7 @@ use std::fmt;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
-use strum::EnumCount;
+use strum::EnumCount as EnumCountTrait;
 use strum_macros::EnumCount;
 
 use crate::ops::mutation::mutate_creep;
