@@ -5,9 +5,8 @@ use rand::prelude::SliceRandom;
 use rand::Rng;
 
 use crate::cfg::Cfg;
-use crate::eval::Evaluator;
+use crate::eval::{Evaluator, FitnessFn};
 use crate::lgp::disasm::lgp_disasm;
-use crate::lgp::exec::LgpExec;
 use crate::lgp::op::Op;
 use crate::ops::crossover::crossover_kpx;
 use crate::ops::distance::dist_fn;
@@ -17,8 +16,8 @@ use crate::runner::Runner;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
-    ops: Vec<Op>, // Contains program code for linear genetic programming.
-    num_reg: usize,
+    pub ops: Vec<Op>, // Contains program code for linear genetic programming.
+    pub num_reg: usize,
 }
 
 impl fmt::Display for State {
@@ -33,17 +32,18 @@ impl State {
     }
 }
 
-pub struct LgpGenome {
+pub struct LgpGenome<F: FitnessFn<State>> {
     max_code: usize,
+    f: F,
 }
 
-impl LgpGenome {
-    pub fn new(max_code: usize) -> Self {
-        Self { max_code }
+impl<F: FitnessFn<State>> LgpGenome<F> {
+    pub fn new(max_code: usize, f: F) -> Self {
+        Self { max_code, f }
     }
 }
 
-impl Evaluator for LgpGenome {
+impl<F: FitnessFn<State>> Evaluator for LgpGenome<F> {
     type Genome = State;
     const NUM_CROSSOVER: usize = 2;
     const NUM_MUTATION: usize = 7;
@@ -90,30 +90,7 @@ impl Evaluator for LgpGenome {
     }
 
     fn fitness(&self, s: &State) -> f64 {
-        let mut fitness = 0.0;
-        for _ in 0..100 {
-            let mut r = rand::thread_rng();
-            let mut reg = vec![0.0, -1.0, 1.0]; // Space for work and answer.
-            // let vals = rand_vec(4, move || r.gen_range(-100.0..100.0));
-            // let vals = vec![r.gen_range(1..12) as f64];
-            let vals = vec![r.gen_range(-PI..PI)];
-            reg.extend(&vals);
-            if reg.len() != s.num_reg {
-                panic!("ASDF");
-            }
-            let mut exec = LgpExec::new(&reg, &s.ops, 200);
-            exec.run();
-
-            // let mut ans: f64 = vals[0];
-            // for &v in vals.iter() {
-            //     if v < ans {
-            //         ans = v;
-            //     }
-            // }
-            let ans = vals[0].sin();
-            fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs())
-        }
-        fitness + 1.0 / (1.0 + s.ops.len() as f64)
+        (self.f)(s)
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
@@ -121,10 +98,13 @@ impl Evaluator for LgpGenome {
     }
 }
 
-pub fn lgp_runner(max_code: usize, cfg: Cfg) -> Runner<LgpGenome> {
-    // TODO: num reg here.
-    let num_reg = 4;
-    Runner::new(LgpGenome::new(max_code), cfg, move || {
+pub fn lgp_runner<F: FitnessFn<State>>(
+    num_reg: usize,
+    max_code: usize,
+    cfg: Cfg,
+    f: F,
+) -> Runner<LgpGenome<F>> {
+    Runner::new(LgpGenome::new(max_code, f), cfg, move || {
         State::new(rand_vec(max_code, || Op::rand(num_reg, max_code)), num_reg)
     })
 }

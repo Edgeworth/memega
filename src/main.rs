@@ -10,9 +10,10 @@ use memega::eval::Evaluator;
 use memega::examples::all_cfg;
 use memega::lgp::asm::lgp_asm;
 use memega::lgp::exec::LgpExec;
-use memega::lgp::state::lgp_runner;
+use memega::lgp::state::{lgp_runner, State};
 use memega::runner::{Runner, RunnerFn, Stats};
 use memestat::Grapher;
+use rand::Rng;
 
 fn eval_run<E: Evaluator>(
     g: &mut Grapher,
@@ -94,14 +95,13 @@ fn run_lgp() -> Result<()> {
     use plotters::prelude::*;
 
     let code = lgp_asm(
-        "neg r2
-jlt r0, r3, 4
-load r3, 22.22265625
-jle r0, r2, 2
-pow r2, r1
-nop
-pow r1, r2
-pow r2, r2",
+        "add r0, r3
+div r1, r0
+abs r3
+mul r0, r0
+add r0, r3
+add r0, r1
+",
     )?;
 
     let xleft = -PI;
@@ -114,7 +114,7 @@ pow r2, r2",
         .margin(5)
         .x_label_area_size(30)
         .y_label_area_size(30)
-        .build_cartesian_2d(xleft..xright, -1.5..1.5)?;
+        .build_cartesian_2d(xleft..xright, -50.0..50.0)?;
 
     chart.configure_mesh().draw()?;
 
@@ -138,6 +138,27 @@ pow r2, r2",
     Ok(())
 }
 
+fn lgp_fitness(s: &State) -> f64 {
+    let mut fitness = 0.0;
+    for _ in 0..100 {
+        let mut r = rand::thread_rng();
+        let mut reg = vec![0.0; s.num_reg]; // Space for work and answer.
+        let x = r.gen_range(0.0..100.0);
+        reg[1] = -1.0;
+        reg[2] = 1.0;
+        reg[3] = x;
+        let mut exec = LgpExec::new(&reg, &s.ops, 200);
+        exec.run();
+
+        let mut ans = 0.0;
+        for i in 1..(x as usize) {
+            ans += 1.0 / (i as f64);
+        }
+        fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs())
+    }
+    fitness + 1.0 / (1.0 + s.ops.len() as f64)
+}
+
 fn main() -> Result<()> {
     pretty_env_logger::init_timed();
     color_eyre::install()?;
@@ -153,7 +174,7 @@ fn main() -> Result<()> {
     // run_once(hyper_runner))?;
 
     let cfg = lgp_cfg();
-    run_once(lgp_runner(10, cfg), 10, 100)?;
+    run_once(lgp_runner(4, 6, cfg, lgp_fitness), 10, 100)?;
     run_lgp()?;
     Ok(())
 }

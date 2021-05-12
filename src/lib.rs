@@ -3,7 +3,6 @@
     array_chunks,
     array_windows,
     bool_to_option,
-    const_fn,
     destructuring_assignment,
     is_sorted,
     map_first_last,
