@@ -1,4 +1,3 @@
-use std::f64::consts::PI;
 use std::fmt;
 
 use rand::prelude::SliceRandom;

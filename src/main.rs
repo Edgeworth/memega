@@ -1,5 +1,4 @@
 use std::f64::consts::PI;
-use std::fmt::Display;
 
 use eyre::Result;
 use memega::cfg::{
@@ -11,7 +10,8 @@ use memega::examples::all_cfg;
 use memega::lgp::asm::lgp_asm;
 use memega::lgp::exec::LgpExec;
 use memega::lgp::state::{lgp_runner, State};
-use memega::runner::{Runner, RunnerFn, Stats};
+use memega::run_evolve;
+use memega::runner::{RunnerFn, Stats};
 use memestat::Grapher;
 use rand::Rng;
 
@@ -51,23 +51,6 @@ fn run_grapher<E: Evaluator>(
     eval_run(&mut g, name, "def", base_cfg, runner_fn)?;
     eval_run(&mut g, name, "mod", mod_cfg, runner_fn)?;
     g.analyse();
-    Ok(())
-}
-
-fn run_once<E: Evaluator>(mut runner: Runner<E>, print_gen: i32, print_summary: i32) -> Result<()>
-where
-    E::Genome: Display,
-{
-    for i in 0..100000 {
-        let mut r = runner.run_iter()?;
-        if i % print_gen == 0 {
-            println!("Generation {}: {}", i, r.nth(0).base_fitness);
-        }
-        if i % print_summary == 0 {
-            println!("{}", runner.summary(&mut r));
-            println!("{}", runner.summary_sample(&mut r, 5, |v| format!("{}", v)));
-        }
-    }
     Ok(())
 }
 
@@ -174,7 +157,7 @@ fn main() -> Result<()> {
     // run_once(hyper_runner))?;
 
     let cfg = lgp_cfg();
-    run_once(lgp_runner(4, 6, cfg, lgp_fitness), 10, 100)?;
+    run_evolve(lgp_runner(4, 6, cfg, lgp_fitness), 10000, 10, 100)?;
     run_lgp()?;
     Ok(())
 }
