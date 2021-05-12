@@ -37,7 +37,6 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
                 data[idx] = tok.floor() as u8;
                 idx += 1;
                 data[idx] = (tok.fract() * 256.0).floor() as u8;
-                idx += 1;
                 // TODO: Hacky
                 return Ok(Op::new(op, data));
             }
