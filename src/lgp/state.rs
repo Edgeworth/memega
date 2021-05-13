@@ -31,18 +31,17 @@ impl State {
     }
 }
 
-pub struct LgpGenome<F: FitnessFn<State>> {
+pub struct LgpGenome {
     max_code: usize,
-    f: F,
 }
 
-impl<F: FitnessFn<State>> LgpGenome<F> {
-    pub fn new(max_code: usize, f: F) -> Self {
-        Self { max_code, f }
+impl LgpGenome {
+    pub fn new(max_code: usize) -> Self {
+        Self { max_code }
     }
 }
 
-impl<F: FitnessFn<State>> Evaluator for LgpGenome<F> {
+impl Evaluator for LgpGenome {
     type Genome = State;
     const NUM_CROSSOVER: usize = 2;
     const NUM_MUTATION: usize = 7;
@@ -88,8 +87,8 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenome<F> {
         }
     }
 
-    fn fitness(&self, s: &State) -> f64 {
-        (self.f)(s)
+    fn fitness(&self, _: &State) -> f64 {
+        unimplemented!()
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
@@ -97,13 +96,57 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenome<F> {
     }
 }
 
-pub fn lgp_runner<F: FitnessFn<State>>(
+pub struct LgpGenomeFn<F: FitnessFn<State>> {
+    genome: LgpGenome,
+    f: F,
+}
+
+impl<F: FitnessFn<State>> LgpGenomeFn<F> {
+    pub fn new(max_code: usize, f: F) -> Self {
+        Self { genome: LgpGenome::new(max_code), f }
+    }
+}
+
+impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
+    type Genome = <LgpGenome as Evaluator>::Genome;
+    const NUM_CROSSOVER: usize = LgpGenome::NUM_CROSSOVER;
+    const NUM_MUTATION: usize = LgpGenome::NUM_MUTATION;
+
+    fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
+        self.genome.crossover(s1, s2, idx)
+    }
+
+    fn mutate(&self, s: &mut State, rate: f64, idx: usize) {
+        self.genome.mutate(s, rate, idx)
+    }
+
+    fn fitness(&self, s: &State) -> f64 {
+        (self.f)(s)
+    }
+
+    fn distance(&self, s1: &State, s2: &State) -> f64 {
+        self.genome.distance(s1, s2)
+    }
+}
+
+pub fn lgp_runner<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
     num_reg: usize,
     max_code: usize,
     cfg: Cfg,
     f: F,
-) -> Runner<LgpGenome<F>> {
-    Runner::new(LgpGenome::new(max_code, f), cfg, move || {
+) -> Runner<E> {
+    Runner::new(f(LgpGenome::new(max_code)), cfg, move || {
+        State::new(rand_vec(max_code, || Op::rand(num_reg, max_code)), num_reg)
+    })
+}
+
+pub fn lgp_runner_fn<F: FitnessFn<State>>(
+    num_reg: usize,
+    max_code: usize,
+    cfg: Cfg,
+    f: F,
+) -> Runner<LgpGenomeFn<F>> {
+    Runner::new(LgpGenomeFn::new(max_code, f), cfg, move || {
         State::new(rand_vec(max_code, || Op::rand(num_reg, max_code)), num_reg)
     })
 }

@@ -7,9 +7,10 @@ use memega::cfg::{
 };
 use memega::lgp::asm::lgp_asm;
 use memega::lgp::exec::LgpExec;
-use memega::lgp::state::{lgp_runner, State};
+use memega::lgp::state::{lgp_runner_fn, State};
 use memega::run_evolve;
 use rand::Rng;
+
 fn lgp_cfg() -> Cfg {
     Cfg::new(2000)
         .with_mutation(Mutation::Adaptive)
@@ -94,7 +95,7 @@ add r0, r1
 #[test]
 fn test_lgp() -> Result<()> {
     let cfg = lgp_cfg();
-    run_evolve(lgp_runner(4, 6, cfg, lgp_fitness), 10000, 10, 100)?;
+    run_evolve(lgp_runner_fn(4, 6, cfg, lgp_fitness), 10000, 10, 100)?;
     run_lgp()?;
     Ok(())
 }
