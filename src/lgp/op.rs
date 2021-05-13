@@ -106,7 +106,7 @@ impl fmt::Display for Op {
                 let hi = self.data[2];
                 f.write_fmt(format_args!("load r{}, {}", rx, (hi as f64) + (lo as f64) / 256.0))
             }
-            Opcode::Copy => f.write_fmt(format_args!("mov r{}, r{}", rx, ry)),
+            Opcode::Copy => f.write_fmt(format_args!("mov [r{}], r{}", rx, ry)),
             Opcode::Jlt => {
                 let imm = self.data[2] as i8;
                 f.write_fmt(format_args!("jlt r{}, r{}, {}", rx, ry, imm))

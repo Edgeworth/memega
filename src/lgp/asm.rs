@@ -28,7 +28,7 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
             Operand::None => {}
             Operand::Register => {
                 let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
-                data[idx] = tok.replace(",", "")[1..].parse()?;
+                data[idx] = tok.replace(&[',', '[', ']'][..], "")[1..].parse()?;
                 idx += 1;
             }
             Operand::Immediate => {
