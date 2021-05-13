@@ -2,11 +2,12 @@ use std::fmt;
 
 use rand::prelude::SliceRandom;
 use rand::Rng;
+use strum::IntoEnumIterator;
 
 use crate::cfg::Cfg;
 use crate::eval::{Evaluator, FitnessFn};
 use crate::lgp::disasm::lgp_disasm;
-use crate::lgp::op::Op;
+use crate::lgp::op::{Op, Opcode};
 use crate::ops::crossover::crossover_kpx;
 use crate::ops::distance::dist_fn;
 use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_swap};
@@ -31,13 +32,31 @@ impl State {
     }
 }
 
-pub struct LgpGenome {
+#[derive(Clone)]
+pub struct LgpGenomeConfig {
+    max_reg: usize,
     max_code: usize,
+    opcodes: Vec<Opcode>,
+}
+
+impl LgpGenomeConfig {
+    pub fn new(max_reg: usize, max_code: usize) -> Self {
+        Self { max_reg, max_code, opcodes: Opcode::iter().collect() }
+    }
+
+    pub fn with_opcodes(mut self, opcodes: &[Opcode]) -> Self {
+        self.opcodes = opcodes.to_vec();
+        self
+    }
+}
+
+pub struct LgpGenome {
+    cfg: LgpGenomeConfig,
 }
 
 impl LgpGenome {
-    pub fn new(max_code: usize) -> Self {
-        Self { max_code }
+    pub fn new(cfg: LgpGenomeConfig) -> Self {
+        Self { cfg }
     }
 }
 
@@ -62,15 +81,17 @@ impl Evaluator for LgpGenome {
             return;
         }
         let code_size = s.ops.len();
+        let opcode = *self.cfg.opcodes.choose(&mut r).unwrap();
+        let op = Op::rand(opcode, s.num_reg, code_size);
         match idx {
             0 => mutate_swap(&mut s.ops),
             1 => mutate_insert(&mut s.ops),
-            2 => mutate_reset(&mut s.ops, Op::rand(s.num_reg, code_size)),
+            2 => mutate_reset(&mut s.ops, op),
             3 => mutate_scramble(&mut s.ops),
             4 => {
                 // Add new random instruction.
-                if code_size < self.max_code {
-                    s.ops.insert(r.gen_range(0..code_size), Op::rand(s.num_reg, code_size));
+                if code_size < self.cfg.max_code {
+                    s.ops.insert(r.gen_range(0..code_size), op);
                 }
             }
             5 => {
@@ -102,8 +123,8 @@ pub struct LgpGenomeFn<F: FitnessFn<State>> {
 }
 
 impl<F: FitnessFn<State>> LgpGenomeFn<F> {
-    pub fn new(max_code: usize, f: F) -> Self {
-        Self { genome: LgpGenome::new(max_code), f }
+    pub fn new(cfg: LgpGenomeConfig, f: F) -> Self {
+        Self { genome: LgpGenome::new(cfg), f }
     }
 }
 
@@ -129,24 +150,27 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
     }
 }
 
+fn rand_op(cfg: &LgpGenomeConfig) -> Op {
+    let mut r = rand::thread_rng();
+    Op::rand(*cfg.opcodes.choose(&mut r).unwrap(), cfg.max_reg, cfg.max_code)
+}
+
 pub fn lgp_runner<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
-    num_reg: usize,
-    max_code: usize,
+    lgpcfg: LgpGenomeConfig,
     cfg: Cfg,
     f: F,
 ) -> Runner<E> {
-    Runner::new(f(LgpGenome::new(max_code)), cfg, move || {
-        State::new(rand_vec(max_code, || Op::rand(num_reg, max_code)), num_reg)
+    Runner::new(f(LgpGenome::new(lgpcfg.clone())), cfg, move || {
+        State::new(rand_vec(lgpcfg.max_code, || rand_op(&lgpcfg.clone())), lgpcfg.max_reg)
     })
 }
 
 pub fn lgp_runner_fn<F: FitnessFn<State>>(
-    num_reg: usize,
-    max_code: usize,
+    lgpcfg: LgpGenomeConfig,
     cfg: Cfg,
     f: F,
 ) -> Runner<LgpGenomeFn<F>> {
-    Runner::new(LgpGenomeFn::new(max_code, f), cfg, move || {
-        State::new(rand_vec(max_code, || Op::rand(num_reg, max_code)), num_reg)
+    Runner::new(LgpGenomeFn::new(lgpcfg.clone(), f), cfg, move || {
+        State::new(rand_vec(lgpcfg.max_code, || rand_op(&lgpcfg.clone())), lgpcfg.max_reg)
     })
 }
