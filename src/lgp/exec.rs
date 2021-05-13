@@ -100,7 +100,7 @@ impl LgpExec {
                     let hi = op.data[2];
                     self.set_reg(rx, (hi as f64) + (lo as f64) / 256.0);
                 }
-                Opcode::Copy => {
+                Opcode::IndirectCopy => {
                     self.set_reg(self.f64_to_reg(self.reg(rx)), self.reg(ry));
                 }
                 Opcode::Jlt => {

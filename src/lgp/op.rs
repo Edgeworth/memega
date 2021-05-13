@@ -28,7 +28,7 @@ pub enum Opcode {
     Pow = 7,   // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
     Log = 8,   // log rx: rx = ln(rx)
     Load = 9,  // load rx, f8:8: rx = immediate fixed point 8:8, little endian
-    Copy = 10, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
+    IndirectCopy = 10, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
     Jlt = 11,  // jlt rx, ry, i8: if rx < ry pc += immediate; relative conditional
     Jle = 12,  // jle rx, ry, i8: if rx <= ry pc += immediate; relative conditional
     Jeq = 13,  // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
@@ -40,7 +40,7 @@ impl Opcode {
             // Zero operands
             Opcode::Nop => Operand::None,
             // Two reg operands
-            Opcode::Add | Opcode::Sub | Opcode::Mul | Opcode::Div | Opcode::Copy | Opcode::Pow => {
+            Opcode::Add | Opcode::Sub | Opcode::Mul | Opcode::Div | Opcode::IndirectCopy | Opcode::Pow => {
                 if idx <= 1 {
                     Operand::Register
                 } else {
@@ -108,7 +108,7 @@ impl fmt::Display for Op {
                 let hi = self.data[2];
                 f.write_fmt(format_args!("load r{}, {}", rx, (hi as f64) + (lo as f64) / 256.0))
             }
-            Opcode::Copy => f.write_fmt(format_args!("mov [r{}], r{}", rx, ry)),
+            Opcode::IndirectCopy => f.write_fmt(format_args!("mov [r{}], r{}", rx, ry)),
             Opcode::Jlt => {
                 let imm = self.data[2] as i8;
                 f.write_fmt(format_args!("jlt r{}, r{}, {}", rx, ry, imm))

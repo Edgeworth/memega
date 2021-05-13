@@ -16,7 +16,7 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
         "pow" => Opcode::Pow,
         "ln" => Opcode::Log,
         "load" => Opcode::Load,
-        "mov" => Opcode::Copy,
+        "mov" => Opcode::IndirectCopy,
         "jlt" => Opcode::Jlt,
         "jle" => Opcode::Jle,
         "jeq" => Opcode::Jeq,
