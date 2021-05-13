@@ -4,7 +4,7 @@ use num_enum::{IntoPrimitive, TryFromPrimitive};
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
 use strum::EnumCount as EnumCountTrait;
-use strum_macros::EnumCount;
+use strum_macros::{EnumCount, EnumIter};
 
 use crate::ops::mutation::mutate_creep;
 
@@ -13,7 +13,9 @@ use crate::ops::mutation::mutate_creep;
 // Opcodes are 8 bit and have variable number of operands.
 // If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
 // Accessing register k will access register k % N if k >= N.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount)]
+#[derive(
+    Debug, Copy, Clone, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount, EnumIter,
+)]
 #[repr(u8)]
 pub enum Opcode {
     Nop = 0,   // no operation - 0
@@ -134,20 +136,19 @@ impl Op {
         Self { op, data }
     }
 
-    pub fn rand(num_reg: usize, code_size: usize) -> Self {
+    pub fn rand(op: Opcode, num_reg: usize, code_size: usize) -> Self {
         let mut r = rand::thread_rng();
-        let opcode = r.gen::<Opcode>();
         let mut data = [0, 0, 0];
         let code_size = code_size.clamp(0, i8::MAX as usize) as i32;
         for i in 0..data.len() {
-            match opcode.operand(i) {
+            match op.operand(i) {
                 Operand::None => {}
                 Operand::Register => data[i] = r.gen_range(0..num_reg) as u8,
                 Operand::Immediate => data[i] = r.gen::<u8>(),
                 Operand::Relative => data[i] = r.gen_range(-code_size..=code_size) as u8,
             }
         }
-        Op::new(opcode, data)
+        Op::new(op, data)
     }
 
     pub fn num_operands(&self) -> usize {
