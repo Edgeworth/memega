@@ -164,7 +164,7 @@ impl Evaluator for HyperAlg {
         }
     }
 
-    fn fitness(&self, s: &State) -> f64 {
+    fn fitness(&self, s: &State, _gen: usize) -> f64 {
         const SAMPLES: usize = 30;
         let mut score = 0.0;
         for _ in 0..SAMPLES {

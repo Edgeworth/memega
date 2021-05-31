@@ -42,7 +42,7 @@ impl Evaluator for Knapsack {
         };
     }
 
-    fn fitness(&self, s: &State) -> f64 {
+    fn fitness(&self, s: &State, _gen: usize) -> f64 {
         let mut cur_w = 0.0;
         let mut cur_v = 0.0;
         for (i, &kept) in s.iter().enumerate() {

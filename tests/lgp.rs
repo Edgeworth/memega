@@ -24,7 +24,7 @@ fn lgp_cfg() -> Cfg {
         .with_par_fitness(true)
 }
 
-fn lgp_fitness(s: &State) -> f64 {
+fn lgp_fitness(s: &State, _gen: usize) -> f64 {
     let mut fitness = 0.0;
     for _ in 0..100 {
         let mut r = rand::thread_rng();

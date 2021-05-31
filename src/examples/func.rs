@@ -40,8 +40,8 @@ impl<F: FitnessFn<FuncState>> Evaluator for FuncEvaluator<F> {
         };
     }
 
-    fn fitness(&self, s: &FuncState) -> f64 {
-        (self.f)(s)
+    fn fitness(&self, s: &FuncState, gen: usize) -> f64 {
+        (self.f)(s, gen)
     }
 
     fn distance(&self, s1: &FuncState, s2: &FuncState) -> f64 {

@@ -29,14 +29,17 @@ impl<G: Genome> UnevaluatedGen<G> {
 
     pub fn evaluate<E: Evaluator<Genome = G>>(
         &mut self,
+        gen_count: usize,
         cfg: &Cfg,
         eval: &E,
     ) -> Result<EvaluatedGen<G>> {
         // First compute plain fitnesses.
         if cfg.par_fitness {
-            self.mems.par_iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome))
+            self.mems
+                .par_iter_mut()
+                .for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count))
         } else {
-            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome))
+            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count))
         };
 
         // Check fitnesses are non-negative.

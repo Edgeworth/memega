@@ -8,7 +8,7 @@ pub fn griewank_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl Fitnes
         dim,
         -10000.0,
         10000.0,
-        |s: &FuncState| {
+        |s: &FuncState, _| {
             let mut add = 0.0;
             let mut mul = 1.0;
             for (i, &x) in s.iter().enumerate() {
