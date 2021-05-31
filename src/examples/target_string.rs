@@ -41,7 +41,7 @@ impl Evaluator for TargetString {
         };
     }
 
-    fn fitness(&self, s: &State) -> f64 {
+    fn fitness(&self, s: &State, _gen: usize) -> f64 {
         (self.target.len() - count_different(s, &self.target)) as f64 + 1.0
     }
 

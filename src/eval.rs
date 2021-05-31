@@ -10,7 +10,7 @@ use crate::gen::species::{SpeciesId, NO_SPECIES};
 use crate::gen::Params;
 
 pub trait Genome = Clone + Send + Sync + PartialOrd + PartialEq + fmt::Debug;
-pub trait FitnessFn<G: Genome> = Fn(&G) -> f64 + Sync + Send + Clone;
+pub trait FitnessFn<G: Genome> = Fn(&G, usize) -> f64 + Sync + Send + Clone;
 
 #[derive(Clone, PartialOrd, PartialEq, Debug, Display)]
 #[display(fmt = "fitness {} species {}", "PrettyPrintFloat(*base_fitness)", species)]
@@ -45,7 +45,7 @@ pub trait Evaluator: Send + Sync {
 
     // Unlike crossover, mutation is called for every mutation operator. No need for a nop operator.
     fn mutate(&self, s: &mut Self::Genome, rate: f64, idx: usize);
-    fn fitness(&self, s: &Self::Genome) -> f64;
+    fn fitness(&self, s: &Self::Genome, gen: usize) -> f64;
     fn distance(&self, s1: &Self::Genome, s2: &Self::Genome) -> f64;
 }
 
@@ -83,8 +83,8 @@ where
         self.eval.mutate(s, rate, idx)
     }
 
-    fn fitness(&self, s: &Self::Genome) -> f64 {
-        *self.fitness_cache.get_or_init(s.clone(), 1, |s| self.eval.fitness(s)).value()
+    fn fitness(&self, s: &Self::Genome, gen: usize) -> f64 {
+        *self.fitness_cache.get_or_init(s.clone(), 1, |s| self.eval.fitness(s, gen)).value()
     }
 
     fn distance(&self, s1: &Self::Genome, s2: &Self::Genome) -> f64 {

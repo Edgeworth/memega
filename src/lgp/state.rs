@@ -108,7 +108,7 @@ impl Evaluator for LgpGenome {
         }
     }
 
-    fn fitness(&self, _: &State) -> f64 {
+    fn fitness(&self, _: &State, _gen: usize) -> f64 {
         unimplemented!()
     }
 
@@ -141,8 +141,8 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
         self.genome.mutate(s, rate, idx)
     }
 
-    fn fitness(&self, s: &State) -> f64 {
-        (self.f)(s)
+    fn fitness(&self, s: &State, gen: usize) -> f64 {
+        (self.f)(s, gen)
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {

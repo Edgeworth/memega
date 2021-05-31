@@ -87,6 +87,7 @@ pub struct Runner<E: Evaluator> {
     eval: E,
     gen: UnevaluatedGen<E::Genome>,
     rand_genome: Box<dyn RandGenome<E::Genome>>,
+    gen_count: usize,
     stagnation_count: usize,
     last_fitness: f64,
 }
@@ -110,6 +111,7 @@ impl<E: Evaluator> Runner<E> {
             eval,
             gen,
             rand_genome: Box::new(rand_genome),
+            gen_count: 0,
             stagnation_count: 0,
             last_fitness: 0.0,
         }
@@ -122,13 +124,14 @@ impl<E: Evaluator> Runner<E> {
             cfg,
             gen,
             rand_genome: Box::new(rand_genome),
+            gen_count: 0,
             stagnation_count: 0,
             last_fitness: 0.0,
         }
     }
 
     pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
-        let gen = self.gen.evaluate(&self.cfg, &self.eval)?;
+        let gen = self.gen.evaluate(self.gen_count, &self.cfg, &self.eval)?;
         let stagnant = match self.cfg.stagnation_condition {
             StagnationCondition::Default => {
                 relative_eq!(gen.mems[0].base_fitness, self.last_fitness)
@@ -137,6 +140,7 @@ impl<E: Evaluator> Runner<E> {
                 abs_diff_eq!(gen.mems[0].base_fitness, self.last_fitness, epsilon = ep)
             }
         };
+        self.gen_count += 1;
         if stagnant {
             self.stagnation_count += 1;
         } else {

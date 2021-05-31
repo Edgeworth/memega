@@ -16,7 +16,7 @@ use std::fmt::Display;
 use eyre::Result;
 
 use crate::eval::Evaluator;
-use crate::runner::Runner;
+use crate::runner::{RunResult, Runner};
 
 pub mod cfg;
 pub mod distributions;
@@ -34,10 +34,11 @@ pub fn run_evolve<E: Evaluator>(
     max_gen: usize,
     print_gen: usize,
     print_summary: usize,
-) -> Result<()>
+) -> Result<RunResult<E::Genome>>
 where
     E::Genome: Display,
 {
+    let mut ret = None;
     for i in 0..max_gen {
         let mut r = runner.run_iter()?;
         if i % print_gen == 0 {
@@ -47,6 +48,7 @@ where
             println!("{}", runner.summary(&mut r));
             println!("{}", runner.summary_sample(&mut r, 5, |v| format!("{}", v)));
         }
+        ret = Some(r);
     }
-    Ok(())
+    Ok(ret.unwrap())
 }

@@ -10,7 +10,7 @@ pub fn rastrigin_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl Fitne
         dim,
         -5.12,
         5.12,
-        |s: &FuncState| {
+        |s: &FuncState, _| {
             const A: f64 = 10.0;
             let mut v = 0.0;
             for &x in s.iter() {

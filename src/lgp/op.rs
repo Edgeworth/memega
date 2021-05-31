@@ -18,20 +18,20 @@ use crate::ops::mutation::mutate_creep;
 )]
 #[repr(u8)]
 pub enum Opcode {
-    Nop = 0,   // no operation - 0
-    Add = 1,   // add rx, ry: rx = rx + ry
-    Sub = 2,   // sub rx, ry: rx = rx - ry
-    Mul = 3,   // mul rx, ry: rx = rx * ry
-    Div = 4,   // div rx, ry: rx = rx / ry - Div by zero => max value
-    Abs = 5,   // abs rx: rx = |rx|
-    Neg = 6,   // neg rx: rx = -rx
-    Pow = 7,   // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
-    Log = 8,   // log rx: rx = ln(rx)
-    Load = 9,  // load rx, f8:8: rx = immediate fixed point 8:8, little endian
+    Nop = 0,           // no operation - 0
+    Add = 1,           // add rx, ry: rx = rx + ry
+    Sub = 2,           // sub rx, ry: rx = rx - ry
+    Mul = 3,           // mul rx, ry: rx = rx * ry
+    Div = 4,           // div rx, ry: rx = rx / ry - Div by zero => max value
+    Abs = 5,           // abs rx: rx = |rx|
+    Neg = 6,           // neg rx: rx = -rx
+    Pow = 7,           // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
+    Log = 8,           // log rx: rx = ln(rx)
+    Load = 9,          // load rx, f8:8: rx = immediate fixed point 8:8, little endian
     IndirectCopy = 10, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
-    Jlt = 11,  // jlt rx, ry, i8: if rx < ry pc += immediate; relative conditional
-    Jle = 12,  // jle rx, ry, i8: if rx <= ry pc += immediate; relative conditional
-    Jeq = 13,  // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
+    Jlt = 11,          // jlt rx, ry, i8: if rx < ry pc += immediate; relative conditional
+    Jle = 12,          // jle rx, ry, i8: if rx <= ry pc += immediate; relative conditional
+    Jeq = 13,          // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
 }
 
 impl Opcode {
@@ -40,7 +40,12 @@ impl Opcode {
             // Zero operands
             Opcode::Nop => Operand::None,
             // Two reg operands
-            Opcode::Add | Opcode::Sub | Opcode::Mul | Opcode::Div | Opcode::IndirectCopy | Opcode::Pow => {
+            Opcode::Add
+            | Opcode::Sub
+            | Opcode::Mul
+            | Opcode::Div
+            | Opcode::IndirectCopy
+            | Opcode::Pow => {
                 if idx <= 1 {
                     Operand::Register
                 } else {

@@ -24,6 +24,10 @@ impl<G: Genome> EvaluatedGen<G> {
         Self { mems }
     }
 
+    pub fn mems(&self) -> &[Mem<G>] {
+        &self.mems
+    }
+
     pub fn species_mems(&self, n: SpeciesId) -> Vec<Mem<G>> {
         self.mems.iter().filter(|v| v.species == n).cloned().collect()
     }

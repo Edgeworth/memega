@@ -16,8 +16,6 @@ fix:
 
 update-deps:
 	rustup update
-	rustup toolchain install nightly
-	rustup component add clippy
 	cargo install cargo-audit cargo-outdated cargo-bloat cargo-tree cargo-udeps
 	cargo update
 	cargo build --workspace --all-features --all-targets

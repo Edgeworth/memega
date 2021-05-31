@@ -10,7 +10,7 @@ pub fn ackley_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl FitnessF
         dim,
         -32.768,
         32.768,
-        |s: &FuncState| {
+        |s: &FuncState, _| {
             const A: f64 = 20.0;
             const B: f64 = 0.2;
             const C: f64 = 2.0 * PI;
