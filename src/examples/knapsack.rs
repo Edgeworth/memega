@@ -60,6 +60,7 @@ impl Evaluator for Knapsack {
     }
 }
 
+#[must_use]
 pub fn knapsack_runner(cfg: Cfg) -> Runner<Knapsack> {
     const NUM_ITEMS: usize = 100;
     const MAX_W: f64 = 100.0;

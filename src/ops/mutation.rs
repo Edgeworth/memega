@@ -46,6 +46,7 @@ pub fn mutate_inversion<T: Copy>(s: &mut [T]) {
 // Discrete mutation operators ////////////////////////////////////////////////
 
 // Generates a random value.
+#[must_use]
 pub fn mutate_gen<T>() -> T
 where
     Standard: Distribution<T>,
@@ -75,6 +76,7 @@ pub fn mutate_rate<T: Copy>(s: &mut [T], rate: f64, mut f: impl FnMut(T) -> T) {
 // Real mutation operators  ////////////////////////////////////////////////
 
 // Random value taken from the uniform distribution on |range|.
+#[must_use]
 pub fn mutate_uniform(st: f64, en: f64) -> f64 {
     let mut r = rand::thread_rng();
     r.gen_range(st..=en)
@@ -82,6 +84,7 @@ pub fn mutate_uniform(st: f64, en: f64) -> f64 {
 
 // Mutate |v| by a value from N(0, std). It's usual to use the mutation rate as |std|.
 // May want to clamp the value to a range afterwards.
+#[must_use]
 pub fn mutate_normal(v: f64, std: f64) -> f64 {
     let mut r = rand::thread_rng();
     v + std * r.sample::<f64, _>(StandardNormal)
@@ -89,6 +92,7 @@ pub fn mutate_normal(v: f64, std: f64) -> f64 {
 
 // Mutate s.t. v' = v * e^(std * N(0, 1)).
 // May want to clamp the value to a range afterwards.
+#[must_use]
 pub fn mutate_lognorm(v: f64, std: f64) -> f64 {
     let mut r = rand::thread_rng();
     v * E.powf(std * r.sample::<f64, _>(StandardNormal))

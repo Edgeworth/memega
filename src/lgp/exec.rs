@@ -12,13 +12,13 @@ pub struct LgpExec {
 }
 
 impl LgpExec {
+    #[must_use]
     pub fn new(reg: &[f64], code: &[Op], max_iter: usize) -> Self {
-        if reg.len() > 256 {
-            panic!("cannot use more than 256 registers");
-        }
+        assert!(reg.len() <= 256, "cannot use more than 256 registers");
         Self { pc: 0, reg: reg.to_vec(), code: code.to_vec(), max_iter }
     }
 
+    #[must_use]
     pub fn reg(&self, idx: u8) -> f64 {
         self.reg[(idx as usize) % self.reg.len()]
     }

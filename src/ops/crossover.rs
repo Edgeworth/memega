@@ -157,8 +157,8 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
     let mut c2: Vec<T> = vec![Default::default(); s1.len()];
     // Build map from values in s1 to positions.
     let mut m: HashMap<T, usize> = HashMap::new();
-    for i in 0..s1.len() {
-        m.entry(s1[i]).or_insert(i);
+    for (i, v) in s1.iter().enumerate() {
+        m.entry(*v).or_insert(i);
     }
     let mut seen = vec![false; s1.len()];
     for i in 0..s1.len() {
@@ -188,7 +188,7 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
 pub fn crossover_kpx<T>(s1: &mut [T], s2: &mut [T], k: usize) {
     let mut r = rand::thread_rng();
     let xpoints = (0..s1.len().min(s2.len())).choose_multiple(&mut r, k);
-    crossover_kpx_pts(s1, s2, &xpoints)
+    crossover_kpx_pts(s1, s2, &xpoints);
 }
 
 // K-point crossover.
@@ -199,7 +199,7 @@ pub fn crossover_kpx_pts<T>(s1: &mut [T], s2: &mut [T], xpoints: &[usize]) {
     xpoints.sort_unstable();
     for &[st, en] in xpoints.array_chunks::<2>() {
         for i in st..en {
-            std::mem::swap(&mut s1[i], &mut s2[i]);
+            swap(&mut s1[i], &mut s2[i]);
         }
     }
 }
@@ -214,7 +214,7 @@ pub fn crossover_ux_rng<T, R: Rng + ?Sized>(s1: &mut [T], s2: &mut [T], r: &mut 
     let min = s1.len().min(s2.len());
     for i in 0..min {
         if r.gen::<bool>() {
-            std::mem::swap(&mut s1[i], &mut s2[i]);
+            swap(&mut s1[i], &mut s2[i]);
         }
     }
 }
@@ -235,7 +235,7 @@ pub fn crossover_arith_alpha(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
 // Whole arithmetic recombination with a random combination multiplier.
 pub fn crossover_arith(s1: &mut [f64], s2: &mut [f64]) {
     let mut r = rand::thread_rng();
-    crossover_arith_alpha(s1, s2, r.gen())
+    crossover_arith_alpha(s1, s2, r.gen());
 }
 
 // Blend crossover. For each element x < y, randomly generate a value in

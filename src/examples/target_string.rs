@@ -50,6 +50,7 @@ impl Evaluator for TargetString {
     }
 }
 
+#[must_use]
 pub fn target_string_runner(cfg: Cfg) -> Runner<TargetString> {
     const TARGET: &str = "Hello world!";
     Runner::new(TargetString::new(TARGET), cfg, move || {

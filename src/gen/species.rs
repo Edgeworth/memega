@@ -18,6 +18,7 @@ pub struct SpeciesInfo {
 }
 
 impl SpeciesInfo {
+    #[must_use]
     pub fn new() -> Self {
         Self { num: 1, radius: 1.0 }
     }
@@ -38,6 +39,7 @@ pub struct DistCache {
 }
 
 impl DistCache {
+    #[must_use]
     pub fn new() -> Self {
         Self { n: 0, cache: Vec::new(), max: 0.0, sum: 0.0 }
     }
@@ -107,7 +109,7 @@ impl DistCache {
             for j in 0..s.len() {
                 let d = self[(i, j)];
                 if d < radius {
-                    sum += 1.0 - (d / radius).powf(alpha)
+                    sum += 1.0 - (d / radius).powf(alpha);
                 }
             }
             s[i].selection_fitness = s[i].base_fitness / sum;
@@ -117,17 +119,20 @@ impl DistCache {
     pub fn species_shared_fitness<G: Genome>(&self, s: &mut [Mem<G>], species: &SpeciesInfo) {
         // Compute alpha as: radius / num_species ^ (1 / dimensionality)
         let alpha = species.radius / species.num as f64;
-        self.shared_fitness(s, species.radius, alpha)
+        self.shared_fitness(s, species.radius, alpha);
     }
 
+    #[must_use]
     pub fn is_empty(&self) -> bool {
         self.cache.is_empty()
     }
 
+    #[must_use]
     pub fn mean(&self) -> f64 {
         self.sum / ((self.n * self.n) as f64)
     }
 
+    #[must_use]
     pub fn max(&self) -> f64 {
         self.max
     }

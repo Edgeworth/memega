@@ -76,11 +76,11 @@ where
     const NUM_MUTATION: usize = E::NUM_MUTATION;
 
     fn crossover(&self, s1: &mut Self::Genome, s2: &mut Self::Genome, idx: usize) {
-        self.eval.crossover(s1, s2, idx)
+        self.eval.crossover(s1, s2, idx);
     }
 
     fn mutate(&self, s: &mut Self::Genome, rate: f64, idx: usize) {
-        self.eval.mutate(s, rate, idx)
+        self.eval.mutate(s, rate, idx);
     }
 
     fn fitness(&self, s: &Self::Genome, gen: usize) -> f64 {

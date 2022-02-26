@@ -36,6 +36,7 @@ pub fn dist1<T: Num + NumAssign + Copy + PartialOrd>(s1: &[T], s2: &[T]) -> T {
 }
 
 // Norm 2 distance - euclidean distance.
+#[must_use]
 pub fn dist2(s1: &[f64], s2: &[f64]) -> f64 {
     let max = s1.len().max(s2.len());
     let mut dist = 0.0;

@@ -4,6 +4,7 @@ use rand::prelude::IteratorRandom;
 use rand::Rng;
 
 // Roulette wheel selection:
+#[must_use]
 pub fn rws(w: &[f64]) -> Option<usize> {
     multi_rws(w, 1).get(0).copied()
 }
@@ -12,6 +13,7 @@ pub fn rws_rng<R: Rng + ?Sized>(w: &[f64], r: &mut R) -> Option<usize> {
     multi_rws_rng(w, 1, r).get(0).copied()
 }
 
+#[must_use]
 pub fn multi_rws(w: &[f64], k: usize) -> Vec<usize> {
     let mut r = rand::thread_rng();
     multi_rws_rng(w, k, &mut r)
@@ -39,6 +41,7 @@ pub fn multi_rws_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usi
 }
 
 // Stochastic universal sampling:
+#[must_use]
 pub fn sus(w: &[f64], k: usize) -> Vec<usize> {
     let mut r = rand::thread_rng();
     sus_rng(w, k, &mut r)
