@@ -17,6 +17,7 @@ pub struct Params {
 }
 
 impl Params {
+    #[must_use]
     pub fn new<E: Evaluator>(cfg: &Cfg) -> Self {
         let mut r = rand::thread_rng();
         let mutation = if let Mutation::Fixed(v) = &cfg.mutation {

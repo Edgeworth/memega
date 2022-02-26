@@ -30,6 +30,7 @@ pub struct HyperAlg {
 }
 
 impl HyperAlg {
+    #[must_use]
     pub fn new(stat_fns: Vec<Box<dyn StatFn>>) -> Self {
         Self { stat_fns }
     }
@@ -132,32 +133,32 @@ impl Evaluator for HyperAlg {
             }
             4 => {
                 if r.gen_bool(rate) {
-                    s.cfg.survival = r.gen()
+                    s.cfg.survival = r.gen();
                 }
             }
             5 => {
                 if r.gen_bool(rate) {
-                    s.cfg.selection = r.gen()
+                    s.cfg.selection = r.gen();
                 }
             }
             6 => {
                 if r.gen_bool(rate) {
-                    s.cfg.niching = r.gen()
+                    s.cfg.niching = r.gen();
                 }
             }
             7 => {
                 if r.gen_bool(rate) {
-                    s.cfg.species = r.gen()
+                    s.cfg.species = r.gen();
                 }
             }
             8 => {
                 if r.gen_bool(rate) {
-                    s.cfg.stagnation = r.gen()
+                    s.cfg.stagnation = r.gen();
                 }
             }
             9 => {
                 if r.gen_bool(rate) {
-                    s.cfg.duplicates = r.gen()
+                    s.cfg.duplicates = r.gen();
                 }
             }
             _ => panic!("bug"),
@@ -168,7 +169,7 @@ impl Evaluator for HyperAlg {
         const SAMPLES: usize = 30;
         let mut score = 0.0;
         for _ in 0..SAMPLES {
-            for f in self.stat_fns.iter() {
+            for f in &self.stat_fns {
                 if let Some(r) = f(s.cfg.clone()) {
                     // TODO: Need multi-objective GA here. Or at least configure
                     // what to optimise.
@@ -203,6 +204,7 @@ pub struct HyperBuilder {
 }
 
 impl HyperBuilder {
+    #[must_use]
     pub fn new(pop_size: usize, sample_dur: Duration) -> Self {
         Self { stat_fns: Vec::new(), pop_size, num_crossover: 0, num_mutation: 0, sample_dur }
     }
@@ -245,6 +247,7 @@ impl HyperBuilder {
         }));
     }
 
+    #[must_use]
     pub fn build(self) -> Runner<HyperAlg> {
         let cfg = Cfg::new(100)
             .with_mutation(Mutation::Adaptive)
@@ -263,6 +266,7 @@ impl HyperBuilder {
     }
 }
 
+#[must_use]
 pub fn hyper_runner(pop_size: usize, sample_dur: Duration) -> Runner<HyperAlg> {
     let mut builder = HyperBuilder::new(pop_size, sample_dur);
     builder.add(1.0, &|cfg| rastrigin_runner(2, cfg));

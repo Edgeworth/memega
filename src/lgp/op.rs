@@ -35,6 +35,7 @@ pub enum Opcode {
 }
 
 impl Opcode {
+    #[must_use]
     pub fn operand(&self, idx: usize) -> Operand {
         match self {
             // Zero operands
@@ -137,25 +138,28 @@ impl Distribution<Opcode> for Standard {
 }
 
 impl Op {
+    #[must_use]
     pub fn new(op: Opcode, data: [u8; 3]) -> Self {
         Self { op, data }
     }
 
+    #[must_use]
     pub fn rand(op: Opcode, num_reg: usize, code_size: usize) -> Self {
         let mut r = rand::thread_rng();
         let mut data = [0, 0, 0];
         let code_size = code_size.clamp(0, i8::MAX as usize) as i32;
-        for i in 0..data.len() {
+        for (i, v) in data.iter_mut().enumerate() {
             match op.operand(i) {
                 Operand::None => {}
-                Operand::Register => data[i] = r.gen_range(0..num_reg) as u8,
-                Operand::Immediate => data[i] = r.gen::<u8>(),
-                Operand::Relative => data[i] = r.gen_range(-code_size..=code_size) as u8,
+                Operand::Register => *v = r.gen_range(0..num_reg) as u8,
+                Operand::Immediate => *v = r.gen::<u8>(),
+                Operand::Relative => *v = r.gen_range(-code_size..=code_size) as u8,
             }
         }
         Op::new(op, data)
     }
 
+    #[must_use]
     pub fn num_operands(&self) -> usize {
         for i in 0..self.data.len() {
             if self.op.operand(i) == Operand::None {
@@ -186,6 +190,7 @@ impl Op {
     }
 
     // Computes some distance metric between operations.
+    #[must_use]
     pub fn dist(a: &Op, b: &Op) -> f64 {
         let mut d = 0.0;
         if a.op != b.op {

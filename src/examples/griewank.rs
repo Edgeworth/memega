@@ -3,6 +3,7 @@ use crate::eval::FitnessFn;
 use crate::examples::func::{func_runner, FuncEvaluator, FuncState};
 use crate::runner::Runner;
 
+#[must_use]
 pub fn griewank_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl FitnessFn<FuncState>>> {
     func_runner(
         dim,

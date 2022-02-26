@@ -27,6 +27,7 @@ impl fmt::Display for State {
 }
 
 impl State {
+    #[must_use]
     pub fn new(ops: Vec<Op>, num_reg: usize) -> Self {
         Self { ops, num_reg }
     }
@@ -40,10 +41,12 @@ pub struct LgpGenomeConfig {
 }
 
 impl LgpGenomeConfig {
+    #[must_use]
     pub fn new(max_reg: usize, max_code: usize) -> Self {
         Self { max_reg, max_code, opcodes: Opcode::iter().collect() }
     }
 
+    #[must_use]
     pub fn with_opcodes(mut self, opcodes: &[Opcode]) -> Self {
         self.opcodes = opcodes.to_vec();
         self
@@ -55,6 +58,7 @@ pub struct LgpGenome {
 }
 
 impl LgpGenome {
+    #[must_use]
     pub fn new(cfg: LgpGenomeConfig) -> Self {
         Self { cfg }
     }
@@ -113,7 +117,7 @@ impl Evaluator for LgpGenome {
     }
 
     fn distance(&self, s1: &State, s2: &State) -> f64 {
-        dist_fn(&s1.ops, &s2.ops, 1.0, |a, b| Op::dist(a, b))
+        dist_fn(&s1.ops, &s2.ops, 1.0, Op::dist)
     }
 }
 
@@ -134,11 +138,11 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
     const NUM_MUTATION: usize = LgpGenome::NUM_MUTATION;
 
     fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
-        self.genome.crossover(s1, s2, idx)
+        self.genome.crossover(s1, s2, idx);
     }
 
     fn mutate(&self, s: &mut State, rate: f64, idx: usize) {
-        self.genome.mutate(s, rate, idx)
+        self.genome.mutate(s, rate, idx);
     }
 
     fn fitness(&self, s: &State, gen: usize) -> f64 {

@@ -11,17 +11,19 @@ use crate::gen::species::{DistCache, SpeciesInfo};
 
 #[derive(Clone, PartialOrd, PartialEq)]
 pub struct UnevaluatedGen<G: Genome> {
-    pub(crate) mems: Vec<Mem<G>>,
-    pub(crate) species: SpeciesInfo,
-    pub(crate) dists: DistCache,
+    pub mems: Vec<Mem<G>>,
+    pub species: SpeciesInfo,
+    pub dists: DistCache,
 }
 
 impl<G: Genome> UnevaluatedGen<G> {
+    #[must_use]
     pub fn initial<E: Evaluator>(genomes: Vec<G>, cfg: &Cfg) -> Self {
         let mems = genomes.into_iter().map(|genome| Mem::new::<E>(genome, cfg)).collect();
         Self::new(mems)
     }
 
+    #[must_use]
     pub fn new(mems: Vec<Mem<G>>) -> Self {
         assert!(!mems.is_empty(), "Generation must not be empty");
         Self { mems, species: SpeciesInfo::new(), dists: DistCache::new() }
@@ -37,9 +39,9 @@ impl<G: Genome> UnevaluatedGen<G> {
         if cfg.par_fitness {
             self.mems
                 .par_iter_mut()
-                .for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count))
+                .for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count));
         } else {
-            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count))
+            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count));
         };
 
         // Check fitnesses are non-negative.
@@ -77,7 +79,7 @@ impl<G: Genome> UnevaluatedGen<G> {
         // Transform fitness if necessary.
         match cfg.niching {
             Niching::None => {
-                for v in self.mems.iter_mut() {
+                for v in &mut self.mems {
                     v.selection_fitness = v.base_fitness;
                 }
             }

@@ -12,10 +12,11 @@ use crate::runner::RandGenome;
 #[derive(Display, Clone, PartialOrd, PartialEq)]
 #[display(fmt = "pop: {}, best: {}", "mems.len()", "self.mems[0]")]
 pub struct EvaluatedGen<G: Genome> {
-    pub(crate) mems: Vec<Mem<G>>,
+    pub mems: Vec<Mem<G>>,
 }
 
 impl<G: Genome> EvaluatedGen<G> {
+    #[must_use]
     pub fn new(mut mems: Vec<Mem<G>>) -> Self {
         // Sort by base fitness. Selection should happen using selection
         // fitness. Generate survivors using base fitness, to make sure we keep
@@ -24,15 +25,18 @@ impl<G: Genome> EvaluatedGen<G> {
         Self { mems }
     }
 
+    #[must_use]
     pub fn mems(&self) -> &[Mem<G>] {
         &self.mems
     }
 
+    #[must_use]
     pub fn species_mems(&self, n: SpeciesId) -> Vec<Mem<G>> {
         self.mems.iter().filter(|v| v.species == n).cloned().collect()
     }
 
     // Get list of species.
+    #[must_use]
     pub fn species(&self) -> Vec<SpeciesId> {
         // Relies on species index assignment to be contigous from zero.
         let mut species: Vec<_> = self.mems.iter().map(|mem| mem.species).collect();

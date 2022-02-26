@@ -56,22 +56,27 @@ pub struct RunResult<G: Genome> {
 }
 
 impl<G: Genome> RunResult<G> {
+    #[must_use]
     pub fn size(&self) -> usize {
         self.gen.mems.len()
     }
 
+    #[must_use]
     pub fn nth(&self, n: usize) -> &Mem<G> {
         &self.gen.mems[n]
     }
 
+    #[must_use]
     pub fn mean_fitness(&self) -> f64 {
         self.gen.mems.iter().map(|v| v.base_fitness).sum::<f64>() / self.gen.mems.len() as f64
     }
 
+    #[must_use]
     pub fn mean_distance(&self) -> f64 {
         self.unevaluated.dists.mean()
     }
 
+    #[must_use]
     pub fn num_dup(&self) -> usize {
         let mut mems_copy = self.gen.mems.iter().map(|v| &v.genome).cloned().collect::<Vec<_>>();
         mems_copy.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
@@ -118,6 +123,7 @@ impl<E: Evaluator> Runner<E> {
     }
 
     pub fn new(eval: E, cfg: Cfg, mut rand_genome: impl RandGenome<E::Genome> + 'static) -> Self {
+        #[allow(clippy::redundant_closure)] // This closure is actually necessary.
         let gen = UnevaluatedGen::initial::<E>(rand_vec(cfg.pop_size, || rand_genome()), &cfg);
         Self {
             eval,
@@ -179,14 +185,14 @@ impl<E: Evaluator> Runner<E> {
         s += &format!("{}\n", Stats::from_run(r));
         if self.cfg.mutation == Mutation::Adaptive {
             s += "  mutation weights: ";
-            for &v in r.nth(0).params.mutation.iter() {
+            for &v in &r.nth(0).params.mutation {
                 s += &format!("{}, ", PrettyPrintFloat(v));
             }
             s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
             s += "  crossover weights: ";
-            for &v in r.nth(0).params.crossover.iter() {
+            for &v in &r.nth(0).params.crossover {
                 s += &format!("{}, ", PrettyPrintFloat(v));
             }
             s += "\n";
@@ -198,6 +204,7 @@ impl<E: Evaluator> Runner<E> {
     // top n / # species for each species. If n isn't divisble by number of
     // species, the remainder will go to print the top n % # out of the #
     // species.
+    #[allow(clippy::unused_self)]
     pub fn summary_sample(
         &self,
         r: &mut RunResult<E::Genome>,
@@ -207,7 +214,7 @@ impl<E: Evaluator> Runner<E> {
         let mut s = String::new();
         let species = r.gen.species();
         let mut by_species: Vec<(usize, Vec<Mem<E::Genome>>)> = Vec::new();
-        for &id in species.iter() {
+        for &id in &species {
             by_species.push((0, r.gen.species_mems(id)));
         }
 
@@ -245,7 +252,7 @@ impl<E: Evaluator> Runner<E> {
                 .unwrap()
         });
 
-        for (count, mems) in by_species.iter() {
+        for (count, mems) in &by_species {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
