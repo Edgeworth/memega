@@ -2,9 +2,11 @@ use rayon::iter::{IntoParallelIterator, ParallelIterator};
 
 use crate::cfg::Cfg;
 use crate::eval::Evaluator;
-use crate::runner::{RunResult, Runner, RunnerFn};
+use crate::run::result::RunResult;
+use crate::run::runner::{CreateRunnerFn, Runner};
 
-pub fn multirun<F: RunnerFn<E>, E: Evaluator + Sized>(
+/// Run multiple instances of a runner.
+pub fn multirun<F: CreateRunnerFn<E>, E: Evaluator + Sized>(
     num_runs: usize,
     num_generations: usize,
     cfg: &Cfg,

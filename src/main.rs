@@ -2,15 +2,17 @@ use eyre::Result;
 use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::examples::all_cfg;
-use memega::runner::{RunnerFn, Stats};
+use memega::run::result::Stats;
+use memega::run::runner::CreateRunnerFn;
 use memestat::Grapher;
 
+#[allow(unused)]
 fn eval_run<E: Evaluator>(
     g: &mut Grapher,
     name: &str,
     run_id: &str,
     base_cfg: Cfg,
-    runner_fn: &impl RunnerFn<E>,
+    runner_fn: &impl CreateRunnerFn<E>,
 ) -> Result<()> {
     const SAMPLES: usize = 100;
     let cfgs = [("100 pop", base_cfg)];
@@ -31,10 +33,11 @@ fn eval_run<E: Evaluator>(
     Ok(())
 }
 
+#[allow(unused)]
 fn run_grapher<E: Evaluator>(
     name: &str,
     base_cfg: Cfg,
-    runner_fn: &impl RunnerFn<E>,
+    runner_fn: &impl CreateRunnerFn<E>,
 ) -> Result<()> {
     let mut g = Grapher::new();
     let mod_cfg = all_cfg();
@@ -56,6 +59,6 @@ fn main() -> Result<()> {
     // run_once(hyper_runner(100, Duration::from_millis(10)))?;
     // run_once(hyper_runner(&knapsack_runner))?;
     // run_once(hyper_runner(&target_string_runner))?;
-    // run_once(hyper_runner))?;
+    // run_once(hyper_runner)?;
     Ok(())
 }

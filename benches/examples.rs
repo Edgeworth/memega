@@ -7,7 +7,7 @@ use memega::examples::griewank::griewank_runner;
 use memega::examples::knapsack::knapsack_runner;
 use memega::examples::rastrigin::rastrigin_runner;
 use memega::examples::target_string::target_string_runner;
-use memega::hyper::hyper_runner;
+use memega::hyper::builder::hyper_runner;
 
 fn get_cfg() -> Cfg {
     Cfg::new(100)
