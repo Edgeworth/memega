@@ -4,7 +4,7 @@ use crate::ops::crossover::crossover_arith;
 use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate, mutate_uniform};
 use crate::ops::util::rand_vec;
-use crate::runner::Runner;
+use crate::run::runner::Runner;
 
 pub type FuncState = Vec<f64>;
 

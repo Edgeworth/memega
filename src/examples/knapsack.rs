@@ -6,7 +6,7 @@ use crate::ops::crossover::crossover_kpx;
 use crate::ops::distance::count_different;
 use crate::ops::mutation::mutate_rate;
 use crate::ops::util::rand_vec;
-use crate::runner::Runner;
+use crate::run::runner::Runner;
 
 type State = Vec<bool>;
 

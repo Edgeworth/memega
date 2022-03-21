@@ -8,7 +8,7 @@ use memega::cfg::{
 use memega::lgp::asm::lgp_asm;
 use memega::lgp::exec::LgpExec;
 use memega::lgp::state::{lgp_runner_fn, LgpGenomeConfig, State};
-use memega::run_evolve;
+use memega::util::run::run_evolve;
 use rand::Rng;
 
 fn lgp_cfg() -> Cfg {

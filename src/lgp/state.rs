@@ -12,7 +12,7 @@ use crate::ops::crossover::crossover_kpx;
 use crate::ops::distance::dist_fn;
 use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_swap};
 use crate::ops::util::rand_vec;
-use crate::runner::Runner;
+use crate::run::runner::Runner;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
