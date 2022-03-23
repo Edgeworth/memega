@@ -1,7 +1,12 @@
 [package]
 authors = ["Eliot Courtney <edgeworth.dev@gmail.com>"]
+categories = ["algorithms", "science"]
+description = "genetic algorithm library"
 edition = "2021"
+keywords = ["genetic", "ga", "evolutionary", "algorithm"]
+license = "MIT OR Apache-2.0"
 name = "memega"
+repository = "https://github.com/Edgeworth/memega"
 version = "0.1.0"
 
 [dependencies]
@@ -11,8 +16,8 @@ concurrent_lru = "0.2.0"
 derive_more = "0.99.17"
 eyre = "0.6.7"
 float-pretty-print = "0.1.1"
-log = "0.4.14"
-memestat = {path = "../memestat"}
+log = "0.4.16"
+memestat = {version = "0.1.0", git = "https://github.com/Edgeworth/memestat"}
 num-traits = "0.2.14"
 num_enum = "0.5.7"
 pretty_env_logger = "0.4.0"
@@ -24,7 +29,7 @@ strum = "0.24.0"
 strum_macros = "0.24.0"
 
 [dev-dependencies]
-criterion = { version = "0.3.5", features = ["real_blackbox"] }
+criterion = {version = "0.3.5", features = ["real_blackbox"]}
 plotters = "0.3.1"
 
 [[bench]]
