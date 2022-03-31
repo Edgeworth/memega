@@ -5,23 +5,24 @@ use memega::cfg::{
     Cfg, Crossover, Mutation, Niching, Replacement, Species, Stagnation, StagnationCondition,
     Survival,
 };
-use memega::lgp::asm::lgp_asm;
-use memega::lgp::exec::LgpExec;
-use memega::lgp::state::{lgp_runner_fn, LgpGenomeConfig, State};
+use memega::evaluators::lgp::builder::{lgp_runner_fn, LgpGenomeConfig};
+use memega::evaluators::lgp::eval::State;
+use memega::evaluators::lgp::vm::asm::lgp_asm;
+use memega::evaluators::lgp::vm::exec::LgpExec;
 use memega::util::run::run_evolve;
 use rand::Rng;
 
 fn lgp_cfg() -> Cfg {
     Cfg::new(2000)
-        .with_mutation(Mutation::Adaptive)
-        .with_crossover(Crossover::Adaptive)
-        .with_survival(Survival::TopProportion(0.1))
-        .with_species(Species::None)
-        .with_niching(Niching::None)
-        .with_stagnation(Stagnation::ContinuousAfter(100))
-        .with_stagnation_condition(StagnationCondition::Epsilon(2.0))
-        .with_replacement(Replacement::ReplaceChildren(0.5))
-        .with_par_fitness(true)
+        .set_mutation(Mutation::Adaptive)
+        .set_crossover(Crossover::Adaptive)
+        .set_survival(Survival::TopProportion(0.1))
+        .set_species(Species::None)
+        .set_niching(Niching::None)
+        .set_stagnation(Stagnation::ContinuousAfter(100))
+        .set_stagnation_condition(StagnationCondition::Epsilon(2.0))
+        .set_replacement(Replacement::ReplaceChildren(0.5))
+        .set_par_fitness(true)
 }
 
 fn lgp_fitness(s: &State, _gen: usize) -> f64 {
@@ -95,7 +96,7 @@ add r0, r1
 #[test]
 fn test_lgp() -> Result<()> {
     let cfg = lgp_cfg();
-    run_evolve(lgp_runner_fn(LgpGenomeConfig::new(4, 6), cfg, lgp_fitness), 10000, 10, 100)?;
+    run_evolve(lgp_runner_fn(LgpGenomeConfig::new(), cfg, lgp_fitness), 10000, 10, 100)?;
     run_lgp()?;
     Ok(())
 }

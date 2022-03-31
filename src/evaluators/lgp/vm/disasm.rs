@@ -1,4 +1,4 @@
-use crate::lgp::op::Op;
+use crate::evaluators::lgp::vm::op::Op;
 
 #[must_use]
 pub fn lgp_disasm(code: &[Op]) -> String {
@@ -12,7 +12,7 @@ pub fn lgp_disasm(code: &[Op]) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::lgp::op::Opcode;
+    use crate::evaluators::lgp::vm::op::{Op, Opcode};
 
     #[test]
     fn basic_disasm() {
