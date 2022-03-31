@@ -2,23 +2,23 @@ use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use memega::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
+use memega::evaluators::hyper::builder::hyper_runner;
 use memega::examples::ackley::ackley_runner;
 use memega::examples::griewank::griewank_runner;
 use memega::examples::knapsack::knapsack_runner;
 use memega::examples::rastrigin::rastrigin_runner;
 use memega::examples::target_string::target_string_runner;
-use memega::hyper::builder::hyper_runner;
 
 fn get_cfg() -> Cfg {
     Cfg::new(100)
-        .with_mutation(Mutation::Adaptive)
-        .with_crossover(Crossover::Adaptive)
-        .with_survival(Survival::TopProportion(0.25))
-        .with_selection(Selection::Sus)
-        .with_species(Species::None)
-        .with_niching(Niching::None)
-        .with_par_dist(false)
-        .with_par_fitness(false)
+        .set_mutation(Mutation::Adaptive)
+        .set_crossover(Crossover::Adaptive)
+        .set_survival(Survival::TopProportion(0.25))
+        .set_selection(Selection::Sus)
+        .set_species(Species::None)
+        .set_niching(Niching::None)
+        .set_par_dist(false)
+        .set_par_fitness(false)
 }
 
 fn rastrigin(c: &mut Criterion) {

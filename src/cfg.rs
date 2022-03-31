@@ -185,67 +185,67 @@ impl Cfg {
     }
 
     #[must_use]
-    pub fn with_pop_size(self, pop_size: usize) -> Self {
+    pub fn set_pop_size(self, pop_size: usize) -> Self {
         Self { pop_size, ..self }
     }
 
     #[must_use]
-    pub fn with_crossover(self, crossover: Crossover) -> Self {
+    pub fn set_crossover(self, crossover: Crossover) -> Self {
         Self { crossover, ..self }
     }
 
     #[must_use]
-    pub fn with_mutation(self, mutation: Mutation) -> Self {
+    pub fn set_mutation(self, mutation: Mutation) -> Self {
         Self { mutation, ..self }
     }
 
     #[must_use]
-    pub fn with_survival(self, survival: Survival) -> Self {
+    pub fn set_survival(self, survival: Survival) -> Self {
         Self { survival, ..self }
     }
 
     #[must_use]
-    pub fn with_selection(self, selection: Selection) -> Self {
+    pub fn set_selection(self, selection: Selection) -> Self {
         Self { selection, ..self }
     }
 
     #[must_use]
-    pub fn with_niching(self, niching: Niching) -> Self {
+    pub fn set_niching(self, niching: Niching) -> Self {
         Self { niching, ..self }
     }
 
     #[must_use]
-    pub fn with_species(self, species: Species) -> Self {
+    pub fn set_species(self, species: Species) -> Self {
         Self { species, ..self }
     }
 
     #[must_use]
-    pub fn with_stagnation(self, stagnation: Stagnation) -> Self {
+    pub fn set_stagnation(self, stagnation: Stagnation) -> Self {
         Self { stagnation, ..self }
     }
 
     #[must_use]
-    pub fn with_stagnation_condition(self, stagnation_condition: StagnationCondition) -> Self {
+    pub fn set_stagnation_condition(self, stagnation_condition: StagnationCondition) -> Self {
         Self { stagnation_condition, ..self }
     }
 
     #[must_use]
-    pub fn with_replacement(self, replacement: Replacement) -> Self {
+    pub fn set_replacement(self, replacement: Replacement) -> Self {
         Self { replacement, ..self }
     }
 
     #[must_use]
-    pub fn with_duplicates(self, duplicates: Duplicates) -> Self {
+    pub fn set_duplicates(self, duplicates: Duplicates) -> Self {
         Self { duplicates, ..self }
     }
 
     #[must_use]
-    pub fn with_par_fitness(self, par_fitness: bool) -> Self {
+    pub fn set_par_fitness(self, par_fitness: bool) -> Self {
         Self { par_fitness, ..self }
     }
 
     #[must_use]
-    pub fn with_par_dist(self, par_dist: bool) -> Self {
+    pub fn set_par_dist(self, par_dist: bool) -> Self {
         Self { par_dist, ..self }
     }
 }

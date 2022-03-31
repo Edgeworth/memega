@@ -3,12 +3,12 @@ use std::time::{Duration, Instant};
 
 use crate::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
 use crate::eval::Evaluator;
+use crate::evaluators::hyper::eval::{HyperAlg, StatFn, State};
 use crate::examples::ackley::ackley_runner;
 use crate::examples::griewank::griewank_runner;
 use crate::examples::knapsack::knapsack_runner;
 use crate::examples::rastrigin::rastrigin_runner;
 use crate::examples::target_string::target_string_runner;
-use crate::hyper::eval::{HyperAlg, StatFn, State};
 use crate::run::result::Stats;
 use crate::run::runner::{CreateRunnerFn, Runner};
 
@@ -58,14 +58,14 @@ impl HyperBuilder {
     #[must_use]
     pub fn build(self) -> Runner<HyperAlg> {
         let cfg = Cfg::new(100)
-            .with_mutation(Mutation::Adaptive)
-            .with_crossover(Crossover::Adaptive)
-            .with_survival(Survival::TopProportion(0.25))
-            .with_selection(Selection::Sus)
-            .with_species(Species::None)
-            .with_niching(Niching::None)
-            .with_par_dist(false)
-            .with_par_fitness(true);
+            .set_mutation(Mutation::Adaptive)
+            .set_crossover(Crossover::Adaptive)
+            .set_survival(Survival::TopProportion(0.25))
+            .set_selection(Selection::Sus)
+            .set_species(Species::None)
+            .set_niching(Niching::None)
+            .set_par_dist(false)
+            .set_par_fitness(true);
         let pop_size = self.pop_size;
         let num_crossover = self.num_crossover;
         let num_mutation = self.num_mutation;

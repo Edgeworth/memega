@@ -38,10 +38,9 @@
 
 pub mod cfg;
 pub mod eval;
+pub mod evaluators;
 pub mod examples;
 pub mod gen;
-pub mod hyper;
-pub mod lgp;
 pub mod ops;
 pub mod run;
 pub mod util;

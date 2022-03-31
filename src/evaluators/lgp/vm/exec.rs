@@ -1,4 +1,4 @@
-use crate::lgp::op::{Op, Opcode};
+use crate::evaluators::lgp::vm::op::{Op, Opcode};
 
 const EP: f64 = 1.0e-6;
 

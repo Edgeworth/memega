@@ -1,6 +1,6 @@
 use eyre::{eyre, Result};
 
-use crate::lgp::op::{Op, Opcode, Operand};
+use crate::evaluators::lgp::vm::op::{Op, Opcode, Operand};
 
 fn lgp_asm_op(s: &str) -> Result<Op> {
     let mut tokens = s.split_whitespace();
