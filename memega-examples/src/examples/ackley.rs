@@ -1,9 +1,10 @@
 use std::f64::consts::{E, PI};
 
-use crate::cfg::Cfg;
-use crate::eval::FitnessFn;
+use memega::cfg::Cfg;
+use memega::eval::FitnessFn;
+use memega::run::runner::Runner;
+
 use crate::examples::func::{func_runner, FuncEvaluator, FuncState};
-use crate::run::runner::Runner;
 
 #[must_use]
 pub fn ackley_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl FitnessFn<FuncState>>> {

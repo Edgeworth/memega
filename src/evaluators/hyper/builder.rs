@@ -4,11 +4,6 @@ use std::time::{Duration, Instant};
 use crate::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
 use crate::eval::Evaluator;
 use crate::evaluators::hyper::eval::{HyperAlg, StatFn, State};
-use crate::examples::ackley::ackley_runner;
-use crate::examples::griewank::griewank_runner;
-use crate::examples::knapsack::knapsack_runner;
-use crate::examples::rastrigin::rastrigin_runner;
-use crate::examples::target_string::target_string_runner;
 use crate::run::result::Stats;
 use crate::run::runner::{CreateRunnerFn, Runner};
 
@@ -72,15 +67,4 @@ impl HyperBuilder {
         let genomefn = move || State::rand(pop_size, num_crossover, num_mutation);
         Runner::new(HyperAlg::new(self.stat_fns), cfg, genomefn)
     }
-}
-
-#[must_use]
-pub fn hyper_runner(pop_size: usize, sample_dur: Duration) -> Runner<HyperAlg> {
-    let mut builder = HyperBuilder::new(pop_size, sample_dur);
-    builder.add(1.0, &|cfg| rastrigin_runner(2, cfg));
-    builder.add(1.0, &|cfg| griewank_runner(2, cfg));
-    builder.add(1.0, &|cfg| ackley_runner(2, cfg));
-    builder.add(1000.0, &knapsack_runner);
-    builder.add(12.0, &target_string_runner);
-    builder.build()
 }
