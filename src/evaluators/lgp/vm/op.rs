@@ -1,21 +1,20 @@
 use std::fmt;
 
+use enumset::EnumSetType;
 use num_enum::{IntoPrimitive, TryFromPrimitive};
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
 use strum::EnumCount as EnumCountTrait;
 use strum_macros::{EnumCount, EnumIter};
 
-use crate::ops::mutation::mutate_creep;
+
 
 // Machine consists of N registers (up to 256) that contain f64 values.
 // Note that floating point comparisons are done using an epsilon.
 // Opcodes are 8 bit and have variable number of operands.
 // If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
 // Accessing register k will access register k % N if k >= N.
-#[derive(
-    Debug, Copy, Clone, PartialEq, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount, EnumIter,
-)]
+#[derive(Debug, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount, EnumIter, EnumSetType)]
 #[repr(u8)]
 pub enum Opcode {
     Nop = 0,           // no operation - 0
@@ -144,22 +143,6 @@ impl Op {
     }
 
     #[must_use]
-    pub fn rand(op: Opcode, num_reg: usize, code_size: usize) -> Self {
-        let mut r = rand::thread_rng();
-        let mut data = [0, 0, 0];
-        let code_size = code_size.clamp(0, i8::MAX as usize) as i32;
-        for (i, v) in data.iter_mut().enumerate() {
-            match op.operand(i) {
-                Operand::None => {}
-                Operand::Register => *v = r.gen_range(0..num_reg) as u8,
-                Operand::Immediate => *v = r.gen::<u8>(),
-                Operand::Relative => *v = r.gen_range(-code_size..=code_size) as u8,
-            }
-        }
-        Op::new(op, data)
-    }
-
-    #[must_use]
     pub fn num_operands(&self) -> usize {
         for i in 0..self.data.len() {
             if self.op.operand(i) == Operand::None {
@@ -167,26 +150,6 @@ impl Op {
             }
         }
         self.data.len()
-    }
-
-    // Micro-mutation of the instruction without changing the opcode.
-    pub fn mutate(&mut self, num_reg: usize, code_size: usize) {
-        let mut r = rand::thread_rng();
-        let num_operands = self.num_operands();
-        if num_operands == 0 {
-            return;
-        }
-        let idx = r.gen_range(0..num_operands);
-        let code_size = code_size.clamp(0, i8::MAX as usize) as i8;
-        match self.op.operand(idx) {
-            Operand::None => {}
-            Operand::Register => self.data[idx] = r.gen_range(0..num_reg) as u8,
-            Operand::Immediate => self.data[idx] = mutate_creep(self.data[idx], 64),
-            Operand::Relative => {
-                self.data[idx] = mutate_creep(self.data[idx] as i8, code_size)
-                    .clamp(-code_size, code_size) as u8;
-            }
-        }
     }
 
     // Computes some distance metric between operations.
