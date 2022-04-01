@@ -6,7 +6,6 @@ multi-objective optimization - currently just does weird fitness combinations
 
 ## TODO
 
-- lgp - cfg for number of significant figures in floats.
 - evolve user data (vec of floats)
 
 ## Selection strategies

@@ -1,70 +1,14 @@
-use rand::prelude::SliceRandom;
-use strum::IntoEnumIterator;
+
+
+
 
 use crate::cfg::Cfg;
 use crate::eval::{Evaluator, FitnessFn};
+use crate::evaluators::lgp::cfg::LgpCfg;
 use crate::evaluators::lgp::eval::{LgpGenome, State};
-use crate::evaluators::lgp::vm::op::{Op, Opcode};
+
 use crate::ops::util::rand_vec;
 use crate::run::runner::Runner;
-
-fn rand_op(cfg: &LgpGenomeConfig) -> Op {
-    let mut r = rand::thread_rng();
-    Op::rand(*cfg.opcodes.choose(&mut r).unwrap(), cfg.max_reg, cfg.max_code)
-}
-
-#[derive(Clone)]
-pub struct LgpGenomeConfig {
-    max_reg: usize,
-    max_code: usize,
-    opcodes: Vec<Opcode>,
-}
-
-impl LgpGenomeConfig {
-    #[must_use]
-    pub fn new() -> Self {
-        Self { max_reg: 4, max_code: 4, opcodes: Opcode::iter().collect() }
-    }
-
-    #[must_use]
-    pub fn set_max_reg(mut self, max_reg: usize) -> Self {
-        self.max_reg = max_reg;
-        self
-    }
-
-    #[must_use]
-    pub fn set_max_code(mut self, max_code: usize) -> Self {
-        self.max_code = max_code;
-        self
-    }
-
-    #[must_use]
-    pub fn set_opcodes(mut self, opcodes: &[Opcode]) -> Self {
-        self.opcodes = opcodes.to_vec();
-        self
-    }
-
-    #[must_use]
-    pub fn max_reg(&self) -> usize {
-        self.max_reg
-    }
-
-    #[must_use]
-    pub fn max_code(&self) -> usize {
-        self.max_code
-    }
-
-    #[must_use]
-    pub fn opcodes(&self) -> &[Opcode] {
-        self.opcodes.as_ref()
-    }
-}
-
-impl Default for LgpGenomeConfig {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 pub struct LgpGenomeFn<F: FitnessFn<State>> {
     genome: LgpGenome,
@@ -72,7 +16,7 @@ pub struct LgpGenomeFn<F: FitnessFn<State>> {
 }
 
 impl<F: FitnessFn<State>> LgpGenomeFn<F> {
-    pub fn new(cfg: LgpGenomeConfig, f: F) -> Self {
+    pub fn new(cfg: LgpCfg, f: F) -> Self {
         Self { genome: LgpGenome::new(cfg), f }
     }
 }
@@ -100,21 +44,21 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
 }
 
 pub fn lgp_runner<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
-    lgpcfg: LgpGenomeConfig,
+    lgpcfg: LgpCfg,
     cfg: Cfg,
     f: F,
 ) -> Runner<E> {
     Runner::new(f(LgpGenome::new(lgpcfg.clone())), cfg, move || {
-        State::new(rand_vec(lgpcfg.max_code, || rand_op(&lgpcfg.clone())), lgpcfg.max_reg)
+        State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
     })
 }
 
 pub fn lgp_runner_fn<F: FitnessFn<State>>(
-    lgpcfg: LgpGenomeConfig,
+    lgpcfg: LgpCfg,
     cfg: Cfg,
     f: F,
 ) -> Runner<LgpGenomeFn<F>> {
     Runner::new(LgpGenomeFn::new(lgpcfg.clone(), f), cfg, move || {
-        State::new(rand_vec(lgpcfg.max_code, || rand_op(&lgpcfg.clone())), lgpcfg.max_reg)
+        State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
     })
 }

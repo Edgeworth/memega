@@ -3,8 +3,8 @@ use std::fmt;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 
-use crate::eval::{Evaluator, FitnessFn};
-use crate::evaluators::lgp::builder::LgpGenomeConfig;
+use crate::eval::Evaluator;
+use crate::evaluators::lgp::cfg::LgpCfg;
 use crate::evaluators::lgp::vm::disasm::lgp_disasm;
 use crate::evaluators::lgp::vm::op::Op;
 use crate::ops::crossover::crossover_kpx;
@@ -14,7 +14,7 @@ use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct State {
     pub ops: Vec<Op>, // Contains program code for linear genetic programming.
-    pub num_reg: usize,
+    pub cfg: LgpCfg,
 }
 
 impl fmt::Display for State {
@@ -25,18 +25,18 @@ impl fmt::Display for State {
 
 impl State {
     #[must_use]
-    pub fn new(ops: Vec<Op>, num_reg: usize) -> Self {
-        Self { ops, num_reg }
+    pub fn new(ops: Vec<Op>, cfg: LgpCfg) -> Self {
+        Self { ops, cfg }
     }
 }
 
 pub struct LgpGenome {
-    cfg: LgpGenomeConfig,
+    cfg: LgpCfg,
 }
 
 impl LgpGenome {
     #[must_use]
-    pub fn new(cfg: LgpGenomeConfig) -> Self {
+    pub fn new(cfg: LgpCfg) -> Self {
         Self { cfg }
     }
 }
@@ -62,8 +62,7 @@ impl Evaluator for LgpGenome {
             return;
         }
         let code_size = s.ops.len();
-        let opcode = *self.cfg.opcodes().choose(&mut r).unwrap();
-        let op = Op::rand(opcode, s.num_reg, code_size);
+        let op = self.cfg.rand_op(Some(code_size));
         match idx {
             0 => mutate_swap(&mut s.ops),
             1 => mutate_insert(&mut s.ops),
@@ -83,7 +82,7 @@ impl Evaluator for LgpGenome {
             }
             6 => {
                 // Micro-mutation
-                s.ops.choose_mut(&mut r).unwrap().mutate(s.num_reg, code_size);
+                self.cfg.mutate(Some(code_size), s.ops.choose_mut(&mut r).unwrap());
             }
             _ => panic!("unknown mutation strategy"),
         }

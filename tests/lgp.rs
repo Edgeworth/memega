@@ -5,7 +5,8 @@ use memega::cfg::{
     Cfg, Crossover, Mutation, Niching, Replacement, Species, Stagnation, StagnationCondition,
     Survival,
 };
-use memega::evaluators::lgp::builder::{lgp_runner_fn, LgpGenomeConfig};
+use memega::evaluators::lgp::builder::lgp_runner_fn;
+use memega::evaluators::lgp::cfg::LgpCfg;
 use memega::evaluators::lgp::eval::State;
 use memega::evaluators::lgp::vm::asm::lgp_asm;
 use memega::evaluators::lgp::vm::exec::LgpExec;
@@ -29,7 +30,7 @@ fn lgp_fitness(s: &State, _gen: usize) -> f64 {
     let mut fitness = 0.0;
     for _ in 0..100 {
         let mut r = rand::thread_rng();
-        let mut reg = vec![0.0; s.num_reg]; // Space for work and answer.
+        let mut reg = vec![0.0; s.cfg.num_reg()]; // Space for work and answer.
         let x = r.gen_range(0.0..100.0);
         reg[1] = -1.0;
         reg[2] = 1.0;
@@ -96,7 +97,7 @@ add r0, r1
 #[test]
 fn test_lgp() -> Result<()> {
     let cfg = lgp_cfg();
-    run_evolve(lgp_runner_fn(LgpGenomeConfig::new(), cfg, lgp_fitness), 10000, 10, 100)?;
+    run_evolve(lgp_runner_fn(LgpCfg::new(), cfg, lgp_fitness), 10000, 10, 100)?;
     run_lgp()?;
     Ok(())
 }
