@@ -7,8 +7,6 @@ use rand_distr::{Distribution, Standard};
 use strum::EnumCount as EnumCountTrait;
 use strum_macros::{EnumCount, EnumIter};
 
-
-
 // Machine consists of N registers (up to 256) that contain f64 values.
 // Note that floating point comparisons are done using an epsilon.
 // Opcodes are 8 bit and have variable number of operands.

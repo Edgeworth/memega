@@ -3,13 +3,9 @@ use rand::prelude::{IteratorRandom, SliceRandom};
 use rand::Rng;
 use strum::IntoEnumIterator;
 
-
-use crate::eval::{FitnessFn};
-
+use crate::eval::FitnessFn;
 use crate::evaluators::lgp::vm::op::{Op, Opcode, Operand};
 use crate::ops::mutation::mutate_creep;
-
-
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
 pub struct LgpCfg {

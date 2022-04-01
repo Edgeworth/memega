@@ -1,13 +1,12 @@
+use memega::cfg::Cfg;
+use memega::eval::Evaluator;
+use memega::ops::crossover::crossover_kpx;
+use memega::ops::distance::count_different;
+use memega::ops::mutation::mutate_rate;
+use memega::ops::util::{rand_vec, str_to_vec};
+use memega::run::runner::Runner;
+use memega::util::distributions::PrintableAscii;
 use rand::Rng;
-
-use crate::cfg::Cfg;
-use crate::eval::Evaluator;
-use crate::ops::crossover::crossover_kpx;
-use crate::ops::distance::count_different;
-use crate::ops::mutation::mutate_rate;
-use crate::ops::util::{rand_vec, str_to_vec};
-use crate::run::runner::Runner;
-use crate::util::distributions::PrintableAscii;
 
 type State = Vec<char>;
 

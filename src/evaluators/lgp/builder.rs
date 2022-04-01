@@ -1,12 +1,7 @@
-
-
-
-
 use crate::cfg::Cfg;
 use crate::eval::{Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpCfg;
 use crate::evaluators::lgp::eval::{LgpGenome, State};
-
 use crate::ops::util::rand_vec;
 use crate::run::runner::Runner;
 
@@ -48,7 +43,7 @@ pub fn lgp_runner<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
     cfg: Cfg,
     f: F,
 ) -> Runner<E> {
-    Runner::new(f(LgpGenome::new(lgpcfg.clone())), cfg, move || {
+    Runner::new(f(LgpGenome::new(lgpcfg)), cfg, move || {
         State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
     })
 }
@@ -58,7 +53,7 @@ pub fn lgp_runner_fn<F: FitnessFn<State>>(
     cfg: Cfg,
     f: F,
 ) -> Runner<LgpGenomeFn<F>> {
-    Runner::new(LgpGenomeFn::new(lgpcfg.clone(), f), cfg, move || {
+    Runner::new(LgpGenomeFn::new(lgpcfg, f), cfg, move || {
         State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
     })
 }

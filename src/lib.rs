@@ -39,7 +39,6 @@
 pub mod cfg;
 pub mod eval;
 pub mod evaluators;
-pub mod examples;
 pub mod gen;
 pub mod ops;
 pub mod run;

@@ -1,10 +1,10 @@
-use crate::cfg::Cfg;
-use crate::eval::{Evaluator, FitnessFn};
-use crate::ops::crossover::crossover_arith;
-use crate::ops::distance::dist2;
-use crate::ops::mutation::{mutate_normal, mutate_rate, mutate_uniform};
-use crate::ops::util::rand_vec;
-use crate::run::runner::Runner;
+use memega::cfg::Cfg;
+use memega::eval::{Evaluator, FitnessFn};
+use memega::ops::crossover::crossover_arith;
+use memega::ops::distance::dist2;
+use memega::ops::mutation::{mutate_normal, mutate_rate, mutate_uniform};
+use memega::ops::util::rand_vec;
+use memega::run::runner::Runner;
 
 pub type FuncState = Vec<f64>;
 
