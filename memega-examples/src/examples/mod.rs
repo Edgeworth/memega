@@ -5,6 +5,7 @@ pub mod func;
 pub mod griewank;
 pub mod hyper;
 pub mod knapsack;
+pub mod lgp;
 pub mod rastrigin;
 pub mod target_string;
 
