@@ -5,6 +5,7 @@ use memega::cfg::{
     Survival,
 };
 use memega::eval::Evaluator;
+use memega::evaluators::lgp::cfg::LgpCfg;
 use memega::evolve::evolver::CreateEvolverFn;
 use memega::evolve::result::Stats;
 use memega::harness::cfg::{HarnessCfg, Termination};
@@ -86,13 +87,14 @@ impl Args {
     pub fn run(&self) -> Result<()> {
         let func_dim = self.func_dim;
         let lgp_target = self.lgp_target.clone();
+        let lgpcfg = LgpCfg::new();
         match self.example {
             Example::Ackley => self.dispatch(move |cfg| ackley_evolver(func_dim, cfg)),
             Example::Griewank => self.dispatch(move |cfg| griewank_evolver(func_dim, cfg)),
             Example::Knapsack => self.dispatch(knapsack_evolver),
             Example::Rastringin => self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg)),
             Example::TargetString => self.dispatch(target_string_evolver),
-            Example::Lgp => self.dispatch(move |cfg| lgp_evolver(lgp_target.clone(), cfg)),
+            Example::Lgp => self.dispatch(move |cfg| lgp_evolver(lgp_target.clone(), lgpcfg, cfg)),
         }
     }
 

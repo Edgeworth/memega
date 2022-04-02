@@ -46,6 +46,6 @@ pub fn lgp_fitness(s: &State, _gen: usize, target: &str) -> f64 {
 }
 
 #[must_use]
-pub fn lgp_evolver(target: String, cfg: Cfg) -> Evolver<impl Evaluator> {
-    lgp_fitness_evolver(LgpCfg::new(), cfg, move |s: &State, gen| lgp_fitness(s, gen, &target))
+pub fn lgp_evolver(target: String, lgpcfg: LgpCfg, cfg: Cfg) -> Evolver<impl Evaluator> {
+    lgp_fitness_evolver(lgpcfg, cfg, move |s: &State, gen| lgp_fitness(s, gen, &target))
 }

@@ -45,7 +45,7 @@ impl LgpExec {
     /// Jumps to the first label with the given label id.
     fn label_jmp(&mut self, label: u8) {
         for (i, op) in self.code.iter().enumerate() {
-            if op.op == Opcode::Label && op.label() == label {
+            if op.code == Opcode::Label && op.label() == label {
                 self.pc = i + 1;
                 return;
             }
@@ -57,7 +57,7 @@ impl LgpExec {
         if let Some(op) = self.fetch() {
             let rx = op.data[0];
             let ry = op.data[1];
-            match op.op {
+            match op.code {
                 Opcode::Add => {
                     let v = self.reg(rx) + self.reg(ry);
                     if v.is_finite() {

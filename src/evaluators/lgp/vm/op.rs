@@ -9,7 +9,7 @@ use crate::evaluators::lgp::vm::opcode::{Opcode, Operand};
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct Op {
-    pub op: Opcode,
+    pub code: Opcode,
     pub data: [u8; 3], // Currently up to 3 bytes.
 }
 
@@ -17,7 +17,7 @@ impl fmt::Display for Op {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let rx = self.data[0];
         let ry = self.data[1];
-        match self.op {
+        match self.code {
             Opcode::Add => write!(f, "add r{}, r{}", rx, ry),
             Opcode::Sub => write!(f, "sub r{}, r{}", rx, ry),
             Opcode::Mul => write!(f, "mul r{}, r{}", rx, ry),
@@ -56,23 +56,29 @@ impl Distribution<Opcode> for Standard {
 impl Op {
     #[must_use]
     pub fn new(op: Opcode, data: [u8; 3]) -> Self {
-        Self { op, data }
+        Self { code: op, data }
+    }
+
+    #[must_use]
+    pub fn imm_range() -> (f64, f64) {
+        const RANGE: f64 = u8::MAX as f64;
+        (-RANGE / 2.0, RANGE / 2.0)
     }
 
     #[must_use]
     pub fn imm_value(&self) -> f64 {
-        let range = u8::MAX as f64;
-        let lo = self.data[1] as f64 / range;
-        let hi = self.data[2] as f64 - range / 2.0;
-        hi + lo
+        let (lo, _) = Self::imm_range();
+        let frac = self.data[1] as f64 / u8::MAX as f64;
+        let int = self.data[2] as f64 + lo;
+        int + frac
     }
 
     pub fn set_imm_f64(&mut self, v: f64) {
-        let range = u8::MAX as f64;
-        let v = v.clamp(-range / 2.0, range / 2.0);
-        let v = v + range / 2.0;
-        self.data[1] = (v.fract() * range).floor() as u8;
-        self.data[2] = v.floor() as u8;
+        let (lo, hi) = Self::imm_range();
+        let v = v.clamp(lo, hi);
+        let v = v - lo;
+        self.data[1] = (v.fract() * u8::MAX as f64).trunc() as u8;
+        self.data[2] = v.trunc() as u8;
     }
 
     #[must_use]
@@ -83,7 +89,7 @@ impl Op {
     #[must_use]
     pub fn num_operands(&self) -> usize {
         for i in 0..self.data.len() {
-            if self.op.operand(i) == Operand::None {
+            if self.code.operand(i) == Operand::None {
                 return i;
             }
         }
@@ -94,7 +100,7 @@ impl Op {
     #[must_use]
     pub fn dist(a: &Op, b: &Op) -> f64 {
         let mut d = 0.0;
-        if a.op != b.op {
+        if a.code != b.code {
             d += 100.0; // Kind of arbitrary, just add a constant for different opcodes.
         }
         for (&a, &b) in a.data.iter().zip(b.data.iter()) {
