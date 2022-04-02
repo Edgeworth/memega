@@ -8,16 +8,21 @@ use strum_macros::{Display, EnumIter};
 // Accessing register k will access register k % N if k >= N.
 #[derive(EnumSetType, Debug, Display, PartialOrd, EnumIter)]
 pub enum Opcode {
-    Add,          // add rx, ry: rx = rx + ry
-    Sub,          // sub rx, ry: rx = rx - ry
-    Mul,          // mul rx, ry: rx = rx * ry
-    Div,          // div rx, ry: rx = rx / ry - Div by zero => max value
-    Abs,          // abs rx: rx = |rx|
-    Neg,          // neg rx: rx = -rx
-    Pow,          // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
-    Log,          // log rx: rx = ln(rx)
+    Add, // add rx, ry: rx = rx + ry
+    Sub, // sub rx, ry: rx = rx - ry
+    Mul, // mul rx, ry: rx = rx * ry
+    Div, // div rx, ry: rx = rx / ry - Div by zero => max value
+    Abs, // abs rx: rx = |rx|
+    Neg, // neg rx: rx = -rx
+    Pow, // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
+    Log, // log rx: rx = ln(rx)
+
+    // Loading:
     Load,         // load rx, f8:8: rx = immediate fixed point 8:8, little endian
+    Copy,         // copy rx, ry: rx = ry - direct copy
     IndirectCopy, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
+
+    // Control flow:
     Jlt,   // jlt rx, ry, u8: if rx < ry pc = address of first label with name u8, if it exists
     Jle,   // jle rx, ry, u8: if rx <= ry pc = address of first label with name u8, if it exists
     Jeq,   // jeq rx, ry, u8: if rx == ry pc = address of first label with name u8, if it exists
@@ -35,6 +40,7 @@ impl Opcode {
             | Opcode::Mul
             | Opcode::Div
             | Opcode::IndirectCopy
+            | Opcode::Copy
             | Opcode::Pow => {
                 if idx <= 1 {
                     Operand::Register
