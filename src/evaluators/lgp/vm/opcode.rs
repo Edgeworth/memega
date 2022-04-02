@@ -1,12 +1,12 @@
 use enumset::EnumSetType;
-use strum_macros::EnumIter;
+use strum_macros::{Display, EnumIter};
 
 // Machine consists of N registers (up to 256) that contain f64 values.
 // Note that floating point comparisons are done using an epsilon.
 // Opcodes are 8 bit and have variable number of operands.
 // If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
 // Accessing register k will access register k % N if k >= N.
-#[derive(EnumSetType, Debug, PartialOrd, EnumIter)]
+#[derive(EnumSetType, Debug, Display, PartialOrd, EnumIter)]
 pub enum Opcode {
     Add,          // add rx, ry: rx = rx + ry
     Sub,          // sub rx, ry: rx = rx - ry

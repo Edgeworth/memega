@@ -67,6 +67,13 @@ impl Op {
 
     #[must_use]
     pub fn imm_value(&self) -> f64 {
+        assert!(
+            self.code.operand(1) == Operand::Immediate
+                && self.code.operand(2) == Operand::Immediate,
+            "Opcode {} does not take an immediate value",
+            self.code
+        );
+
         let (lo, _) = Self::imm_range();
         let frac = self.data[1] as f64 / u8::MAX as f64;
         let int = self.data[2] as f64 + lo;
@@ -74,6 +81,13 @@ impl Op {
     }
 
     pub fn set_imm_f64(&mut self, v: f64) {
+        assert!(
+            self.code.operand(1) == Operand::Immediate
+                && self.code.operand(2) == Operand::Immediate,
+            "Opcode {} does not take an immediate value",
+            self.code
+        );
+
         let (lo, hi) = Self::imm_range();
         let v = v.clamp(lo, hi);
         let v = v - lo;
@@ -83,6 +97,7 @@ impl Op {
 
     #[must_use]
     pub fn label(&self) -> u8 {
+        assert!(self.code == Opcode::Label, "Opcode is not a label");
         self.data[0]
     }
 
