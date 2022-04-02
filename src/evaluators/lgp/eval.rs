@@ -62,7 +62,7 @@ impl Evaluator for LgpGenome {
             return;
         }
         let code_size = s.ops.len();
-        let op = self.cfg.rand_op(Some(code_size));
+        let op = self.cfg.rand_op();
         match idx {
             0 => mutate_swap(&mut s.ops),
             1 => mutate_insert(&mut s.ops),
@@ -82,7 +82,7 @@ impl Evaluator for LgpGenome {
             }
             6 => {
                 // Micro-mutation
-                self.cfg.mutate(Some(code_size), s.ops.choose_mut(&mut r).unwrap());
+                self.cfg.mutate(s.ops.choose_mut(&mut r).unwrap());
             }
             _ => panic!("unknown mutation strategy"),
         }

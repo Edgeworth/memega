@@ -44,7 +44,7 @@ pub fn lgp_evolver<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
     f: F,
 ) -> Evolver<E> {
     Evolver::new(f(LgpGenome::new(lgpcfg)), cfg, move || {
-        State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
+        State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op()), lgpcfg)
     })
 }
 

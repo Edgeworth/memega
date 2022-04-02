@@ -3,8 +3,9 @@ use rand::prelude::IteratorRandom;
 use rand::Rng;
 use strum::IntoEnumIterator;
 
-use crate::evaluators::lgp::vm::op::{Op, Opcode, Operand};
-use crate::ops::mutation::mutate_creep;
+use crate::evaluators::lgp::vm::op::Op;
+use crate::evaluators::lgp::vm::opcode::{Opcode, Operand};
+use crate::ops::mutation::{mutate_creep, mutate_normal};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
 pub struct LgpCfg {
@@ -12,58 +13,63 @@ pub struct LgpCfg {
     max_code: usize,
     /// Maximum number of iterations to run.
     max_iter: usize,
-    /// Number of significant figures in immediate values.
-    imm_sf: usize,
+    /// Max label value:
+    max_label: usize,
+    /// Number of bits set in immediate values. This is useful to control how
+    /// much precision loaded float values can be.
+    flt_bits: usize,
     opcodes: EnumSet<Opcode>,
 }
 
 impl LgpCfg {
     #[must_use]
     pub fn new() -> Self {
-        Self { num_reg: 4, max_code: 4, max_iter: 20, imm_sf: 2, opcodes: Opcode::iter().collect() }
-    }
-
-    fn clamped_code_size(&self, code_size: Option<usize>) -> i8 {
-        let code_size = match code_size {
-            Some(n) => n,
-            None => self.max_code,
-        };
-        code_size.clamp(0, i8::MAX as usize) as i8
+        Self {
+            num_reg: 4,
+            max_code: 4,
+            max_iter: 20,
+            max_label: 1,
+            flt_bits: 2,
+            opcodes: Opcode::iter().collect(),
+        }
     }
 
     #[must_use]
-    pub fn rand_op(&self, code_size: Option<usize>) -> Op {
+    pub fn rand_op(&self) -> Op {
         let mut r = rand::thread_rng();
         let op = self.opcodes.iter().choose(&mut r).unwrap();
-        let code_size = self.clamped_code_size(code_size);
         let mut data = [0, 0, 0];
         for (i, v) in data.iter_mut().enumerate() {
             match op.operand(i) {
                 Operand::None => {}
                 Operand::Register => *v = r.gen_range(0..self.num_reg) as u8,
                 Operand::Immediate => *v = r.gen::<u8>(),
-                Operand::Relative => *v = r.gen_range(-code_size..=code_size) as u8,
+                Operand::Label => *v = r.gen_range(0..self.max_label()) as u8,
             }
         }
         Op::new(op, data)
     }
 
     // Micro-mutation of the instruction without changing the opcode.
-    pub fn mutate(&self, code_size: Option<usize>, op: &mut Op) {
+    pub fn mutate(&self, op: &mut Op) {
         let mut r = rand::thread_rng();
         let num_operands = op.num_operands();
         if num_operands == 0 {
             return;
         }
         let idx = r.gen_range(0..num_operands);
-        let code_size = self.clamped_code_size(code_size);
         match op.op.operand(idx) {
             Operand::None => {}
             Operand::Register => op.data[idx] = r.gen_range(0..self.num_reg) as u8,
-            Operand::Immediate => op.data[idx] = mutate_creep(op.data[idx], 64),
-            Operand::Relative => {
-                op.data[idx] =
-                    mutate_creep(op.data[idx] as i8, code_size).clamp(-code_size, code_size) as u8;
+            Operand::Immediate => {
+                // Large/small mutation.
+                let stddev = if r.gen::<bool>() { 10.0 } else { 1.0 };
+                let v = mutate_normal(op.imm_value(), stddev);
+                op.set_imm_f64(v);
+            }
+            Operand::Label => {
+                let max = self.max_label() as i32;
+                op.data[idx] = mutate_creep(op.data[idx] as i32, max).clamp(0, max) as u8;
             }
         }
     }
@@ -88,8 +94,14 @@ impl LgpCfg {
     }
 
     #[must_use]
-    pub fn set_imm_sf(mut self, imm_sf: usize) -> Self {
-        self.imm_sf = imm_sf;
+    pub fn set_max_label(mut self, max_label: usize) -> Self {
+        self.max_label = max_label;
+        self
+    }
+
+    #[must_use]
+    pub fn set_flt_bits(mut self, flt_bits: usize) -> Self {
+        self.flt_bits = flt_bits;
         self
     }
 
@@ -115,8 +127,13 @@ impl LgpCfg {
     }
 
     #[must_use]
-    pub fn imm_sf(&self) -> usize {
-        self.imm_sf
+    pub fn max_label(&self) -> usize {
+        self.max_label
+    }
+
+    #[must_use]
+    pub fn flt_bits(&self) -> usize {
+        self.flt_bits
     }
 
     #[must_use]

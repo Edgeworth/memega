@@ -1,12 +1,12 @@
 use eyre::{eyre, Result};
 
-use crate::evaluators::lgp::vm::op::{Op, Opcode, Operand};
+use crate::evaluators::lgp::vm::op::Op;
+use crate::evaluators::lgp::vm::opcode::{Opcode, Operand};
 
 fn lgp_asm_op(s: &str) -> Result<Op> {
     let mut tokens = s.split_whitespace();
     let mut data = [0, 0, 0];
     let op = match tokens.next().ok_or_else(|| eyre!("missing token"))? {
-        "nop" => Opcode::Nop,
         "add" => Opcode::Add,
         "sub" => Opcode::Sub,
         "mul" => Opcode::Mul,
@@ -20,6 +20,7 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
         "jlt" => Opcode::Jlt,
         "jle" => Opcode::Jle,
         "jeq" => Opcode::Jeq,
+        "lbl" => Opcode::Label,
         _ => return Err(eyre!("unknown instruction format")),
     };
     let mut idx = 0;
@@ -33,16 +34,13 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
             }
             Operand::Immediate => {
                 let tok = tokens.next().ok_or_else(|| eyre!("missing immediate for {:?}", op))?;
-                let tok = tok.parse::<f64>()?;
-                data[idx] = (tok.fract() * 256.0).floor() as u8;
-                idx += 1;
-                data[idx] = tok.floor() as u8;
-                // TODO: Hacky
-                return Ok(Op::new(op, data));
+                let mut op = Op::new(op, data);
+                op.set_imm_f64(tok.parse::<f64>()?);
+                return Ok(op);
             }
-            Operand::Relative => {
-                let tok = tokens.next().ok_or_else(|| eyre!("missing relative jump immediate"))?;
-                data[idx] = tok.parse::<i8>()? as u8;
+            Operand::Label => {
+                let tok = tokens.next().ok_or_else(|| eyre!("missing label"))?;
+                data[idx] = tok.parse::<u8>()?;
                 idx += 1;
             }
         }

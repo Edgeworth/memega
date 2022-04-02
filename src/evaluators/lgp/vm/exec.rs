@@ -1,4 +1,5 @@
-use crate::evaluators::lgp::vm::op::{Op, Opcode};
+use crate::evaluators::lgp::vm::op::Op;
+use crate::evaluators::lgp::vm::opcode::Opcode;
 
 const EP: f64 = 1.0e-6;
 
@@ -35,15 +36,20 @@ impl LgpExec {
         v
     }
 
+    /// Looks up a particular register given the index.
     fn f64_to_reg(&self, v: f64) -> u8 {
         let v = (v % (self.reg.len() as f64) + self.reg.len() as f64) as usize;
         (v % self.reg.len()) as u8
     }
 
-    fn rel_jmp(&mut self, imm: i8) {
-        let pc = self.pc as i32 + imm as i32;
-        let pc = pc.clamp(0, self.code.len() as i32);
-        self.pc = pc as usize;
+    /// Jumps to the first label with the given label id.
+    fn label_jmp(&mut self, label: u8) {
+        for (i, op) in self.code.iter().enumerate() {
+            if op.op == Opcode::Label && op.label() == label {
+                self.pc = i + 1;
+                return;
+            }
+        }
     }
 
     // Returns true iff finished.
@@ -52,7 +58,6 @@ impl LgpExec {
             let rx = op.data[0];
             let ry = op.data[1];
             match op.op {
-                Opcode::Nop => {} // Do nothing
                 Opcode::Add => {
                     let v = self.reg(rx) + self.reg(ry);
                     if v.is_finite() {
@@ -96,31 +101,27 @@ impl LgpExec {
                     }
                 }
                 Opcode::Load => {
-                    let lo = op.data[1];
-                    let hi = op.data[2];
-                    self.set_reg(rx, (hi as f64) + (lo as f64) / 256.0);
+                    self.set_reg(rx, op.imm_value());
                 }
                 Opcode::IndirectCopy => {
                     self.set_reg(self.f64_to_reg(self.reg(rx)), self.reg(ry));
                 }
                 Opcode::Jlt => {
-                    let imm = op.data[2] as i8;
                     if self.reg(rx) < self.reg(ry) - EP {
-                        self.rel_jmp(imm);
+                        self.label_jmp(op.label());
                     }
                 }
                 Opcode::Jle => {
-                    let imm = op.data[2] as i8;
                     if self.reg(rx) <= self.reg(ry) + EP {
-                        self.rel_jmp(imm);
+                        self.label_jmp(op.label());
                     }
                 }
                 Opcode::Jeq => {
-                    let imm = op.data[2] as i8;
                     if (self.reg(rx) - self.reg(ry)).abs() < EP {
-                        self.rel_jmp(imm);
+                        self.label_jmp(op.label());
                     }
                 }
+                Opcode::Label => {} // Do nothing.
             }
             false
         } else {
