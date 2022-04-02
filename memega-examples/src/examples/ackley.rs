@@ -1,18 +1,18 @@
 use std::f64::consts::{E, PI};
 
 use memega::cfg::Cfg;
-use memega::eval::FitnessFn;
-use memega::run::runner::Runner;
+use memega::eval::Evaluator;
+use memega::evolve::evolver::Evolver;
 
-use crate::examples::func::{func_runner, FuncEvaluator, FuncState};
+use crate::examples::func::{func_evolver, State};
 
 #[must_use]
-pub fn ackley_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl FitnessFn<FuncState>>> {
-    func_runner(
+pub fn ackley_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
+    func_evolver(
         dim,
         -32.768,
         32.768,
-        |s: &FuncState, _| {
+        |s: &State, _| {
             const A: f64 = 20.0;
             const B: f64 = 0.2;
             const C: f64 = 2.0 * PI;

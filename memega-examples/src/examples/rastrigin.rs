@@ -1,18 +1,18 @@
 use std::f64::consts::PI;
 
 use memega::cfg::Cfg;
-use memega::eval::FitnessFn;
-use memega::run::runner::Runner;
+use memega::eval::Evaluator;
+use memega::evolve::evolver::Evolver;
 
-use crate::examples::func::{func_runner, FuncEvaluator, FuncState};
+use crate::examples::func::{func_evolver, State};
 
 #[must_use]
-pub fn rastrigin_runner(dim: usize, cfg: Cfg) -> Runner<FuncEvaluator<impl FitnessFn<FuncState>>> {
-    func_runner(
+pub fn rastrigin_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
+    func_evolver(
         dim,
         -5.12,
         5.12,
-        |s: &FuncState, _| {
+        |s: &State, _| {
             const A: f64 = 10.0;
             let mut v = 0.0;
             for &x in s.iter() {

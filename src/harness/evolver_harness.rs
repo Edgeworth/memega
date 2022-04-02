@@ -1,10 +1,9 @@
 use eyre::Result;
 
 use crate::eval::Evaluator;
+use crate::evolve::evolver::Evolver;
+use crate::evolve::result::EvolveResult;
 use crate::harness::cfg::{HarnessCfg, Termination};
-use crate::run::result::RunResult;
-use crate::run::runner::Runner;
-use crate::util::fmt_any::FmtAny;
 
 /// Runs evolution with the given parameters and prints some info.
 pub struct Harness {
@@ -17,7 +16,7 @@ impl Harness {
         Self { cfg }
     }
 
-    pub fn evolve<E: Evaluator>(&self, mut runner: Runner<E>) -> Result<RunResult<E::Genome>> {
+    pub fn evolve<E: Evaluator>(&self, mut evolver: Evolver<E>) -> Result<EvolveResult<E::Genome>> {
         let mut ret = None;
         for i in 0.. {
             match self.cfg.termination() {
@@ -27,13 +26,13 @@ impl Harness {
                     }
                 }
             }
-            let mut r = runner.run_iter()?;
+            let mut r = evolver.run_iter()?;
             if let Some(print_gen) = self.cfg.print_gen() && i % print_gen == 0 {
                 println!("Generation {}: {}", i, r.nth(0).base_fitness);
             }
             if let Some(print_summary) = self.cfg.print_summary() && i % print_summary == 0 {
-                println!("{}", runner.summary(&mut r));
-                println!("{}", runner.summary_sample(&mut r, 5, |v| format!("{}", FmtAny(v))));
+                println!("{}", evolver.summary(&mut r));
+                println!("{}", evolver.summary_sample(&mut r, 5));
             }
             ret = Some(r);
         }

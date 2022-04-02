@@ -1,9 +1,8 @@
 use enumset::EnumSet;
-use rand::prelude::{IteratorRandom, SliceRandom};
+use rand::prelude::IteratorRandom;
 use rand::Rng;
 use strum::IntoEnumIterator;
 
-use crate::eval::FitnessFn;
 use crate::evaluators::lgp::vm::op::{Op, Opcode, Operand};
 use crate::ops::mutation::mutate_creep;
 

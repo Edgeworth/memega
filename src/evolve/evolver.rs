@@ -3,17 +3,18 @@ use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;
 
 use crate::cfg::{Cfg, Crossover, Mutation, Stagnation, StagnationCondition};
-use crate::eval::{Evaluator, Genome, Mem};
+use crate::eval::{Evaluator, Genome};
+use crate::evolve::result::{EvolveResult, Stats};
+use crate::gen::member::Member;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
-use crate::run::result::{RunResult, Stats};
 
-pub trait CreateRunnerFn<E: Evaluator> = Fn(Cfg) -> Runner<E> + Sync + Send + Clone + 'static;
+pub trait CreateEvolverFn<E: Evaluator> = Fn(Cfg) -> Evolver<E> + Sync + Send + Clone + 'static;
 pub trait RandGenome<G: Genome> = FnMut() -> G + Send;
 
 /// Runs iterations of GA w.r.t. the given evaluator.
-pub struct Runner<E: Evaluator> {
-    pub cfg: Cfg,
+pub struct Evolver<E: Evaluator> {
+    cfg: Cfg,
     eval: E,
     gen: UnevaluatedGen<E::Genome>,
     rand_genome: Box<dyn RandGenome<E::Genome>>,
@@ -22,7 +23,7 @@ pub struct Runner<E: Evaluator> {
     last_fitness: f64,
 }
 
-impl<E: Evaluator> Runner<E> {
+impl<E: Evaluator> Evolver<E> {
     pub fn from_initial(
         eval: E,
         cfg: Cfg,
@@ -61,7 +62,7 @@ impl<E: Evaluator> Runner<E> {
         }
     }
 
-    pub fn run_iter(&mut self) -> Result<RunResult<E::Genome>> {
+    pub fn run_iter(&mut self) -> Result<EvolveResult<E::Genome>> {
         let gen = self.gen.evaluate(self.gen_count, &self.cfg, &self.eval)?;
         let stagnant = match self.cfg.stagnation_condition {
             StagnationCondition::Default => {
@@ -94,7 +95,7 @@ impl<E: Evaluator> Runner<E> {
 
         let mut next = gen.next_gen(self.rand_genome.as_mut(), stagnant, &self.cfg, &self.eval)?;
         std::mem::swap(&mut next, &mut self.gen);
-        Ok(RunResult { unevaluated: next, gen, stagnant })
+        Ok(EvolveResult { unevaluated: next, gen, stagnant })
     }
 
     pub fn cfg(&self) -> &Cfg {
@@ -105,9 +106,9 @@ impl<E: Evaluator> Runner<E> {
         &self.eval
     }
 
-    pub fn summary(&self, r: &mut RunResult<E::Genome>) -> String {
+    pub fn summary(&self, r: &mut EvolveResult<E::Genome>) -> String {
         let mut s = String::new();
-        s += &format!("{}\n", Stats::from_run(r));
+        s += &format!("{}\n", Stats::from_result(r));
         if self.cfg.mutation == Mutation::Adaptive {
             s += "  mutation weights: ";
             for &v in &r.nth(0).params.mutation {
@@ -130,15 +131,10 @@ impl<E: Evaluator> Runner<E> {
     // species, the remainder will go to print the top n % # out of the #
     // species.
     #[allow(clippy::unused_self)]
-    pub fn summary_sample(
-        &self,
-        r: &mut RunResult<E::Genome>,
-        n: usize,
-        mut f: impl FnMut(&E::Genome) -> String,
-    ) -> String {
+    pub fn summary_sample(&self, r: &mut EvolveResult<E::Genome>, n: usize) -> String {
         let mut s = String::new();
         let species = r.gen.species();
-        let mut by_species: Vec<(usize, Vec<Mem<E::Genome>>)> = Vec::new();
+        let mut by_species: Vec<(usize, Vec<Member<E::Genome>>)> = Vec::new();
         for &id in &species {
             by_species.push((0, r.gen.species_mems(id)));
         }
@@ -181,7 +177,7 @@ impl<E: Evaluator> Runner<E> {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
-                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.base_fitness), f(&mem.genome));
+                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.base_fitness), mem.genome);
                 }
                 s += "\n";
             }

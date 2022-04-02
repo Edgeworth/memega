@@ -1,10 +1,10 @@
-use std::f64::consts::PI;
-
-use eyre::Result;
+use memega::cfg::Cfg;
+use memega::eval::Evaluator;
+use memega::evaluators::lgp::builder::lgp_fitness_evolver;
+use memega::evaluators::lgp::cfg::LgpCfg;
 use memega::evaluators::lgp::eval::State;
-use memega::evaluators::lgp::vm::asm::lgp_asm;
 use memega::evaluators::lgp::vm::exec::LgpExec;
-use memega::run::runner::CreateRunnerFn;
+use memega::evolve::evolver::Evolver;
 use rand::Rng;
 
 #[must_use]
@@ -29,49 +29,6 @@ pub fn lgp_fitness(s: &State, _gen: usize) -> f64 {
     fitness + 1.0 / (1.0 + s.ops.len() as f64)
 }
 
-pub fn run_lgp() -> Result<()> {
-    use plotters::prelude::*;
-
-    let code = lgp_asm(
-        "add r0, r3
-div r1, r0
-abs r3
-mul r0, r0
-add r0, r3
-add r0, r1
-",
-    )?;
-
-    let xleft = -PI;
-    let xright = PI;
-
-    let root = BitMapBackend::new("test.png", (640, 480)).into_drawing_area();
-    root.fill(&WHITE)?;
-    let mut chart = ChartBuilder::on(&root)
-        .caption("stuff", ("sans-serif", 50).into_font())
-        .margin(5)
-        .x_label_area_size(30)
-        .y_label_area_size(30)
-        .build_cartesian_2d(xleft..xright, -50.0..50.0)?;
-
-    chart.configure_mesh().draw()?;
-
-    chart
-        .draw_series(LineSeries::new(
-            (-50..=50).map(|x| x as f64 / 50.0 * (xright - xleft)).map(|x| {
-                let mut lgp = LgpExec::new(&[0.0, -1.0, 1.0, x], &code, 200);
-                lgp.run();
-                (x, lgp.reg(0))
-            }),
-            &RED,
-        ))?
-        .label("y = stuff");
-
-    chart
-        .configure_series_labels()
-        .background_style(&WHITE.mix(0.8))
-        .border_style(&BLACK)
-        .draw()?;
-
-    Ok(())
+pub fn lgp_evolver(cfg: Cfg) -> Evolver<impl Evaluator> {
+    lgp_fitness_evolver(LgpCfg::new(), cfg, lgp_fitness)
 }

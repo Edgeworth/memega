@@ -5,29 +5,48 @@ use memega::cfg::{
     Survival,
 };
 use memega::eval::Evaluator;
+use memega::evolve::evolver::CreateEvolverFn;
+use memega::evolve::result::Stats;
 use memega::harness::cfg::{HarnessCfg, Termination};
-use memega::run::result::Stats;
-use memega::run::runner::CreateRunnerFn;
-use memestat::Grapher;
+use memega::harness::evolver_harness::Harness;
 
-use crate::examples::all_cfg;
+use crate::examples::ackley::ackley_evolver;
+use crate::examples::griewank::griewank_evolver;
+use crate::examples::knapsack::knapsack_evolver;
+use crate::examples::lgp::lgp_evolver;
+use crate::examples::rastrigin::rastrigin_evolver;
+use crate::examples::target_string::target_string_evolver;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ArgEnum)]
-pub enum MemeGaOp {
+pub enum Example {
     Ackley,
     Griewank,
-    Hyper,
     Knapsack,
     Rastringin,
     TargetString,
     Lgp,
 }
 
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ArgEnum)]
+pub enum Op {
+    Run,
+}
+
 #[derive(Debug, Parser)]
 #[clap(name = "memega cli", about = "memega cli")]
 pub struct Args {
-    #[clap(arg_enum)]
-    pub op: MemeGaOp,
+    #[clap(arg_enum, help = "which operation to run")]
+    pub op: Op,
+
+    #[clap(arg_enum, help = "which example problem to solve")]
+    pub example: Example,
+
+    #[clap(
+        long,
+        default_value = "2",
+        help = "dimension size for mathematical function example problems"
+    )]
+    pub func_dim: usize,
 
     #[clap(long, default_value = "2000", help = "population size")]
     pub pop_size: usize,
@@ -37,23 +56,6 @@ pub struct Args {
 }
 
 impl Args {
-    pub fn run_op(&self) -> Result<()> {
-        match self.op {}
-        // run_grapher("knapsack", cfg.clone(), &knapsack_runner)?;
-        // run_grapher("rastrigin", cfg.clone(), &|cfg| rastrigin_runner(2, cfg))?;
-        // run_grapher("griewank", cfg.clone(), &|cfg| griewank_runner(2, cfg))?;
-        // run_grapher("ackley", cfg.clone(), &|cfg| ackley_runner(2, cfg))?;
-        // run_grapher("string", cfg, &target_string_runner)?;
-        // run_once(rastrigin_runner(2, all_cfg()))?;
-        // run_once(hyper_runner(100, Duration::from_millis(10)))?;
-        // run_once(hyper_runner(&knapsack_runner))?;
-        // run_once(hyper_runner(&target_string_runner))?;
-        // run_once(hyper_runner)?;
-        // run_evolve(lgp_runner_fn(LgpCfg::new(), cfg, lgp_fitness), 10000, 10, 100)?;
-
-        Ok(())
-    }
-
     fn cfg(&self) -> Cfg {
         Cfg::new(self.pop_size)
             .set_mutation(Mutation::Adaptive)
@@ -74,46 +76,31 @@ impl Args {
             .set_print_summary(Some(10))
     }
 
-    #[allow(unused)]
-    fn eval_run<E: Evaluator>(
-        &self,
-        g: &mut Grapher,
-        name: &str,
-        run_id: &str,
-        base_cfg: Cfg,
-        runner_fn: &impl CreateRunnerFn<E>,
-    ) -> Result<()> {
-        const SAMPLES: usize = 100;
-        let cfgs = [("100 pop", base_cfg)];
-        for _ in 0..SAMPLES {
-            for (cfg_name, cfg) in &cfgs {
-                let mut runner = runner_fn(cfg.clone());
-                for _ in 0..100 {
-                    runner.run_iter()?;
-                }
-                let r = Stats::from_run(&mut runner.run_iter()?);
-                g.add(&format!("{}:{}:best fitness", name, cfg_name), run_id, r.best_fitness);
-                g.add(&format!("{}:{}:mean fitness", name, cfg_name), run_id, r.mean_fitness);
-                g.add(&format!("{}:{}:dupes", name, cfg_name), run_id, r.num_dup as f64);
-                g.add(&format!("{}:{}:mean dist", name, cfg_name), run_id, r.mean_distance);
-                g.add(&format!("{}:{}:species", name, cfg_name), run_id, r.species.num as f64);
-            }
+    pub fn run(&self) -> Result<()> {
+        let func_dim = self.func_dim;
+        match self.example {
+            Example::Ackley => self.dispatch(move |cfg| ackley_evolver(func_dim, cfg)),
+            Example::Griewank => self.dispatch(move |cfg| griewank_evolver(func_dim, cfg)),
+            Example::Knapsack => self.dispatch(knapsack_evolver),
+            Example::Rastringin => self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg)),
+            Example::TargetString => self.dispatch(target_string_evolver),
+            Example::Lgp => self.dispatch(lgp_evolver),
+        }
+    }
+
+    fn dispatch<E: Evaluator>(&self, create_fn: impl CreateEvolverFn<E>) -> Result<()> {
+        match self.op {
+            Op::Run => self.run_op(create_fn)?,
         }
         Ok(())
     }
 
-    #[allow(unused)]
-    fn run_grapher<E: Evaluator>(
-        &self,
-        name: &str,
-        base_cfg: Cfg,
-        runner_fn: &impl CreateRunnerFn<E>,
-    ) -> Result<()> {
-        let mut g = Grapher::new();
-        let mod_cfg = all_cfg();
-        self.eval_run(&mut g, name, "def", base_cfg, runner_fn)?;
-        self.eval_run(&mut g, name, "mod", mod_cfg, runner_fn)?;
-        g.analyse();
+    fn run_op<E: Evaluator>(&self, create_fn: impl CreateEvolverFn<E>) -> Result<()> {
+        let evolver = create_fn(self.cfg());
+        let harness = Harness::new(self.harness_cfg());
+        let mut r = harness.evolve(evolver)?;
+        println!("Stats:");
+        println!("{}", Stats::from_result(&mut r));
         Ok(())
     }
 }

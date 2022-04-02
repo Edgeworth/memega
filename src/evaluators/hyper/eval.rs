@@ -1,19 +1,21 @@
 use std::mem::swap;
 
+use derive_more::Display;
 use rand::Rng;
 
 use crate::cfg::{Cfg, Crossover, Mutation};
 use crate::eval::Evaluator;
+use crate::evolve::evolver::CreateEvolverFn;
+use crate::evolve::result::Stats;
 use crate::ops::crossover::crossover_blx;
 use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate};
 use crate::ops::util::rand_vec;
-use crate::run::result::Stats;
-use crate::run::runner::CreateRunnerFn;
 
 pub trait StatFn = Fn(Cfg) -> Option<Stats> + Send + Sync;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Display, Clone, PartialEq, PartialOrd)]
+#[display(fmt = "{:?}", cfg)]
 pub struct State {
     cfg: Cfg,
     crossover: Vec<f64>, // Weights for fixed crossover.
