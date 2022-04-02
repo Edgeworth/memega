@@ -108,17 +108,17 @@ impl LgpExec {
                 }
                 Opcode::Jlt => {
                     if self.reg(rx) < self.reg(ry) - EP {
-                        self.label_jmp(op.label());
+                        self.label_jmp(op.data[2]);
                     }
                 }
                 Opcode::Jle => {
                     if self.reg(rx) <= self.reg(ry) + EP {
-                        self.label_jmp(op.label());
+                        self.label_jmp(op.data[2]);
                     }
                 }
                 Opcode::Jeq => {
                     if (self.reg(rx) - self.reg(ry)).abs() < EP {
-                        self.label_jmp(op.label());
+                        self.label_jmp(op.data[2]);
                     }
                 }
                 Opcode::Label => {} // Do nothing.

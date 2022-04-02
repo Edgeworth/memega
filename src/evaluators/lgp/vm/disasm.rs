@@ -11,13 +11,19 @@ pub fn lgp_disasm(code: &[Op]) -> String {
 
 #[cfg(test)]
 mod tests {
+    use eyre::Result;
+
     use super::*;
+    use crate::evaluators::lgp::vm::asm::lgp_asm;
     use crate::evaluators::lgp::vm::op::Op;
     use crate::evaluators::lgp::vm::opcode::Opcode;
 
     #[test]
-    fn basic_disasm() {
-        let code = &[Op::new(Opcode::Label, [1, 0, 0]), Op::new(Opcode::Add, [2, 3, 0])];
-        assert_eq!("lbl 1\nadd r2, r3\n", lgp_disasm(code));
+    fn basic_disasm() -> Result<()> {
+        let code = vec![Op::new(Opcode::Label, [1, 0, 0]), Op::new(Opcode::Add, [2, 3, 0])];
+        let text = "lbl 1\nadd r2, r3\n";
+        assert_eq!(text, lgp_disasm(&code));
+        assert_eq!(code, lgp_asm(text)?);
+        Ok(())
     }
 }
