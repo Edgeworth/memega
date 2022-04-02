@@ -1,6 +1,5 @@
 use std::collections::HashMap;
 
-
 use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
