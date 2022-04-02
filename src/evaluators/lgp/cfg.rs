@@ -10,14 +10,17 @@ use crate::ops::mutation::mutate_creep;
 pub struct LgpCfg {
     num_reg: usize,
     max_code: usize,
-    imm_sf: usize, // Number of significant figures in immediate values.
+    /// Maximum number of iterations to run.
+    max_iter: usize,
+    /// Number of significant figures in immediate values.
+    imm_sf: usize,
     opcodes: EnumSet<Opcode>,
 }
 
 impl LgpCfg {
     #[must_use]
     pub fn new() -> Self {
-        Self { num_reg: 4, max_code: 4, imm_sf: 2, opcodes: Opcode::iter().collect() }
+        Self { num_reg: 4, max_code: 4, max_iter: 20, imm_sf: 2, opcodes: Opcode::iter().collect() }
     }
 
     fn clamped_code_size(&self, code_size: Option<usize>) -> i8 {
@@ -77,6 +80,13 @@ impl LgpCfg {
         self
     }
 
+
+    #[must_use]
+    pub fn set_max_iter(mut self, max_iter: usize) -> Self {
+        self.max_iter = max_iter;
+        self
+    }
+
     #[must_use]
     pub fn set_imm_sf(mut self, imm_sf: usize) -> Self {
         self.imm_sf = imm_sf;
@@ -97,6 +107,11 @@ impl LgpCfg {
     #[must_use]
     pub fn max_code(&self) -> usize {
         self.max_code
+    }
+
+    #[must_use]
+    pub fn max_iter(&self) -> usize {
+        self.max_iter
     }
 
     #[must_use]

@@ -48,6 +48,13 @@ pub struct Args {
     )]
     pub func_dim: usize,
 
+    #[clap(
+        long,
+        default_value = "x^2 + x + 1",
+        help = "equation involving x for lgp to evolve (e.g. x^2 + x + 1)"
+    )]
+    pub lgp_target: String,
+
     #[clap(long, default_value = "2000", help = "population size")]
     pub pop_size: usize,
 
@@ -78,13 +85,14 @@ impl Args {
 
     pub fn run(&self) -> Result<()> {
         let func_dim = self.func_dim;
+        let lgp_target = self.lgp_target.clone();
         match self.example {
             Example::Ackley => self.dispatch(move |cfg| ackley_evolver(func_dim, cfg)),
             Example::Griewank => self.dispatch(move |cfg| griewank_evolver(func_dim, cfg)),
             Example::Knapsack => self.dispatch(knapsack_evolver),
             Example::Rastringin => self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg)),
             Example::TargetString => self.dispatch(target_string_evolver),
-            Example::Lgp => self.dispatch(lgp_evolver),
+            Example::Lgp => self.dispatch(move |cfg| lgp_evolver(lgp_target.clone(), cfg)),
         }
     }
 
