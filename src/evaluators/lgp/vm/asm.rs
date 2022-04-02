@@ -20,6 +20,7 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
         "jlt" => Opcode::Jlt,
         "jle" => Opcode::Jle,
         "jeq" => Opcode::Jeq,
+        "jmp" => Opcode::Jmp,
         "lbl" => Opcode::Label,
         _ => return Err(eyre!("unknown instruction format")),
     };
