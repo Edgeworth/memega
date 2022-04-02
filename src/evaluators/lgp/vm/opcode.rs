@@ -21,6 +21,7 @@ pub enum Opcode {
     Jlt,   // jlt rx, ry, u8: if rx < ry pc = address of first label with name u8, if it exists
     Jle,   // jle rx, ry, u8: if rx <= ry pc = address of first label with name u8, if it exists
     Jeq,   // jeq rx, ry, u8: if rx == ry pc = address of first label with name u8, if it exists
+    Jmp,   // jmp u8: pc = address of first label with name u8, if it exists
     Label, // Label that jump instructions jump to
 }
 
@@ -65,8 +66,8 @@ impl Opcode {
                     Operand::Register
                 }
             }
-            // Label:
-            Opcode::Label => {
+            // Single label operands:
+            Opcode::Jmp | Opcode::Label => {
                 if idx == 0 {
                     Operand::Label
                 } else {

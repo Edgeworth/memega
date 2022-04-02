@@ -26,22 +26,12 @@ impl fmt::Display for Op {
             Opcode::Neg => write!(f, "neg r{}", rx),
             Opcode::Pow => write!(f, "pow r{}, r{}", rx, ry),
             Opcode::Log => write!(f, "ln r{}", rx),
-            Opcode::Load => {
-                write!(f, "load r{}, {}", rx, self.imm_value())
-            }
+            Opcode::Load => write!(f, "load r{}, {}", rx, self.imm_value()),
             Opcode::IndirectCopy => write!(f, "mov [r{}], r{}", rx, ry),
-            Opcode::Jlt => {
-                let label = self.data[2];
-                write!(f, "jlt r{}, r{}, {}", rx, ry, label)
-            }
-            Opcode::Jle => {
-                let label = self.data[2];
-                write!(f, "jle r{}, r{}, {}", rx, ry, label)
-            }
-            Opcode::Jeq => {
-                let label = self.data[2];
-                write!(f, "jeq r{}, r{}, {}", rx, ry, label)
-            }
+            Opcode::Jlt => write!(f, "jlt r{}, r{}, {}", rx, ry, self.label()),
+            Opcode::Jle => write!(f, "jle r{}, r{}, {}", rx, ry, self.label()),
+            Opcode::Jeq => write!(f, "jeq r{}, r{}, {}", rx, ry, self.label()),
+            Opcode::Jmp => write!(f, "jmp {}", self.label()),
             Opcode::Label => write!(f, "lbl {}", rx),
         }
     }
@@ -97,8 +87,11 @@ impl Op {
 
     #[must_use]
     pub fn label(&self) -> u8 {
-        assert!(self.code == Opcode::Label, "Opcode is not a label");
-        self.data[0]
+        match self.code {
+            Opcode::Jmp | Opcode::Label => self.data[0],
+            Opcode::Jlt | Opcode::Jle | Opcode::Jeq => self.data[2],
+            _ => panic!("Opcode does not have a label: {}", self.code),
+        }
     }
 
     #[must_use]
