@@ -103,6 +103,9 @@ impl LgpExec {
                 Opcode::Load => {
                     self.set_reg(rx, op.imm_value());
                 }
+                Opcode::Copy => {
+                    self.set_reg(rx, self.reg(ry));
+                }
                 Opcode::IndirectCopy => {
                     self.set_reg(self.f64_to_reg(self.reg(rx)), self.reg(ry));
                 }
