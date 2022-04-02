@@ -15,9 +15,9 @@ pub struct LgpCfg {
     max_iter: usize,
     /// Max label value:
     max_label: usize,
-    /// Number of bits set in immediate values. This is useful to control how
-    /// much precision loaded float values can be.
-    flt_bits: usize,
+    /// Number of significant figures the immediate value can have. This is
+    /// useful to control how much precision loaded float values can be.
+    imm_sf: usize,
     opcodes: EnumSet<Opcode>,
 }
 
@@ -26,10 +26,10 @@ impl LgpCfg {
     pub fn new() -> Self {
         Self {
             num_reg: 4,
-            max_code: 4,
+            max_code: 10,
             max_iter: 20,
             max_label: 1,
-            flt_bits: 2,
+            imm_sf: 2,
             opcodes: Opcode::iter().collect(),
         }
     }
@@ -37,17 +37,26 @@ impl LgpCfg {
     #[must_use]
     pub fn rand_op(&self) -> Op {
         let mut r = rand::thread_rng();
-        let op = self.opcodes.iter().choose(&mut r).unwrap();
-        let mut data = [0, 0, 0];
-        for (i, v) in data.iter_mut().enumerate() {
-            match op.operand(i) {
+        let mut op = Op::new(self.opcodes.iter().choose(&mut r).unwrap(), [0, 0, 0]);
+        for i in 0..op.data.len() {
+            match op.code.operand(i) {
                 Operand::None => {}
-                Operand::Register => *v = r.gen_range(0..self.num_reg) as u8,
-                Operand::Immediate => *v = r.gen::<u8>(),
-                Operand::Label => *v = r.gen_range(0..self.max_label()) as u8,
+                Operand::Register => op.data[i] = r.gen_range(0..self.num_reg) as u8,
+                Operand::Immediate => {
+                    let (lo, hi) = Op::imm_range();
+                    let v: f64 = r.gen_range(lo..=hi);
+                    op.set_imm_f64(Self::round_sf(v, self.imm_sf()));
+                }
+                Operand::Label => op.data[i] = r.gen_range(0..self.max_label()) as u8,
             }
         }
-        Op::new(op, data)
+        op
+    }
+
+    fn round_sf(v: f64, sf: usize) -> f64 {
+        let digits = v.abs().log10().ceil() as i32;
+        let power = 10f64.powi(digits - sf as i32);
+        (v / power).round() * power
     }
 
     // Micro-mutation of the instruction without changing the opcode.
@@ -58,14 +67,14 @@ impl LgpCfg {
             return;
         }
         let idx = r.gen_range(0..num_operands);
-        match op.op.operand(idx) {
+        match op.code.operand(idx) {
             Operand::None => {}
             Operand::Register => op.data[idx] = r.gen_range(0..self.num_reg) as u8,
             Operand::Immediate => {
                 // Large/small mutation.
                 let stddev = if r.gen::<bool>() { 10.0 } else { 1.0 };
                 let v = mutate_normal(op.imm_value(), stddev);
-                op.set_imm_f64(v);
+                op.set_imm_f64(Self::round_sf(v, self.imm_sf()));
             }
             Operand::Label => {
                 let max = self.max_label() as i32;
@@ -100,8 +109,8 @@ impl LgpCfg {
     }
 
     #[must_use]
-    pub fn set_flt_bits(mut self, flt_bits: usize) -> Self {
-        self.flt_bits = flt_bits;
+    pub fn set_imm_sf(mut self, imm_sf: usize) -> Self {
+        self.imm_sf = imm_sf;
         self
     }
 
@@ -132,8 +141,8 @@ impl LgpCfg {
     }
 
     #[must_use]
-    pub fn flt_bits(&self) -> usize {
-        self.flt_bits
+    pub fn imm_sf(&self) -> usize {
+        self.imm_sf
     }
 
     #[must_use]
