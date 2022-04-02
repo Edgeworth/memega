@@ -80,8 +80,8 @@ impl Args {
     fn harness_cfg(&self) -> HarnessCfg {
         HarnessCfg::new()
             .set_termination(Termination::FixedGenerations(self.num_gen))
-            .set_print_gen(Some(10))
-            .set_print_summary(Some(10))
+            .set_print_gen(10)
+            .set_print_summary(10)
     }
 
     pub fn run(&self) -> Result<()> {

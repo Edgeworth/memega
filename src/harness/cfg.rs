@@ -37,8 +37,8 @@ impl HarnessCfg {
     }
 
     #[must_use]
-    pub fn set_print_gen(mut self, print_gen: Option<usize>) -> Self {
-        self.print_gen = print_gen;
+    pub fn set_print_gen(mut self, print_gen: usize) -> Self {
+        self.print_gen = Some(print_gen);
         self
     }
 
@@ -48,8 +48,8 @@ impl HarnessCfg {
     }
 
     #[must_use]
-    pub fn set_print_summary(mut self, print_summary: Option<usize>) -> Self {
-        self.print_summary = print_summary;
+    pub fn set_print_summary(mut self, print_summary: usize) -> Self {
+        self.print_summary = Some(print_summary);
         self
     }
 }
