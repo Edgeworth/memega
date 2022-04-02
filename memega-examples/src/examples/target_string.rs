@@ -1,14 +1,17 @@
+use derive_more::{Deref, DerefMut, Display};
 use memega::cfg::Cfg;
 use memega::eval::Evaluator;
+use memega::evolve::evolver::Evolver;
 use memega::ops::crossover::crossover_kpx;
 use memega::ops::distance::count_different;
 use memega::ops::mutation::mutate_rate;
 use memega::ops::util::{rand_vec, str_to_vec};
-use memega::run::runner::Runner;
 use memega::util::distributions::PrintableAscii;
 use rand::Rng;
 
-type State = Vec<char>;
+#[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
+#[display(fmt = "{}", "self.0.iter().collect::<String>()")]
+pub struct State(pub Vec<char>);
 
 #[derive(Debug, Clone)]
 pub struct TargetString {
@@ -17,7 +20,7 @@ pub struct TargetString {
 
 impl TargetString {
     fn new(target: &str) -> Self {
-        Self { target: str_to_vec(target) }
+        Self { target: State(str_to_vec(target)) }
     }
 }
 
@@ -50,10 +53,10 @@ impl Evaluator for TargetString {
 }
 
 #[must_use]
-pub fn target_string_runner(cfg: Cfg) -> Runner<TargetString> {
+pub fn target_string_evolver(cfg: Cfg) -> Evolver<TargetString> {
     const TARGET: &str = "Hello world!";
-    Runner::new(TargetString::new(TARGET), cfg, move || {
+    Evolver::new(TargetString::new(TARGET), cfg, move || {
         let mut r = rand::thread_rng();
-        rand_vec(TARGET.len(), || r.sample::<char, _>(PrintableAscii))
+        State(rand_vec(TARGET.len(), || r.sample::<char, _>(PrintableAscii)))
     })
 }

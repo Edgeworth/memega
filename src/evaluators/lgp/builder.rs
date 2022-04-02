@@ -2,21 +2,21 @@ use crate::cfg::Cfg;
 use crate::eval::{Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpCfg;
 use crate::evaluators::lgp::eval::{LgpGenome, State};
+use crate::evolve::evolver::Evolver;
 use crate::ops::util::rand_vec;
-use crate::run::runner::Runner;
 
-pub struct LgpGenomeFn<F: FitnessFn<State>> {
+pub struct LgpGenomeFitnessFn<F: FitnessFn<State>> {
     genome: LgpGenome,
     f: F,
 }
 
-impl<F: FitnessFn<State>> LgpGenomeFn<F> {
-    pub fn new(cfg: LgpCfg, f: F) -> Self {
-        Self { genome: LgpGenome::new(cfg), f }
+impl<F: FitnessFn<State>> LgpGenomeFitnessFn<F> {
+    pub fn new(genome: LgpGenome, f: F) -> Self {
+        Self { genome, f }
     }
 }
 
-impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
+impl<F: FitnessFn<State>> Evaluator for LgpGenomeFitnessFn<F> {
     type Genome = <LgpGenome as Evaluator>::Genome;
     const NUM_CROSSOVER: usize = LgpGenome::NUM_CROSSOVER;
     const NUM_MUTATION: usize = LgpGenome::NUM_MUTATION;
@@ -38,22 +38,20 @@ impl<F: FitnessFn<State>> Evaluator for LgpGenomeFn<F> {
     }
 }
 
-pub fn lgp_runner<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
+pub fn lgp_evolver<E: Evaluator<Genome = State>, F: FnOnce(LgpGenome) -> E>(
     lgpcfg: LgpCfg,
     cfg: Cfg,
     f: F,
-) -> Runner<E> {
-    Runner::new(f(LgpGenome::new(lgpcfg)), cfg, move || {
+) -> Evolver<E> {
+    Evolver::new(f(LgpGenome::new(lgpcfg)), cfg, move || {
         State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
     })
 }
 
-pub fn lgp_runner_fn<F: FitnessFn<State>>(
+pub fn lgp_fitness_evolver<F: FitnessFn<State>>(
     lgpcfg: LgpCfg,
     cfg: Cfg,
     f: F,
-) -> Runner<LgpGenomeFn<F>> {
-    Runner::new(LgpGenomeFn::new(lgpcfg, f), cfg, move || {
-        State::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op(None)), lgpcfg)
-    })
+) -> Evolver<impl Evaluator> {
+    lgp_evolver(lgpcfg, cfg, |genome| LgpGenomeFitnessFn::new(genome, f))
 }

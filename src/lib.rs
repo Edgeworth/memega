@@ -32,16 +32,16 @@
     clippy::module_name_repetitions,
     clippy::similar_names,
     clippy::too_many_lines,
-    clippy::unreadable_literal,
-    incomplete_features
+    clippy::unreadable_literal
 )]
-#![feature(array_chunks, let_chains, is_sorted, specialization, trait_alias)]
+#![allow(clippy::expl_impl_clone_on_copy)]
+#![feature(array_chunks, let_chains, is_sorted, trait_alias)]
 
 pub mod cfg;
 pub mod eval;
 pub mod evaluators;
+pub mod evolve;
 pub mod gen;
 pub mod harness;
 pub mod ops;
-pub mod run;
 pub mod util;

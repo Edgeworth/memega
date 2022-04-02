@@ -1,8 +1,9 @@
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 
-use crate::eval::{Genome, Mem};
+use crate::eval::Genome;
 use crate::gen::evaluated::EvaluatedGen;
+use crate::gen::member::Member;
 use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 
@@ -28,7 +29,7 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn from_run<G: Genome>(r: &mut RunResult<G>) -> Self {
+    pub fn from_result<G: Genome>(r: &mut EvolveResult<G>) -> Self {
         Self {
             best_fitness: r.nth(0).base_fitness,
             mean_fitness: r.mean_fitness(),
@@ -43,20 +44,20 @@ impl Stats {
 
 #[derive(Display, Clone, PartialEq)]
 #[display(fmt = "Run({})", gen)]
-pub struct RunResult<G: Genome> {
+pub struct EvolveResult<G: Genome> {
     pub unevaluated: UnevaluatedGen<G>,
     pub gen: EvaluatedGen<G>,
     pub stagnant: bool,
 }
 
-impl<G: Genome> RunResult<G> {
+impl<G: Genome> EvolveResult<G> {
     #[must_use]
     pub fn size(&self) -> usize {
         self.gen.mems.len()
     }
 
     #[must_use]
-    pub fn nth(&self, n: usize) -> &Mem<G> {
+    pub fn nth(&self, n: usize) -> &Member<G> {
         &self.gen.mems[n]
     }
 

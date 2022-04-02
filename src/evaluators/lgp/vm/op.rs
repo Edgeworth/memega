@@ -1,34 +1,33 @@
 use std::fmt;
 
 use enumset::EnumSetType;
-use num_enum::{IntoPrimitive, TryFromPrimitive};
+use rand::prelude::IteratorRandom;
 use rand::Rng;
 use rand_distr::{Distribution, Standard};
-use strum::EnumCount as EnumCountTrait;
-use strum_macros::{EnumCount, EnumIter};
+use strum::IntoEnumIterator;
+use strum_macros::EnumIter;
 
 // Machine consists of N registers (up to 256) that contain f64 values.
 // Note that floating point comparisons are done using an epsilon.
 // Opcodes are 8 bit and have variable number of operands.
 // If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
 // Accessing register k will access register k % N if k >= N.
-#[derive(Debug, PartialOrd, IntoPrimitive, TryFromPrimitive, EnumCount, EnumIter, EnumSetType)]
-#[repr(u8)]
+#[derive(EnumSetType, Debug, PartialOrd, EnumIter)]
 pub enum Opcode {
-    Nop = 0,           // no operation - 0
-    Add = 1,           // add rx, ry: rx = rx + ry
-    Sub = 2,           // sub rx, ry: rx = rx - ry
-    Mul = 3,           // mul rx, ry: rx = rx * ry
-    Div = 4,           // div rx, ry: rx = rx / ry - Div by zero => max value
-    Abs = 5,           // abs rx: rx = |rx|
-    Neg = 6,           // neg rx: rx = -rx
-    Pow = 7,           // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
-    Log = 8,           // log rx: rx = ln(rx)
-    Load = 9,          // load rx, f8:8: rx = immediate fixed point 8:8, little endian
-    IndirectCopy = 10, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
-    Jlt = 11,          // jlt rx, ry, i8: if rx < ry pc += immediate; relative conditional
-    Jle = 12,          // jle rx, ry, i8: if rx <= ry pc += immediate; relative conditional
-    Jeq = 13,          // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
+    Nop,          // no operation - 0
+    Add,          // add rx, ry: rx = rx + ry
+    Sub,          // sub rx, ry: rx = rx - ry
+    Mul,          // mul rx, ry: rx = rx * ry
+    Div,          // div rx, ry: rx = rx / ry - Div by zero => max value
+    Abs,          // abs rx: rx = |rx|
+    Neg,          // neg rx: rx = -rx
+    Pow,          // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
+    Log,          // log rx: rx = ln(rx)
+    Load,         // load rx, f8:8: rx = immediate fixed point 8:8, little endian
+    IndirectCopy, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
+    Jlt,          // jlt rx, ry, i8: if rx < ry pc += immediate; relative conditional
+    Jle,          // jle rx, ry, i8: if rx <= ry pc += immediate; relative conditional
+    Jeq,          // jeq rx, ry, i8: if rx == ry pc += immediate; relative conditional
 }
 
 impl Opcode {
@@ -130,7 +129,7 @@ impl fmt::Display for Op {
 
 impl Distribution<Opcode> for Standard {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Opcode {
-        Opcode::try_from_primitive(rng.gen_range(0..Opcode::COUNT) as u8).unwrap()
+        Opcode::iter().choose(rng).unwrap()
     }
 }
 

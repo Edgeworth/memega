@@ -5,13 +5,14 @@ use eyre::{eyre, Result};
 use rayon::prelude::*;
 
 use crate::cfg::{Cfg, Niching, Species};
-use crate::eval::{Evaluator, Genome, Mem};
+use crate::eval::{Evaluator, Genome};
 use crate::gen::evaluated::EvaluatedGen;
+use crate::gen::member::Member;
 use crate::gen::species::{DistCache, SpeciesInfo};
 
 #[derive(Clone, PartialOrd, PartialEq)]
 pub struct UnevaluatedGen<G: Genome> {
-    pub mems: Vec<Mem<G>>,
+    pub mems: Vec<Member<G>>,
     pub species: SpeciesInfo,
     pub dists: DistCache,
 }
@@ -19,12 +20,12 @@ pub struct UnevaluatedGen<G: Genome> {
 impl<G: Genome> UnevaluatedGen<G> {
     #[must_use]
     pub fn initial<E: Evaluator>(genomes: Vec<G>, cfg: &Cfg) -> Self {
-        let mems = genomes.into_iter().map(|genome| Mem::new::<E>(genome, cfg)).collect();
+        let mems = genomes.into_iter().map(|genome| Member::new::<E>(genome, cfg)).collect();
         Self::new(mems)
     }
 
     #[must_use]
-    pub fn new(mems: Vec<Mem<G>>) -> Self {
+    pub fn new(mems: Vec<Member<G>>) -> Self {
         assert!(!mems.is_empty(), "Generation must not be empty");
         Self { mems, species: SpeciesInfo::new(), dists: DistCache::new() }
     }

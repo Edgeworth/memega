@@ -2,21 +2,23 @@ use derive_more::Display;
 use eyre::{eyre, Result};
 
 use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Replacement, Selection, Survival};
-use crate::eval::{Evaluator, Genome, Mem};
+use crate::eval::{Evaluator, Genome};
+use crate::evolve::evolver::RandGenome;
+use crate::gen::member::Member;
 use crate::gen::species::SpeciesId;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
-use crate::run::runner::RandGenome;
+
 #[derive(Display, Clone, PartialOrd, PartialEq)]
 #[display(fmt = "pop: {}, best: {}", "mems.len()", "self.mems[0]")]
 pub struct EvaluatedGen<G: Genome> {
-    pub mems: Vec<Mem<G>>,
+    pub mems: Vec<Member<G>>,
 }
 
 impl<G: Genome> EvaluatedGen<G> {
     #[must_use]
-    pub fn new(mut mems: Vec<Mem<G>>) -> Self {
+    pub fn new(mut mems: Vec<Member<G>>) -> Self {
         // Sort by base fitness. Selection should happen using selection
         // fitness. Generate survivors using base fitness, to make sure we keep
         // the top individuals.
@@ -25,12 +27,12 @@ impl<G: Genome> EvaluatedGen<G> {
     }
 
     #[must_use]
-    pub fn mems(&self) -> &[Mem<G>] {
+    pub fn mems(&self) -> &[Member<G>] {
         &self.mems
     }
 
     #[must_use]
-    pub fn species_mems(&self, n: SpeciesId) -> Vec<Mem<G>> {
+    pub fn species_mems(&self, n: SpeciesId) -> Vec<Member<G>> {
         self.mems.iter().filter(|v| v.species == n).cloned().collect()
     }
 
@@ -44,7 +46,7 @@ impl<G: Genome> EvaluatedGen<G> {
         species
     }
 
-    fn survivors(&self, survival: Survival, cfg: &Cfg) -> Vec<Mem<G>> {
+    fn survivors(&self, survival: Survival, cfg: &Cfg) -> Vec<Member<G>> {
         match survival {
             Survival::TopProportion(prop) => {
                 // Ceiling so we don't miss keeping things for small sizes.
@@ -67,7 +69,7 @@ impl<G: Genome> EvaluatedGen<G> {
         }
     }
 
-    fn selection(&self, selection: Selection) -> [Mem<G>; 2] {
+    fn selection(&self, selection: Selection) -> [Member<G>; 2] {
         let fitnesses = self.mems.iter().map(|v| v.selection_fitness).collect::<Vec<_>>();
         let idxs = match selection {
             Selection::Sus => sus(&fitnesses, 2),
@@ -92,8 +94,8 @@ impl<G: Genome> EvaluatedGen<G> {
         &self,
         crossover: &Crossover,
         eval: &E,
-        s1: &mut Mem<G>,
-        s2: &mut Mem<G>,
+        s1: &mut Member<G>,
+        s2: &mut Member<G>,
     ) -> Result<()> {
         match crossover {
             Crossover::Fixed(rates) => {
@@ -117,7 +119,7 @@ impl<G: Genome> EvaluatedGen<G> {
         &self,
         mutation: &Mutation,
         eval: &E,
-        s: &mut Mem<G>,
+        s: &mut Member<G>,
     ) -> Result<()> {
         match mutation {
             Mutation::Fixed(rates) => {
@@ -161,7 +163,7 @@ impl<G: Genome> EvaluatedGen<G> {
                 }
             };
             for _ in 0..num {
-                new_mems.push(Mem::new::<E>((*genfn)(), cfg));
+                new_mems.push(Member::new::<E>((*genfn)(), cfg));
             }
         }
 

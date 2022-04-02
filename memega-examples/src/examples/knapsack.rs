@@ -1,13 +1,16 @@
+use derive_more::{Deref, DerefMut, Display};
 use memega::cfg::Cfg;
 use memega::eval::Evaluator;
+use memega::evolve::evolver::Evolver;
 use memega::ops::crossover::crossover_kpx;
 use memega::ops::distance::count_different;
 use memega::ops::mutation::mutate_rate;
 use memega::ops::util::rand_vec;
-use memega::run::runner::Runner;
 use rand::Rng;
 
-type State = Vec<bool>;
+#[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
+#[display(fmt = "{:?}", _0)]
+pub struct State(pub Vec<bool>);
 
 #[derive(Debug, Clone)]
 pub struct Knapsack {
@@ -60,7 +63,7 @@ impl Evaluator for Knapsack {
 }
 
 #[must_use]
-pub fn knapsack_runner(cfg: Cfg) -> Runner<Knapsack> {
+pub fn knapsack_evolver(cfg: Cfg) -> Evolver<Knapsack> {
     const NUM_ITEMS: usize = 100;
     const MAX_W: f64 = 100.0;
 
@@ -70,8 +73,8 @@ pub fn knapsack_runner(cfg: Cfg) -> Runner<Knapsack> {
         let v = r.gen_range(0.1..10.0) * w;
         (w, v)
     });
-    Runner::new(Knapsack::new(MAX_W, items), cfg, move || {
+    Evolver::new(Knapsack::new(MAX_W, items), cfg, move || {
         let mut r = rand::thread_rng();
-        rand_vec(NUM_ITEMS, || r.gen::<bool>())
+        State(rand_vec(NUM_ITEMS, || r.gen::<bool>()))
     })
 }
