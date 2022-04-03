@@ -1,11 +1,10 @@
 use eyre::{eyre, Result};
 
 use crate::evaluators::lgp::vm::op::Op;
-use crate::evaluators::lgp::vm::opcode::{Opcode, Operand};
+use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 
 fn lgp_asm_op(s: &str) -> Result<Op> {
     let mut tokens = s.split_whitespace();
-    let mut data = [0, 0, 0];
     let op = match tokens.next().ok_or_else(|| eyre!("missing token"))? {
         "add" => Opcode::Add,
         "sub" => Opcode::Sub,
@@ -14,40 +13,49 @@ fn lgp_asm_op(s: &str) -> Result<Op> {
         "abs" => Opcode::Abs,
         "neg" => Opcode::Neg,
         "pow" => Opcode::Pow,
-        "ln" => Opcode::Log,
+        "ln" => Opcode::Ln,
+        "sin" => Opcode::Sin,
+        "cos" => Opcode::Cos,
         "load" => Opcode::Load,
         "copy" => Opcode::Copy,
-        "ind" => Opcode::IndirectCopy,
-        "jlt" => Opcode::Jlt,
-        "jle" => Opcode::Jle,
-        "jeq" => Opcode::Jeq,
-        "jmp" => Opcode::Jmp,
-        "lbl" => Opcode::Label,
+        "iflt" => Opcode::IfLt,
         _ => return Err(eyre!("unknown instruction format")),
     };
-    let mut idx = 0;
-    for i in 0..data.len() {
-        match op.operand(i) {
-            Operand::None => {}
-            Operand::Register => {
-                let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
-                data[idx] = tok.replace(&[',', '[', ']'][..], "")[1..].parse()?;
-                idx += 1;
-            }
-            Operand::Immediate => {
-                let tok = tokens.next().ok_or_else(|| eyre!("missing immediate for {:?}", op))?;
-                let mut op = Op::new(op, data);
-                op.set_imm_f64(tok.parse::<f64>()?);
-                return Ok(op);
-            }
-            Operand::Label => {
-                let tok = tokens.next().ok_or_else(|| eyre!("missing label"))?;
-                data[idx] = tok.parse::<u8>()?;
-                idx += 1;
-            }
+    let mut op = Op::from_code(op);
+    match op.operands_mut() {
+        Operands::Reg2Cmp { ra, rb } => {
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *ra = tok.replace(',', "")[1..].parse()?;
+
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *rb = tok.replace(',', "")[1..].parse()?;
+        }
+        Operands::Reg2Assign { ri, ra } => {
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *ri = tok.replace(',', "")[1..].parse()?;
+
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *ra = tok.replace(',', "")[1..].parse()?;
+        }
+        Operands::Reg3Assign { ri, ra, rb } => {
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *ri = tok.replace(',', "")[1..].parse()?;
+
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *ra = tok.replace(',', "")[1..].parse()?;
+
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *rb = tok.replace(',', "")[1..].parse()?;
+        }
+        Operands::ImmAssign { ri, imm } => {
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *ri = tok.replace(',', "")[1..].parse()?;
+
+            let tok = tokens.next().ok_or_else(|| eyre!("missing register"))?;
+            *imm = tok.parse::<f32>()?;
         }
     }
-    Ok(Op::new(op, data))
+    Ok(op)
 }
 
 pub fn lgp_asm(s: &str) -> Result<Vec<Op>> {

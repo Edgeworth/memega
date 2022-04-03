@@ -1,93 +1,60 @@
 use enumset::EnumSetType;
 use strum_macros::{Display, EnumIter};
 
-// Machine consists of N registers (up to 256) that contain f64 values.
-// Note that floating point comparisons are done using an epsilon.
-// Opcodes are 8 bit and have variable number of operands.
-// If a opcode isn't in the range of opcodes, it is mapped onto it using modulo.
-// Accessing register k will access register k % N if k >= N.
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub enum Operands {
+    /// Compare two registers.
+    Reg2Cmp { ra: u8, rb: u8 },
+    /// Assign function of register to another.
+    Reg2Assign { ri: u8, ra: u8 },
+    /// Assign function of two registers to another.
+    Reg3Assign { ri: u8, ra: u8, rb: u8 },
+    /// Assign immediate value to register.
+    ImmAssign { ri: u8, imm: f32 },
+}
+
+/// Machine consists of N registers (up to 256) that contain f64 values.
+/// Opcodes are 8 bit and have variable number of operands.
 #[derive(EnumSetType, Debug, Display, PartialOrd, EnumIter)]
 pub enum Opcode {
-    Add, // add rx, ry: rx = rx + ry
-    Sub, // sub rx, ry: rx = rx - ry
-    Mul, // mul rx, ry: rx = rx * ry
-    Div, // div rx, ry: rx = rx / ry - Div by zero => max value
-    Abs, // abs rx: rx = |rx|
-    Neg, // neg rx: rx = -rx
-    Pow, // pow rx, ry: rx = rx ^ ry - Require rx >= 0.0
-    Log, // log rx: rx = ln(rx)
+    // Arithmetic - three register assignments:
+    Add, // add ri, ra, rb: rx = rx + ry
+    Sub, // sub ri, ra, rb: ri = ra - rb
+    Mul, // mul ri, ra, rb: ri = ra * rb
+    Div, // div ri, ra, rb: ri = ra / rb - Div by zero is ignored.
+    Pow, // pow ri, ra, rb: ri = ra ^ rb - Infinite value is ignored.
+
+    // Arithmetic - two register assignments:
+    Abs, // abs ri, ra: ri = |ra|
+    Neg, // neg ri, ra: ri = -ra
+    Ln,  // ln ri, ra: ri = ln(ra)
+    Sin, // sin ri, ra: ri = sin(ra)
+    Cos, // cos ri, ra: ri = cos(ra)
 
     // Loading:
-    Load,         // load rx, f8:8: rx = immediate fixed point 8:8, little endian
-    Copy,         // copy rx, ry: rx = ry - direct copy
-    IndirectCopy, // copy [rx], ry: [rx] = ry - copy ry to register indicated by rx
+    Load, // load ri, f64: ri = floating point value
+    Copy, // copy ri, ra: ri = ra - direct copy
 
-    // Control flow:
-    Jlt,   // jlt rx, ry, u8: if rx < ry pc = address of first label with name u8, if it exists
-    Jle,   // jle rx, ry, u8: if rx <= ry pc = address of first label with name u8, if it exists
-    Jeq,   // jeq rx, ry, u8: if rx == ry pc = address of first label with name u8, if it exists
-    Jmp,   // jmp u8: pc = address of first label with name u8, if it exists
-    Label, // Label that jump instructions jump to
+    // Branching:
+    IfLt, // iflt ra, rb: if ra < rb execute next instruction. Can be chained.
 }
 
 impl Opcode {
     #[must_use]
-    pub fn operand(&self, idx: usize) -> Operand {
+    pub fn operands(&self) -> Operands {
         match self {
-            // Two reg operands
-            Opcode::Add
-            | Opcode::Sub
-            | Opcode::Mul
-            | Opcode::Div
-            | Opcode::IndirectCopy
-            | Opcode::Copy
-            | Opcode::Pow => {
-                if idx <= 1 {
-                    Operand::Register
-                } else {
-                    Operand::None
-                }
+            // Three reg assign
+            Opcode::Add | Opcode::Sub | Opcode::Mul | Opcode::Div | Opcode::Pow => {
+                Operands::Reg3Assign { ri: 0, ra: 0, rb: 0 }
             }
-            // One reg operand
-            Opcode::Abs | Opcode::Neg | Opcode::Log => {
-                if idx == 0 {
-                    Operand::Register
-                } else {
-                    Operand::None
-                }
+            // Two reg assign:
+            Opcode::Abs | Opcode::Neg | Opcode::Ln | Opcode::Sin | Opcode::Cos | Opcode::Copy => {
+                Operands::Reg2Assign { ri: 0, ra: 0 }
             }
-            // One reg operand, two immediate
-            Opcode::Load => {
-                if idx == 0 {
-                    Operand::Register
-                } else {
-                    Operand::Immediate
-                }
-            }
-            // Two reg operand, one immediate
-            Opcode::Jlt | Opcode::Jle | Opcode::Jeq => {
-                if idx == 2 {
-                    Operand::Label
-                } else {
-                    Operand::Register
-                }
-            }
-            // Single label operands:
-            Opcode::Jmp | Opcode::Label => {
-                if idx == 0 {
-                    Operand::Label
-                } else {
-                    Operand::None
-                }
-            }
+            // Immediate assign
+            Opcode::Load => Operands::ImmAssign { ri: 0, imm: 0.0 },
+            // Two reg compare:
+            Opcode::IfLt => Operands::Reg2Cmp { ra: 0, rb: 0 },
         }
     }
-}
-
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
-pub enum Operand {
-    None,
-    Register,
-    Immediate,
-    Label,
 }
