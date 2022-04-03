@@ -134,7 +134,7 @@ impl Distribution<Replacement> for Standard {
 
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Duplicates {
-    DisallowDuplicates, // Don't allow duplicate genomes in the population.
+    DisallowDuplicates, // Don't allow duplicate states in the population.
     AllowDuplicates,
 }
 

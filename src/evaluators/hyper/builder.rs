@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 
 use crate::cfg::Cfg;
 use crate::eval::Evaluator;
-use crate::evaluators::hyper::eval::{HyperAlg, StatFn, State};
+use crate::evaluators::hyper::eval::{HyperEvaluator, HyperState, StatFn};
 use crate::evolve::evolver::{CreateEvolverFn, Evolver};
 use crate::evolve::result::Stats;
 
@@ -51,11 +51,11 @@ impl HyperBuilder {
     }
 
     #[must_use]
-    pub fn build(self, cfg: Cfg) -> Evolver<HyperAlg> {
+    pub fn build(self, cfg: Cfg) -> Evolver<HyperEvaluator> {
         let pop_size = self.pop_size;
         let num_crossover = self.num_crossover;
         let num_mutation = self.num_mutation;
-        let genomefn = move || State::rand(pop_size, num_crossover, num_mutation);
-        Evolver::new(HyperAlg::new(self.stat_fns), cfg, genomefn)
+        let state_fn = move || HyperState::rand(pop_size, num_crossover, num_mutation);
+        Evolver::new(HyperEvaluator::new(self.stat_fns), cfg, state_fn)
     }
 }

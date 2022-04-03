@@ -3,21 +3,21 @@ use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;
 
 use crate::cfg::{Cfg, Crossover, Mutation, Stagnation, StagnationCondition};
-use crate::eval::{Evaluator, Genome};
+use crate::eval::{Evaluator, State};
 use crate::evolve::result::{EvolveResult, Stats};
 use crate::gen::member::Member;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
 
 pub trait CreateEvolverFn<E: Evaluator> = Fn(Cfg) -> Evolver<E> + Sync + Send + Clone + 'static;
-pub trait RandGenome<G: Genome> = FnMut() -> G + Send;
+pub trait RandState<S: State> = FnMut() -> S + Send;
 
 /// Runs iterations of GA w.r.t. the given evaluator.
 pub struct Evolver<E: Evaluator> {
     cfg: Cfg,
     eval: E,
-    gen: UnevaluatedGen<E::Genome>,
-    rand_genome: Box<dyn RandGenome<E::Genome>>,
+    gen: UnevaluatedGen<E::State>,
+    rand_state: Box<dyn RandState<E::State>>,
     gen_count: usize,
     stagnation_count: usize,
     last_fitness: f64,
@@ -27,42 +27,42 @@ impl<E: Evaluator> Evolver<E> {
     pub fn from_initial(
         eval: E,
         cfg: Cfg,
-        mut gen: Vec<E::Genome>,
-        mut rand_genome: impl RandGenome<E::Genome> + 'static,
+        mut gen: Vec<E::State>,
+        mut rand_state: impl RandState<E::State> + 'static,
     ) -> Self {
         // Fill out the rest of |gen| if it's smaller than pop_size.
         // If speciation is on, this lets more random species be generated at
         // the beginning.
         while gen.len() < cfg.pop_size {
-            gen.push(rand_genome());
+            gen.push(rand_state());
         }
         let gen = UnevaluatedGen::initial::<E>(gen, &cfg);
         Self {
             cfg,
             eval,
             gen,
-            rand_genome: Box::new(rand_genome),
+            rand_state: Box::new(rand_state),
             gen_count: 0,
             stagnation_count: 0,
             last_fitness: 0.0,
         }
     }
 
-    pub fn new(eval: E, cfg: Cfg, mut rand_genome: impl RandGenome<E::Genome> + 'static) -> Self {
+    pub fn new(eval: E, cfg: Cfg, mut rand_state: impl RandState<E::State> + 'static) -> Self {
         #[allow(clippy::redundant_closure)] // This closure is actually necessary.
-        let gen = UnevaluatedGen::initial::<E>(rand_vec(cfg.pop_size, || rand_genome()), &cfg);
+        let gen = UnevaluatedGen::initial::<E>(rand_vec(cfg.pop_size, || rand_state()), &cfg);
         Self {
             eval,
             cfg,
             gen,
-            rand_genome: Box::new(rand_genome),
+            rand_state: Box::new(rand_state),
             gen_count: 0,
             stagnation_count: 0,
             last_fitness: 0.0,
         }
     }
 
-    pub fn run_iter(&mut self) -> Result<EvolveResult<E::Genome>> {
+    pub fn run_iter(&mut self) -> Result<EvolveResult<E::State>> {
         let gen = self.gen.evaluate(self.gen_count, &self.cfg, &self.eval)?;
         let stagnant = match self.cfg.stagnation_condition {
             StagnationCondition::Default => {
@@ -93,7 +93,7 @@ impl<E: Evaluator> Evolver<E> {
             Stagnation::ContinuousAfter(count) => self.stagnation_count >= count,
         };
 
-        let mut next = gen.next_gen(self.rand_genome.as_mut(), stagnant, &self.cfg, &self.eval)?;
+        let mut next = gen.next_gen(self.rand_state.as_mut(), stagnant, &self.cfg, &self.eval)?;
         std::mem::swap(&mut next, &mut self.gen);
         Ok(EvolveResult { unevaluated: next, gen, stagnant })
     }
@@ -106,7 +106,7 @@ impl<E: Evaluator> Evolver<E> {
         &self.eval
     }
 
-    pub fn summary(&self, r: &mut EvolveResult<E::Genome>) -> String {
+    pub fn summary(&self, r: &mut EvolveResult<E::State>) -> String {
         let mut s = String::new();
         s += &format!("{}\n", Stats::from_result(r));
         if self.cfg.mutation == Mutation::Adaptive {
@@ -131,10 +131,10 @@ impl<E: Evaluator> Evolver<E> {
     // species, the remainder will go to print the top n % # out of the #
     // species.
     #[allow(clippy::unused_self)]
-    pub fn summary_sample(&self, r: &mut EvolveResult<E::Genome>, n: usize) -> String {
+    pub fn summary_sample(&self, r: &mut EvolveResult<E::State>, n: usize) -> String {
         let mut s = String::new();
         let species = r.gen.species();
-        let mut by_species: Vec<(usize, Vec<Member<E::Genome>>)> = Vec::new();
+        let mut by_species: Vec<(usize, Vec<Member<E::State>>)> = Vec::new();
         for &id in &species {
             by_species.push((0, r.gen.species_mems(id)));
         }
@@ -177,7 +177,7 @@ impl<E: Evaluator> Evolver<E> {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
-                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.base_fitness), mem.genome);
+                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.base_fitness), mem.state);
                 }
                 s += "\n";
             }

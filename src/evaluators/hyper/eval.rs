@@ -16,15 +16,15 @@ pub trait StatFn = Fn(Cfg) -> Option<Stats> + Send + Sync;
 
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd)]
 #[display(fmt = "{:?}", cfg)]
-pub struct State {
+pub struct HyperState {
     cfg: Cfg,
     crossover: Vec<f64>, // Weights for fixed crossover.
     mutation: Vec<f64>,  // Weights for fixed mutation.
 }
 
-impl State {
+impl HyperState {
     #[must_use]
-    pub fn rand(pop_size: usize, num_crossover: usize, num_mutation: usize) -> State {
+    pub fn rand(pop_size: usize, num_crossover: usize, num_mutation: usize) -> HyperState {
         let mut r = rand::thread_rng();
         let crossover = rand_vec(num_crossover, || r.gen());
         let mutation = rand_vec(num_mutation, || r.gen());
@@ -33,27 +33,27 @@ impl State {
         cfg.selection = r.gen();
         cfg.niching = r.gen();
         cfg.species = r.gen();
-        State { cfg, crossover, mutation }
+        HyperState { cfg, crossover, mutation }
     }
 }
 
-pub struct HyperAlg {
+pub struct HyperEvaluator {
     stat_fns: Vec<Box<dyn StatFn>>,
 }
 
-impl HyperAlg {
+impl HyperEvaluator {
     #[must_use]
     pub fn new(stat_fns: Vec<Box<dyn StatFn>>) -> Self {
         Self { stat_fns }
     }
 }
 
-impl Evaluator for HyperAlg {
-    type Genome = State;
+impl Evaluator for HyperEvaluator {
+    type State = HyperState;
     const NUM_CROSSOVER: usize = 4;
     const NUM_MUTATION: usize = 10;
 
-    fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
+    fn crossover(&self, s1: &mut Self::State, s2: &mut Self::State, idx: usize) {
         let mut r = rand::thread_rng();
         match idx {
             0 => {}
@@ -90,7 +90,7 @@ impl Evaluator for HyperAlg {
         }
     }
 
-    fn mutate(&self, s: &mut State, rate: f64, idx: usize) {
+    fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
         let mut r = rand::thread_rng();
         match idx {
             0 => {
@@ -177,7 +177,7 @@ impl Evaluator for HyperAlg {
         }
     }
 
-    fn fitness(&self, s: &State, _gen: usize) -> f64 {
+    fn fitness(&self, s: &Self::State, _gen: usize) -> f64 {
         const SAMPLES: usize = 30;
         let mut score = 0.0;
         for _ in 0..SAMPLES {
@@ -192,7 +192,7 @@ impl Evaluator for HyperAlg {
         score / SAMPLES as f64
     }
 
-    fn distance(&self, s1: &State, s2: &State) -> f64 {
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64 {
         let mut dist = 0.0;
 
         let s1_cross = if let Crossover::Fixed(v) = &s1.cfg.crossover { v } else { &s1.crossover };

@@ -1,7 +1,7 @@
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 
-use crate::eval::Genome;
+use crate::eval::State;
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::member::Member;
 use crate::gen::species::SpeciesInfo;
@@ -29,7 +29,7 @@ pub struct Stats {
 }
 
 impl Stats {
-    pub fn from_result<G: Genome>(r: &mut EvolveResult<G>) -> Self {
+    pub fn from_result<S: State>(r: &mut EvolveResult<S>) -> Self {
         Self {
             best_fitness: r.nth(0).base_fitness,
             mean_fitness: r.mean_fitness(),
@@ -44,20 +44,20 @@ impl Stats {
 
 #[derive(Display, Clone, PartialEq)]
 #[display(fmt = "Run({})", gen)]
-pub struct EvolveResult<G: Genome> {
-    pub unevaluated: UnevaluatedGen<G>,
-    pub gen: EvaluatedGen<G>,
+pub struct EvolveResult<S: State> {
+    pub unevaluated: UnevaluatedGen<S>,
+    pub gen: EvaluatedGen<S>,
     pub stagnant: bool,
 }
 
-impl<G: Genome> EvolveResult<G> {
+impl<S: State> EvolveResult<S> {
     #[must_use]
     pub fn size(&self) -> usize {
         self.gen.mems.len()
     }
 
     #[must_use]
-    pub fn nth(&self, n: usize) -> &Member<G> {
+    pub fn nth(&self, n: usize) -> &Member<S> {
         &self.gen.mems[n]
     }
 
@@ -73,9 +73,9 @@ impl<G: Genome> EvolveResult<G> {
 
     #[must_use]
     pub fn num_dup(&self) -> usize {
-        let mut mems_copy = self.gen.mems.iter().map(|v| &v.genome).cloned().collect::<Vec<_>>();
-        mems_copy.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
-        mems_copy.dedup();
-        self.gen.mems.len() - mems_copy.len()
+        let mut states = self.gen.mems.iter().map(|v| &v.state).cloned().collect::<Vec<_>>();
+        states.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
+        states.dedup();
+        self.gen.mems.len() - states.len()
     }
 }

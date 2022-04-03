@@ -2,7 +2,7 @@ use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evolve::evolver::Evolver;
 
-use crate::examples::func::{func_evolver, State};
+use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
 pub fn griewank_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
@@ -10,7 +10,7 @@ pub fn griewank_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
         dim,
         -10000.0,
         10000.0,
-        |s: &State, _| {
+        |s: &FuncState, _| {
             let mut add = 0.0;
             let mut mul = 1.0;
             for (i, &x) in s.iter().enumerate() {

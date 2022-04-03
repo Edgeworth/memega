@@ -4,7 +4,7 @@ use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
 use memega::evaluators::lgp::cfg::LgpCfg;
-use memega::evaluators::lgp::eval::State;
+use memega::evaluators::lgp::eval::LgpState;
 use memega::evaluators::lgp::vm::exec::LgpExec;
 use memega::evolve::evolver::Evolver;
 use num_traits::ToPrimitive;
@@ -12,7 +12,7 @@ use rand::Rng;
 use savage_core::expression::{Expression, Rational};
 
 #[must_use]
-pub fn lgp_fitness(s: &State, _gen: usize, target: &str) -> f64 {
+pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
     const NUM_SAMPLES: usize = 100;
 
     let expr: Expression = target.parse().unwrap();
@@ -47,5 +47,5 @@ pub fn lgp_fitness(s: &State, _gen: usize, target: &str) -> f64 {
 
 #[must_use]
 pub fn lgp_evolver(target: String, lgpcfg: LgpCfg, cfg: Cfg) -> Evolver<impl Evaluator> {
-    lgp_fitness_evolver(lgpcfg, cfg, move |s: &State, gen| lgp_fitness(s, gen, &target))
+    lgp_fitness_evolver(lgpcfg, cfg, move |s: &LgpState, gen| lgp_fitness(s, gen, &target))
 }

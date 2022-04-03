@@ -12,51 +12,52 @@ use crate::ops::distance::dist_fn;
 use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_swap};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct State {
+pub struct LgpState {
     pub ops: Vec<Op>, // Contains program code for linear genetic programming.
     pub cfg: LgpCfg,
 }
 
-impl fmt::Display for State {
+impl fmt::Display for LgpState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(&lgp_disasm(&self.ops))
     }
 }
 
-impl State {
+impl LgpState {
     #[must_use]
     pub fn new(ops: Vec<Op>, cfg: LgpCfg) -> Self {
         Self { ops, cfg }
     }
 }
 
-pub struct LgpGenome {
+pub struct LgpEvaluator {
     cfg: LgpCfg,
 }
 
-impl LgpGenome {
+impl LgpEvaluator {
     #[must_use]
     pub fn new(cfg: LgpCfg) -> Self {
         Self { cfg }
     }
 }
 
-impl Evaluator for LgpGenome {
-    type Genome = State;
+impl Evaluator for LgpEvaluator {
+    type State = LgpState;
     const NUM_CROSSOVER: usize = 2;
     const NUM_MUTATION: usize = 7;
 
-    fn crossover(&self, s1: &mut State, s2: &mut State, idx: usize) {
+    fn crossover(&self, s1: &mut LgpState, s2: &mut LgpState, idx: usize) {
         match idx {
             0 => {} // Do nothing.
             1 => {
+                // Two point crossover.
                 crossover_kpx(&mut s1.ops, &mut s2.ops, 2);
             }
             _ => panic!("unknown crossover strategy"),
         };
     }
 
-    fn mutate(&self, s: &mut State, rate: f64, idx: usize) {
+    fn mutate(&self, s: &mut LgpState, rate: f64, idx: usize) {
         let mut r = rand::thread_rng();
         if r.gen::<f64>() > rate {
             return;
@@ -88,11 +89,11 @@ impl Evaluator for LgpGenome {
         }
     }
 
-    fn fitness(&self, _: &State, _gen: usize) -> f64 {
+    fn fitness(&self, _: &LgpState, _gen: usize) -> f64 {
         unimplemented!()
     }
 
-    fn distance(&self, s1: &State, s2: &State) -> f64 {
+    fn distance(&self, s1: &LgpState, s2: &LgpState) -> f64 {
         dist_fn(&s1.ops, &s2.ops, 1.0, Op::dist)
     }
 }
