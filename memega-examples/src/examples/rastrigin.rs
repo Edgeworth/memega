@@ -4,7 +4,7 @@ use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evolve::evolver::Evolver;
 
-use crate::examples::func::{func_evolver, State};
+use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
 pub fn rastrigin_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
@@ -12,7 +12,7 @@ pub fn rastrigin_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
         dim,
         -5.12,
         5.12,
-        |s: &State, _| {
+        |s: &FuncState, _| {
             const A: f64 = 10.0;
             let mut v = 0.0;
             for &x in s.iter() {

@@ -2,8 +2,8 @@ use derive_more::Display;
 use eyre::{eyre, Result};
 
 use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Replacement, Selection, Survival};
-use crate::eval::{Evaluator, Genome};
-use crate::evolve::evolver::RandGenome;
+use crate::eval::{Evaluator, State};
+use crate::evolve::evolver::RandState;
 use crate::gen::member::Member;
 use crate::gen::species::SpeciesId;
 use crate::gen::unevaluated::UnevaluatedGen;
@@ -12,13 +12,13 @@ use crate::ops::sampling::{multi_rws, rws, sus};
 
 #[derive(Display, Clone, PartialOrd, PartialEq)]
 #[display(fmt = "pop: {}, best: {}", "mems.len()", "self.mems[0]")]
-pub struct EvaluatedGen<G: Genome> {
-    pub mems: Vec<Member<G>>,
+pub struct EvaluatedGen<S: State> {
+    pub mems: Vec<Member<S>>,
 }
 
-impl<G: Genome> EvaluatedGen<G> {
+impl<S: State> EvaluatedGen<S> {
     #[must_use]
-    pub fn new(mut mems: Vec<Member<G>>) -> Self {
+    pub fn new(mut mems: Vec<Member<S>>) -> Self {
         // Sort by base fitness. Selection should happen using selection
         // fitness. Generate survivors using base fitness, to make sure we keep
         // the top individuals.
@@ -27,12 +27,12 @@ impl<G: Genome> EvaluatedGen<G> {
     }
 
     #[must_use]
-    pub fn mems(&self) -> &[Member<G>] {
+    pub fn mems(&self) -> &[Member<S>] {
         &self.mems
     }
 
     #[must_use]
-    pub fn species_mems(&self, n: SpeciesId) -> Vec<Member<G>> {
+    pub fn species_mems(&self, n: SpeciesId) -> Vec<Member<S>> {
         self.mems.iter().filter(|v| v.species == n).cloned().collect()
     }
 
@@ -46,7 +46,7 @@ impl<G: Genome> EvaluatedGen<G> {
         species
     }
 
-    fn survivors(&self, survival: Survival, cfg: &Cfg) -> Vec<Member<G>> {
+    fn survivors(&self, survival: Survival, cfg: &Cfg) -> Vec<Member<S>> {
         match survival {
             Survival::TopProportion(prop) => {
                 // Ceiling so we don't miss keeping things for small sizes.
@@ -69,7 +69,7 @@ impl<G: Genome> EvaluatedGen<G> {
         }
     }
 
-    fn selection(&self, selection: Selection) -> [Member<G>; 2] {
+    fn selection(&self, selection: Selection) -> [Member<S>; 2] {
         let fitnesses = self.mems.iter().map(|v| v.selection_fitness).collect::<Vec<_>>();
         let idxs = match selection {
             Selection::Sus => sus(&fitnesses, 2),
@@ -90,12 +90,12 @@ impl<G: Genome> EvaluatedGen<G> {
         Ok(())
     }
 
-    fn crossover<E: Evaluator<Genome = G>>(
+    fn crossover<E: Evaluator<State = S>>(
         &self,
         crossover: &Crossover,
         eval: &E,
-        s1: &mut Member<G>,
-        s2: &mut Member<G>,
+        s1: &mut Member<S>,
+        s2: &mut Member<S>,
     ) -> Result<()> {
         match crossover {
             Crossover::Fixed(rates) => {
@@ -111,15 +111,15 @@ impl<G: Genome> EvaluatedGen<G> {
         Self::check_weights(&s1.params.crossover, E::NUM_CROSSOVER)?;
         Self::check_weights(&s2.params.crossover, E::NUM_CROSSOVER)?;
         let idx = rws(&s1.params.crossover).unwrap();
-        eval.crossover(&mut s1.genome, &mut s2.genome, idx);
+        eval.crossover(&mut s1.state, &mut s2.state, idx);
         Ok(())
     }
 
-    fn mutation<E: Evaluator<Genome = G>>(
+    fn mutation<E: Evaluator<State = S>>(
         &self,
         mutation: &Mutation,
         eval: &E,
-        s: &mut Member<G>,
+        s: &mut Member<S>,
     ) -> Result<()> {
         match mutation {
             Mutation::Fixed(rates) => {
@@ -136,19 +136,19 @@ impl<G: Genome> EvaluatedGen<G> {
         };
         Self::check_weights(&s.params.mutation, E::NUM_MUTATION)?;
         for (idx, &rate) in s.params.mutation.iter().enumerate() {
-            eval.mutate(&mut s.genome, rate, idx);
+            eval.mutate(&mut s.state, rate, idx);
         }
         Ok(())
     }
 
 
-    pub fn next_gen<E: Evaluator<Genome = G>>(
+    pub fn next_gen<E: Evaluator<State = S>>(
         &self,
-        genfn: &mut (dyn RandGenome<G> + '_),
+        genfn: &mut (dyn RandState<S> + '_),
         stagnant: bool,
         cfg: &Cfg,
         eval: &E,
-    ) -> Result<UnevaluatedGen<G>> {
+    ) -> Result<UnevaluatedGen<S>> {
         // Pick survivors:
         let mut new_mems = self.survivors(cfg.survival, cfg);
         // Min here to avoid underflow - can happen if we produce too many parents.
@@ -183,8 +183,8 @@ impl<G: Genome> EvaluatedGen<G> {
 
             // Remove duplicates if we need to.
             if cfg.duplicates == Duplicates::DisallowDuplicates {
-                new_mems.sort_unstable_by(|a, b| a.genome.partial_cmp(&b.genome).unwrap());
-                new_mems.dedup_by(|a, b| a.genome.eq(&b.genome));
+                new_mems.sort_unstable_by(|a, b| a.state.partial_cmp(&b.state).unwrap());
+                new_mems.dedup_by(|a, b| a.state.eq(&b.state));
             }
         }
         Ok(UnevaluatedGen::new(new_mems))

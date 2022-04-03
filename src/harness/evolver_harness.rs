@@ -16,7 +16,7 @@ impl Harness {
         Self { cfg }
     }
 
-    pub fn evolve<E: Evaluator>(&self, mut evolver: Evolver<E>) -> Result<EvolveResult<E::Genome>> {
+    pub fn evolve<E: Evaluator>(&self, mut evolver: Evolver<E>) -> Result<EvolveResult<E::State>> {
         let mut ret = None;
         for i in 0.. {
             match self.cfg.termination() {

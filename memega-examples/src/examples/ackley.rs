@@ -4,7 +4,7 @@ use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evolve::evolver::Evolver;
 
-use crate::examples::func::{func_evolver, State};
+use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
 pub fn ackley_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
@@ -12,7 +12,7 @@ pub fn ackley_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
         dim,
         -32.768,
         32.768,
-        |s: &State, _| {
+        |s: &FuncState, _| {
             const A: f64 = 20.0;
             const B: f64 = 0.2;
             const C: f64 = 2.0 * PI;

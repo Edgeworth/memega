@@ -5,7 +5,7 @@ use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
-use crate::eval::{Evaluator, Genome};
+use crate::eval::{Evaluator, State};
 use crate::gen::member::Member;
 
 pub type SpeciesId = u64;
@@ -45,7 +45,7 @@ impl DistCache {
         Self { n: 0, cache: Vec::new(), max: 0.0, sum: 0.0 }
     }
 
-    pub fn ensure<E: Evaluator>(&mut self, s: &[Member<E::Genome>], par: bool, eval: &E) {
+    pub fn ensure<E: Evaluator>(&mut self, s: &[Member<E::State>], par: bool, eval: &E) {
         if self.is_empty() {
             self.n = s.len();
             self.cache = if par {
@@ -54,7 +54,7 @@ impl DistCache {
                     .map(|v| {
                         let i = v / self.n;
                         let j = v % self.n;
-                        eval.distance(&s[i].genome, &s[j].genome)
+                        eval.distance(&s[i].state, &s[j].state)
                     })
                     .collect();
                 (self.max, self.sum) = cache
@@ -66,7 +66,7 @@ impl DistCache {
                 let mut cache = vec![0.0; self.n * self.n];
                 for i in 0..self.n {
                     for j in 0..self.n {
-                        let dist = eval.distance(&s[i].genome, &s[j].genome);
+                        let dist = eval.distance(&s[i].state, &s[j].state);
                         cache[i * self.n + j] = dist;
                         self.max = self.max.max(dist);
                         self.sum += dist;
@@ -77,9 +77,9 @@ impl DistCache {
         }
     }
 
-    pub fn speciate<G: Genome>(
+    pub fn speciate<S: State>(
         &self,
-        s: &[Member<G>],
+        s: &[Member<S>],
         radius: f64,
     ) -> (Vec<SpeciesId>, SpeciesInfo) {
         // Copy any existing species over.
@@ -107,7 +107,7 @@ impl DistCache {
         (ids, SpeciesInfo { num, radius })
     }
 
-    pub fn shared_fitness<G: Genome>(&self, s: &mut [Member<G>], radius: f64, alpha: f64) {
+    pub fn shared_fitness<S: State>(&self, s: &mut [Member<S>], radius: f64, alpha: f64) {
         // Compute fitness as F'(i) = F(i) / sum of 1 - (d(i, j) / species_radius) ^ alpha.
         for i in 0..s.len() {
             let mut sum = 0.0;
@@ -121,7 +121,7 @@ impl DistCache {
         }
     }
 
-    pub fn species_shared_fitness<G: Genome>(&self, s: &mut [Member<G>], species: &SpeciesInfo) {
+    pub fn species_shared_fitness<S: State>(&self, s: &mut [Member<S>], species: &SpeciesInfo) {
         // Compute alpha as: radius / num_species ^ (1 / dimensionality)
         let alpha = species.radius / species.num as f64;
         self.shared_fitness(s, species.radius, alpha);

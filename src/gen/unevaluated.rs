@@ -5,44 +5,44 @@ use eyre::{eyre, Result};
 use rayon::prelude::*;
 
 use crate::cfg::{Cfg, Niching, Species};
-use crate::eval::{Evaluator, Genome};
+use crate::eval::{Evaluator, State};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::member::Member;
 use crate::gen::species::{DistCache, SpeciesInfo};
 
 #[derive(Clone, PartialOrd, PartialEq)]
-pub struct UnevaluatedGen<G: Genome> {
-    pub mems: Vec<Member<G>>,
+pub struct UnevaluatedGen<S: State> {
+    pub mems: Vec<Member<S>>,
     pub species: SpeciesInfo,
     pub dists: DistCache,
 }
 
-impl<G: Genome> UnevaluatedGen<G> {
+impl<S: State> UnevaluatedGen<S> {
     #[must_use]
-    pub fn initial<E: Evaluator>(genomes: Vec<G>, cfg: &Cfg) -> Self {
-        let mems = genomes.into_iter().map(|genome| Member::new::<E>(genome, cfg)).collect();
+    pub fn initial<E: Evaluator>(states: Vec<S>, cfg: &Cfg) -> Self {
+        let mems = states.into_iter().map(|state| Member::new::<E>(state, cfg)).collect();
         Self::new(mems)
     }
 
     #[must_use]
-    pub fn new(mems: Vec<Member<G>>) -> Self {
+    pub fn new(mems: Vec<Member<S>>) -> Self {
         assert!(!mems.is_empty(), "Generation must not be empty");
         Self { mems, species: SpeciesInfo::new(), dists: DistCache::new() }
     }
 
-    pub fn evaluate<E: Evaluator<Genome = G>>(
+    pub fn evaluate<E: Evaluator<State = S>>(
         &mut self,
         gen_count: usize,
         cfg: &Cfg,
         eval: &E,
-    ) -> Result<EvaluatedGen<G>> {
+    ) -> Result<EvaluatedGen<S>> {
         // First compute plain fitnesses.
         if cfg.par_fitness {
             self.mems
                 .par_iter_mut()
-                .for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count));
+                .for_each(|s| s.base_fitness = eval.fitness(&s.state, gen_count));
         } else {
-            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.genome, gen_count));
+            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.state, gen_count));
         };
 
         // Check fitnesses are non-negative.
