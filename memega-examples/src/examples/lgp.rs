@@ -3,13 +3,15 @@ use std::collections::HashMap;
 use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
-use memega::evaluators::lgp::cfg::LgpCfg;
+use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use memega::evaluators::lgp::eval::LgpState;
-use memega::evaluators::lgp::vm::exec::LgpExec;
+use memega::evaluators::lgp::vm::lgpvm::LgpVm;
 use memega::evolve::evolver::Evolver;
 use num_traits::ToPrimitive;
 use rand::Rng;
 use savage_core::expression::{Expression, Rational};
+
+const NUM_CONST: usize = 4;
 
 #[must_use]
 pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
@@ -32,20 +34,20 @@ pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
             _ => panic!("should be number output: {}", ans),
         };
 
-        let mut reg = vec![0.0; s.cfg.num_reg()]; // Space for work and answer.
-        reg[1] = -1.0;
-        reg[2] = 1.0;
-        reg[3] = x;
-        let mut exec = LgpExec::new(&reg, &s.ops, s.cfg.max_iter());
+        let constants: [f64; NUM_CONST] = [0.0, -1.0, 1.0, x];
+        let cfg = s.lgpvmcfg(&constants);
+        let mut exec = LgpVm::new(&cfg);
         exec.run();
 
 
-        fitness += 1.0 / (1.0 + (ans - exec.reg(0)).abs());
+        fitness += 1.0 / (1.0 + (ans - exec.mem(0)).abs());
     }
     fitness / NUM_SAMPLES as f64 + 0.1 / (1.0 + s.ops.len() as f64)
 }
 
 #[must_use]
-pub fn lgp_evolver(target: String, lgpcfg: LgpCfg, cfg: Cfg) -> Evolver<impl Evaluator> {
-    lgp_fitness_evolver(lgpcfg, cfg, move |s: &LgpState, gen| lgp_fitness(s, gen, &target))
+pub fn lgp_evolver(target: String, lgpcfg: LgpEvaluatorCfg, cfg: Cfg) -> Evolver<impl Evaluator> {
+    lgp_fitness_evolver(lgpcfg.set_num_const(NUM_CONST), cfg, move |s: &LgpState, gen| {
+        lgp_fitness(s, gen, &target)
+    })
 }

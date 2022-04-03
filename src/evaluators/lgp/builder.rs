@@ -1,6 +1,6 @@
 use crate::cfg::Cfg;
 use crate::eval::{Evaluator, FitnessFn};
-use crate::evaluators::lgp::cfg::LgpCfg;
+use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::eval::{LgpEvaluator, LgpState};
 use crate::evolve::evolver::Evolver;
 use crate::ops::util::rand_vec;
@@ -39,7 +39,7 @@ impl<F: FitnessFn<LgpState>> Evaluator for LgpFitnessFnEvaluator<F> {
 }
 
 pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>(
-    lgpcfg: LgpCfg,
+    lgpcfg: LgpEvaluatorCfg,
     cfg: Cfg,
     f: F,
 ) -> Evolver<E> {
@@ -49,7 +49,7 @@ pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>
 }
 
 pub fn lgp_fitness_evolver<F: FitnessFn<LgpState>>(
-    lgpcfg: LgpCfg,
+    lgpcfg: LgpEvaluatorCfg,
     cfg: Cfg,
     f: F,
 ) -> Evolver<impl Evaluator> {

@@ -4,32 +4,31 @@ use rand::Rng;
 use strum::IntoEnumIterator;
 
 use crate::evaluators::lgp::vm::op::Op;
-use crate::evaluators::lgp::vm::opcode::{Opcode, Operand};
-use crate::ops::mutation::{mutate_creep, mutate_normal};
+use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
+use crate::ops::mutation::mutate_normal;
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
-pub struct LgpCfg {
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+pub struct LgpEvaluatorCfg {
     num_reg: usize,
+    num_const: usize,
     max_code: usize,
-    /// Maximum number of iterations to run.
-    max_iter: usize,
-    /// Max label value:
-    max_label: usize,
     /// Number of significant figures the immediate value can have. This is
     /// useful to control how much precision loaded float values can be.
     imm_sf: usize,
+    /// Range randomly generated floating point numbers can be in.
+    imm_range: (f64, f64),
     opcodes: EnumSet<Opcode>,
 }
 
-impl LgpCfg {
+impl LgpEvaluatorCfg {
     #[must_use]
     pub fn new() -> Self {
         Self {
             num_reg: 4,
+            num_const: 0,
             max_code: 10,
-            max_iter: 20,
-            max_label: 1,
             imm_sf: 2,
+            imm_range: (-100.0, 100.0),
             opcodes: Opcode::iter().collect(),
         }
     }
@@ -37,17 +36,27 @@ impl LgpCfg {
     #[must_use]
     pub fn rand_op(&self) -> Op {
         let mut r = rand::thread_rng();
-        let mut op = Op::new(self.opcodes.iter().choose(&mut r).unwrap(), [0, 0, 0]);
-        for i in 0..op.data.len() {
-            match op.code.operand(i) {
-                Operand::None => {}
-                Operand::Register => op.data[i] = r.gen_range(0..self.num_reg) as u8,
-                Operand::Immediate => {
-                    let (lo, hi) = Op::imm_range();
-                    let v: f64 = r.gen_range(lo..=hi);
-                    op.set_imm_f64(Self::round_sf(v, self.imm_sf()));
-                }
-                Operand::Label => op.data[i] = r.gen_range(0..self.max_label()) as u8,
+        let mut op = Op::from_code(self.opcodes.iter().choose(&mut r).unwrap());
+
+        let mem_size = self.num_reg + self.num_const;
+        match op.operands_mut() {
+            Operands::Reg2Cmp { ra, rb } => {
+                *ra = r.gen_range(0..mem_size) as u8;
+                *rb = r.gen_range(0..mem_size) as u8;
+            }
+            Operands::Reg2Assign { ri, ra } => {
+                *ri = r.gen_range(0..self.num_reg) as u8;
+                *ra = r.gen_range(0..mem_size) as u8;
+            }
+            Operands::Reg3Assign { ri, ra, rb } => {
+                *ri = r.gen_range(0..self.num_reg) as u8;
+                *ra = r.gen_range(0..mem_size) as u8;
+                *rb = r.gen_range(0..mem_size) as u8;
+            }
+            Operands::ImmAssign { ri, imm } => {
+                *ri = r.gen_range(0..self.num_reg) as u8;
+                let v = r.gen_range(self.imm_range.0..=self.imm_range.1);
+                *imm = Self::round_sf(v, self.imm_sf()) as f32;
             }
         }
         op
@@ -62,23 +71,47 @@ impl LgpCfg {
     // Micro-mutation of the instruction without changing the opcode.
     pub fn mutate(&self, op: &mut Op) {
         let mut r = rand::thread_rng();
-        let num_operands = op.num_operands();
-        if num_operands == 0 {
-            return;
-        }
-        let idx = r.gen_range(0..num_operands);
-        match op.code.operand(idx) {
-            Operand::None => {}
-            Operand::Register => op.data[idx] = r.gen_range(0..self.num_reg) as u8,
-            Operand::Immediate => {
-                // Large/small mutation.
-                let stddev = if r.gen::<bool>() { 10.0 } else { 1.0 };
-                let v = mutate_normal(op.imm_value(), stddev);
-                op.set_imm_f64(Self::round_sf(v, self.imm_sf()));
+
+        let mem_size = self.num_reg + self.num_const;
+        match op.operands_mut() {
+            Operands::Reg2Cmp { ra, rb } => {
+                if r.gen::<bool>() {
+                    *ra = r.gen_range(0..mem_size) as u8;
+                } else {
+                    *rb = r.gen_range(0..mem_size) as u8;
+                }
             }
-            Operand::Label => {
-                let max = self.max_label() as i32;
-                op.data[idx] = mutate_creep(op.data[idx] as i32, max).clamp(0, max) as u8;
+            Operands::Reg2Assign { ri, ra } => {
+                if r.gen::<bool>() {
+                    *ri = r.gen_range(0..self.num_reg) as u8;
+                } else {
+                    *ra = r.gen_range(0..mem_size) as u8;
+                }
+            }
+            Operands::Reg3Assign { ri, ra, rb } => {
+                match r.gen_range(0..3) {
+                    0 => {
+                        *ri = r.gen_range(0..self.num_reg) as u8;
+                    }
+                    1 => {
+                        *ra = r.gen_range(0..mem_size) as u8;
+                    }
+                    2 => {
+                        *rb = r.gen_range(0..mem_size) as u8;
+                    }
+                    _ => unreachable!(),
+                };
+            }
+            Operands::ImmAssign { ri, imm } => {
+                if r.gen::<bool>() {
+                    *ri = r.gen_range(0..self.num_reg) as u8;
+                } else {
+                    // Large/small mutation.
+                    let range = self.imm_range.1 - self.imm_range.0;
+                    let stddev = if r.gen::<bool>() { range.sqrt() } else { range.log10() };
+                    let v = mutate_normal(*imm as f64, stddev);
+                    *imm = Self::round_sf(v, self.imm_sf) as f32;
+                }
             }
         }
     }
@@ -90,27 +123,27 @@ impl LgpCfg {
     }
 
     #[must_use]
+    pub fn set_num_const(mut self, num_const: usize) -> Self {
+        self.num_const = num_const;
+        self
+    }
+
+
+    #[must_use]
     pub fn set_max_code(mut self, max_code: usize) -> Self {
         self.max_code = max_code;
-        self
-    }
-
-
-    #[must_use]
-    pub fn set_max_iter(mut self, max_iter: usize) -> Self {
-        self.max_iter = max_iter;
-        self
-    }
-
-    #[must_use]
-    pub fn set_max_label(mut self, max_label: usize) -> Self {
-        self.max_label = max_label;
         self
     }
 
     #[must_use]
     pub fn set_imm_sf(mut self, imm_sf: usize) -> Self {
         self.imm_sf = imm_sf;
+        self
+    }
+
+    #[must_use]
+    pub fn set_imm_range(mut self, imm_range: (f64, f64)) -> Self {
+        self.imm_range = imm_range;
         self
     }
 
@@ -126,18 +159,13 @@ impl LgpCfg {
     }
 
     #[must_use]
+    pub fn num_const(&self) -> usize {
+        self.num_const
+    }
+
+    #[must_use]
     pub fn max_code(&self) -> usize {
         self.max_code
-    }
-
-    #[must_use]
-    pub fn max_iter(&self) -> usize {
-        self.max_iter
-    }
-
-    #[must_use]
-    pub fn max_label(&self) -> usize {
-        self.max_label
     }
 
     #[must_use]
@@ -146,12 +174,17 @@ impl LgpCfg {
     }
 
     #[must_use]
+    pub fn imm_range(&self) -> (f64, f64) {
+        self.imm_range
+    }
+
+    #[must_use]
     pub fn opcodes(&self) -> EnumSet<Opcode> {
         self.opcodes
     }
 }
 
-impl Default for LgpCfg {
+impl Default for LgpEvaluatorCfg {
     fn default() -> Self {
         Self::new()
     }

@@ -4,7 +4,8 @@ use rand::prelude::SliceRandom;
 use rand::Rng;
 
 use crate::eval::Evaluator;
-use crate::evaluators::lgp::cfg::LgpCfg;
+use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
+use crate::evaluators::lgp::vm::cfg::LgpVmCfg;
 use crate::evaluators::lgp::vm::disasm::lgp_disasm;
 use crate::evaluators::lgp::vm::op::Op;
 use crate::ops::crossover::crossover_kpx;
@@ -14,7 +15,7 @@ use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct LgpState {
     pub ops: Vec<Op>, // Contains program code for linear genetic programming.
-    pub cfg: LgpCfg,
+    pub cfg: LgpEvaluatorCfg,
 }
 
 impl fmt::Display for LgpState {
@@ -25,18 +26,24 @@ impl fmt::Display for LgpState {
 
 impl LgpState {
     #[must_use]
-    pub fn new(ops: Vec<Op>, cfg: LgpCfg) -> Self {
+    pub fn new(ops: Vec<Op>, cfg: LgpEvaluatorCfg) -> Self {
         Self { ops, cfg }
+    }
+
+    #[must_use]
+    pub fn lgpvmcfg(&self, constants: &[f64]) -> LgpVmCfg {
+        assert!(constants.len() == self.cfg.num_const(), "constants length mismatch");
+        LgpVmCfg::new().set_num_reg(self.cfg.num_reg()).set_code(&self.ops).set_constants(constants)
     }
 }
 
 pub struct LgpEvaluator {
-    cfg: LgpCfg,
+    cfg: LgpEvaluatorCfg,
 }
 
 impl LgpEvaluator {
     #[must_use]
-    pub fn new(cfg: LgpCfg) -> Self {
+    pub fn new(cfg: LgpEvaluatorCfg) -> Self {
         Self { cfg }
     }
 }
