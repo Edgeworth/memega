@@ -31,9 +31,10 @@ impl LgpState {
     }
 
     #[must_use]
-    pub fn lgpvmcfg(&self, constants: &[f64]) -> LgpVmCfg {
+    pub fn lgpvmcfg(&self, regs: &[f64], constants: &[f64]) -> LgpVmCfg {
+        assert!(regs.len() == self.cfg.num_reg(), "regs length mismatch");
         assert!(constants.len() == self.cfg.num_const(), "constants length mismatch");
-        LgpVmCfg::new().set_num_reg(self.cfg.num_reg()).set_code(&self.ops).set_constants(constants)
+        LgpVmCfg::new().set_code(&self.ops).set_regs(regs).set_constants(constants)
     }
 }
 

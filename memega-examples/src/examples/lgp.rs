@@ -11,6 +11,7 @@ use num_traits::ToPrimitive;
 use rand::Rng;
 use savage_core::expression::{Expression, Rational};
 
+const NUM_REG: usize = 2;
 const NUM_CONST: usize = 4;
 
 #[must_use]
@@ -34,14 +35,16 @@ pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
             _ => panic!("should be number output: {}", ans),
         };
 
+        let regs: [f64; NUM_REG] = [0.0, 0.0];
         let constants: [f64; NUM_CONST] = [0.0, -1.0, 1.0, x];
-        let cfg = s.lgpvmcfg(&constants);
+        let cfg = s.lgpvmcfg(&regs, &constants);
         let mut exec = LgpVm::new(&cfg);
         exec.run();
 
-
         fitness += 1.0 / (1.0 + (ans - exec.mem(0)).abs());
     }
+    // TODO: Should we penalize longer programs here? Or write optimize function
+    // for code.
     fitness / NUM_SAMPLES as f64 + 0.1 / (1.0 + s.ops.len() as f64)
 }
 

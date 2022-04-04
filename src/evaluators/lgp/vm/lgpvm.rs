@@ -16,15 +16,21 @@ pub struct LgpVm {
 impl LgpVm {
     #[must_use]
     pub fn new(cfg: &LgpVmCfg) -> Self {
-        let num_reg = cfg.num_reg();
-        let mem_size = num_reg + cfg.constants().len();
+        let num_reg = cfg.regs().len();
+        let mem_size = cfg.regs().len() + cfg.constants().len();
         let mut mem = vec![0.0; mem_size];
+        mem[..num_reg].copy_from_slice(cfg.regs());
         mem[num_reg..].copy_from_slice(cfg.constants());
         Self { pc: 0, mem, code: cfg.code().to_vec(), num_reg }
     }
 
     fn is_constant(&self, idx: u8) -> bool {
         idx as usize >= self.num_reg
+    }
+
+    #[must_use]
+    pub fn mem_slice(&self) -> &[f64] {
+        &self.mem
     }
 
     #[must_use]
@@ -36,11 +42,17 @@ impl LgpVm {
         self.mem[idx as usize] = v;
     }
 
+    fn peek(&mut self) -> Option<Op> {
+        if self.pc >= self.code.len() { None } else { Some(self.code[self.pc]) }
+    }
+
     fn fetch(&mut self) -> Option<Op> {
-        // Check if we finished the program. Return 0 if we overrun.
-        let v = if self.pc >= self.code.len() { None } else { Some(self.code[self.pc]) };
-        self.pc += 1;
-        v
+        if let Some(v) = self.peek() {
+            self.pc += 1;
+            Some(v)
+        } else {
+            None
+        }
     }
 
     // Returns true iff finished.
@@ -116,9 +128,9 @@ impl LgpVm {
                     }
                 }
                 (Opcode::IfLt, Operands::Reg2Cmp { ra, rb }) => {
-                    // TODO: implement multiple ifs
                     if self.mem(ra) >= self.mem(rb) {
-                        self.pc += 1;
+                        // Find first non if instruction and skip it (last fetch will skip).
+                        while let Some(op) = self.fetch() && op.code() == Opcode::IfLt {}
                     }
                 }
                 _ => panic!("incorrect or unimplemented opcode: {:?}", op),
