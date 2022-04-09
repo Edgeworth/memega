@@ -1,11 +1,11 @@
-use memega::cfg::Cfg;
 use memega::eval::Evaluator;
+use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 
 use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
-pub fn griewank_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
+pub fn griewank_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator> {
     func_evolver(
         dim,
         -10000.0,

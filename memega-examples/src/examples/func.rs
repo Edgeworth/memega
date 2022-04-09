@@ -1,6 +1,6 @@
 use derive_more::{Deref, DerefMut, Display};
-use memega::cfg::Cfg;
 use memega::eval::{Evaluator, FitnessFn};
+use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 use memega::ops::crossover::crossover_arith;
 use memega::ops::distance::dist2;
@@ -57,7 +57,7 @@ pub fn func_evolver<F: FitnessFn<FuncState>>(
     st: f64,
     en: f64,
     f: F,
-    cfg: Cfg,
+    cfg: EvolveCfg,
 ) -> Evolver<impl Evaluator> {
     Evolver::new(FuncEvaluator::new(dim, st, en, f), cfg, move || {
         FuncState(rand_vec(dim, || mutate_uniform(st, en)))

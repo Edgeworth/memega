@@ -1,8 +1,8 @@
 use derive_more::Display;
 use float_pretty_print::PrettyPrintFloat;
 
-use crate::cfg::Cfg;
 use crate::eval::{Evaluator, State};
+use crate::evolve::cfg::EvolveCfg;
 use crate::gen::params::Params;
 use crate::gen::species::{SpeciesId, NO_SPECIES};
 
@@ -17,7 +17,7 @@ pub struct Member<S: State> {
 }
 
 impl<S: State> Member<S> {
-    pub fn new<E: Evaluator>(state: S, cfg: &Cfg) -> Self {
+    pub fn new<E: Evaluator>(state: S, cfg: &EvolveCfg) -> Self {
         Self {
             state,
             params: Params::new::<E>(cfg),

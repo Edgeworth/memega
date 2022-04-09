@@ -1,13 +1,13 @@
 use std::f64::consts::PI;
 
-use memega::cfg::Cfg;
 use memega::eval::Evaluator;
+use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 
 use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
-pub fn rastrigin_evolver(dim: usize, cfg: Cfg) -> Evolver<impl Evaluator> {
+pub fn rastrigin_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator> {
     func_evolver(
         dim,
         -5.12,

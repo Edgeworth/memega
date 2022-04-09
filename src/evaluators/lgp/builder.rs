@@ -1,7 +1,7 @@
-use crate::cfg::Cfg;
 use crate::eval::{Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::eval::{LgpEvaluator, LgpState};
+use crate::evolve::cfg::EvolveCfg;
 use crate::evolve::evolver::Evolver;
 use crate::ops::mutation::mutate_normal;
 use crate::ops::util::rand_vec;
@@ -41,13 +41,15 @@ impl<F: FitnessFn<LgpState>> Evaluator for LgpFitnessFnEvaluator<F> {
 
 pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>(
     lgpcfg: LgpEvaluatorCfg,
-    cfg: Cfg,
+    cfg: EvolveCfg,
     f: F,
 ) -> Evolver<E> {
     const INITIAL_LENGTH_MEAN: f64 = 10.0;
     const INITIAL_LENGTH_STD: f64 = 2.0;
 
     Evolver::new(f(LgpEvaluator::new(lgpcfg.clone())), cfg, move || {
+        // Better to start with small-ish programs, even if the max code
+        // length is high.
         let length = mutate_normal(INITIAL_LENGTH_MEAN, INITIAL_LENGTH_STD).round() as usize;
         let length = length.clamp(1, lgpcfg.max_code());
         let ops = rand_vec(length, || lgpcfg.rand_op());
@@ -57,7 +59,7 @@ pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>
 
 pub fn lgp_fitness_evolver<F: FitnessFn<LgpState>>(
     lgpcfg: LgpEvaluatorCfg,
-    cfg: Cfg,
+    cfg: EvolveCfg,
     f: F,
 ) -> Evolver<impl Evaluator> {
     lgp_evolver(lgpcfg, cfg, |evaluator| LgpFitnessFnEvaluator::new(evaluator, f))

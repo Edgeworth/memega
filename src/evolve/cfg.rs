@@ -148,7 +148,7 @@ impl Distribution<Duplicates> for Standard {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Cfg {
+pub struct EvolveCfg {
     pub pop_size: usize,
     pub crossover: Crossover,
     pub mutation: Mutation, // Mutation rate per bit / basic block.
@@ -164,7 +164,7 @@ pub struct Cfg {
     pub par_dist: bool,    // Run distance computations in parallel
 }
 
-impl Cfg {
+impl EvolveCfg {
     #[must_use]
     pub fn new(pop_size: usize) -> Self {
         Self {
