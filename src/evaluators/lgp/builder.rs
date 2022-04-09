@@ -3,6 +3,7 @@ use crate::eval::{Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::eval::{LgpEvaluator, LgpState};
 use crate::evolve::evolver::Evolver;
+use crate::ops::mutation::mutate_normal;
 use crate::ops::util::rand_vec;
 
 pub struct LgpFitnessFnEvaluator<F: FitnessFn<LgpState>> {
@@ -43,8 +44,14 @@ pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>
     cfg: Cfg,
     f: F,
 ) -> Evolver<E> {
-    Evolver::new(f(LgpEvaluator::new(lgpcfg)), cfg, move || {
-        LgpState::new(rand_vec(lgpcfg.max_code(), || lgpcfg.rand_op()), lgpcfg)
+    const INITIAL_LENGTH_MEAN: f64 = 10.0;
+    const INITIAL_LENGTH_STD: f64 = 2.0;
+
+    Evolver::new(f(LgpEvaluator::new(lgpcfg.clone())), cfg, move || {
+        let length = mutate_normal(INITIAL_LENGTH_MEAN, INITIAL_LENGTH_STD).round() as usize;
+        let length = length.clamp(1, lgpcfg.max_code());
+        let ops = rand_vec(length, || lgpcfg.rand_op());
+        LgpState::new(ops, lgpcfg.num_reg(), lgpcfg.num_const(), lgpcfg.output_regs())
     })
 }
 

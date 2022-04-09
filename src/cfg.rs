@@ -122,7 +122,7 @@ impl Distribution<StagnationCondition> for Standard {
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Replacement {
-    // During stagnation make a proportion of the children random individuals.
+    // During stagnation make a proportion of the children with random individuals.
     ReplaceChildren(f64),
 }
 
