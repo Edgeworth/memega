@@ -36,11 +36,3 @@ rayon = "1.5.1"
 smallvec = "1.8.0"
 strum = "0.24.0"
 strum_macros = "0.24.0"
-
-# Build dependencies with optimisations - debug builds will run faster
-# but dependencies don't change often.
-[profile.dev.package."*"]
-opt-level = 3
-
-[profile.release]
-lto = true

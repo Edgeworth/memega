@@ -4,8 +4,8 @@ use approx::relative_eq;
 use eyre::{eyre, Result};
 use rayon::prelude::*;
 
-use crate::cfg::{Cfg, Niching, Species};
 use crate::eval::{Evaluator, State};
+use crate::evolve::cfg::{EvolveCfg, Niching, Species};
 use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::member::Member;
 use crate::gen::species::{DistCache, SpeciesInfo};
@@ -19,7 +19,7 @@ pub struct UnevaluatedGen<S: State> {
 
 impl<S: State> UnevaluatedGen<S> {
     #[must_use]
-    pub fn initial<E: Evaluator>(states: Vec<S>, cfg: &Cfg) -> Self {
+    pub fn initial<E: Evaluator>(states: Vec<S>, cfg: &EvolveCfg) -> Self {
         let mems = states.into_iter().map(|state| Member::new::<E>(state, cfg)).collect();
         Self::new(mems)
     }
@@ -33,7 +33,7 @@ impl<S: State> UnevaluatedGen<S> {
     pub fn evaluate<E: Evaluator<State = S>>(
         &mut self,
         gen_count: usize,
-        cfg: &Cfg,
+        cfg: &EvolveCfg,
         eval: &E,
     ) -> Result<EvaluatedGen<S>> {
         // First compute plain fitnesses.

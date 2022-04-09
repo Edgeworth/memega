@@ -3,8 +3,8 @@ use std::mem::swap;
 use derive_more::Display;
 use rand::Rng;
 
-use crate::cfg::{Cfg, Crossover, Mutation};
 use crate::eval::Evaluator;
+use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation};
 use crate::evolve::evolver::CreateEvolverFn;
 use crate::evolve::result::Stats;
 use crate::ops::crossover::crossover_blx;
@@ -12,12 +12,12 @@ use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate};
 use crate::ops::util::rand_vec;
 
-pub trait StatFn = Fn(Cfg) -> Option<Stats> + Send + Sync;
+pub trait StatFn = Fn(EvolveCfg) -> Option<Stats> + Send + Sync;
 
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd)]
 #[display(fmt = "{:?}", cfg)]
 pub struct HyperState {
-    cfg: Cfg,
+    cfg: EvolveCfg,
     crossover: Vec<f64>, // Weights for fixed crossover.
     mutation: Vec<f64>,  // Weights for fixed mutation.
 }
@@ -28,7 +28,7 @@ impl HyperState {
         let mut r = rand::thread_rng();
         let crossover = rand_vec(num_crossover, || r.gen());
         let mutation = rand_vec(num_mutation, || r.gen());
-        let mut cfg = Cfg::new(pop_size);
+        let mut cfg = EvolveCfg::new(pop_size);
         cfg.survival = r.gen();
         cfg.selection = r.gen();
         cfg.niching = r.gen();

@@ -1,6 +1,6 @@
 use derive_more::{Deref, DerefMut, Display};
-use memega::cfg::Cfg;
 use memega::eval::Evaluator;
+use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 use memega::ops::crossover::crossover_kpx;
 use memega::ops::distance::count_different;
@@ -63,7 +63,7 @@ impl Evaluator for KnapsackEvaluator {
 }
 
 #[must_use]
-pub fn knapsack_evolver(cfg: Cfg) -> Evolver<KnapsackEvaluator> {
+pub fn knapsack_evolver(cfg: EvolveCfg) -> Evolver<KnapsackEvaluator> {
     const NUM_ITEMS: usize = 100;
     const MAX_W: f64 = 100.0;
 

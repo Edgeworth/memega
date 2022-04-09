@@ -1,7 +1,7 @@
 use rand::Rng;
 
-use crate::cfg::{Cfg, Crossover, Mutation};
 use crate::eval::Evaluator;
+use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation};
 use crate::ops::util::rand_vec;
 
 /// Potentially self-adaptive parameters per state.
@@ -14,7 +14,7 @@ pub struct Params {
 
 impl Params {
     #[must_use]
-    pub fn new<E: Evaluator>(cfg: &Cfg) -> Self {
+    pub fn new<E: Evaluator>(cfg: &EvolveCfg) -> Self {
         let mut r = rand::thread_rng();
         let mutation = if let Mutation::Fixed(v) = &cfg.mutation {
             v.clone()

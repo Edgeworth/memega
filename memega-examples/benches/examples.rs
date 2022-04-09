@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use memega::cfg::{Cfg, Crossover, Mutation, Niching, Selection, Species, Survival};
+use memega::evolve::cfg::{Crossover, EvolveCfg, Mutation, Niching, Selection, Species, Survival};
 use memega_examples::examples::ackley::ackley_evolver;
 use memega_examples::examples::griewank::griewank_evolver;
 use memega_examples::examples::hyper::hyper_evolver;
@@ -9,8 +9,8 @@ use memega_examples::examples::knapsack::knapsack_evolver;
 use memega_examples::examples::rastrigin::rastrigin_evolver;
 use memega_examples::examples::target_string::target_string_evolver;
 
-fn get_cfg() -> Cfg {
-    Cfg::new(100)
+fn get_cfg() -> EvolveCfg {
+    EvolveCfg::new(100)
         .set_mutation(Mutation::Adaptive)
         .set_crossover(Crossover::Adaptive)
         .set_survival(Survival::TopProportion(0.25))

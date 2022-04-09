@@ -1,6 +1,6 @@
 use derive_more::{Deref, DerefMut, Display};
-use memega::cfg::Cfg;
 use memega::eval::Evaluator;
+use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 use memega::ops::crossover::crossover_kpx;
 use memega::ops::distance::count_different;
@@ -53,7 +53,7 @@ impl Evaluator for TargetStringEvaluator {
 }
 
 #[must_use]
-pub fn target_string_evolver(cfg: Cfg) -> Evolver<TargetStringEvaluator> {
+pub fn target_string_evolver(cfg: EvolveCfg) -> Evolver<TargetStringEvaluator> {
     const TARGET: &str = "Hello world!";
     Evolver::new(TargetStringEvaluator::new(TARGET), cfg, move || {
         let mut r = rand::thread_rng();

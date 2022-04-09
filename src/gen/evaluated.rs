@@ -1,8 +1,10 @@
 use derive_more::Display;
 use eyre::{eyre, Result};
 
-use crate::cfg::{Cfg, Crossover, Duplicates, Mutation, Replacement, Selection, Survival};
 use crate::eval::{Evaluator, State};
+use crate::evolve::cfg::{
+    Crossover, Duplicates, EvolveCfg, Mutation, Replacement, Selection, Survival,
+};
 use crate::evolve::evolver::RandState;
 use crate::gen::member::Member;
 use crate::gen::species::SpeciesId;
@@ -46,7 +48,7 @@ impl<S: State> EvaluatedGen<S> {
         species
     }
 
-    fn survivors(&self, survival: Survival, cfg: &Cfg) -> Vec<Member<S>> {
+    fn survivors(&self, survival: Survival, cfg: &EvolveCfg) -> Vec<Member<S>> {
         match survival {
             Survival::TopProportion(prop) => {
                 // Ceiling so we don't miss keeping things for small sizes.
@@ -146,7 +148,7 @@ impl<S: State> EvaluatedGen<S> {
         &self,
         genfn: &mut (dyn RandState<S> + '_),
         stagnant: bool,
-        cfg: &Cfg,
+        cfg: &EvolveCfg,
         eval: &E,
     ) -> Result<UnevaluatedGen<S>> {
         // Pick survivors:

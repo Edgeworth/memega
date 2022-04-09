@@ -2,19 +2,20 @@ use approx::{abs_diff_eq, relative_eq};
 use eyre::Result;
 use float_pretty_print::PrettyPrintFloat;
 
-use crate::cfg::{Cfg, Crossover, Mutation, Stagnation, StagnationCondition};
 use crate::eval::{Evaluator, State};
+use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation, Stagnation, StagnationCondition};
 use crate::evolve::result::{EvolveResult, Stats};
 use crate::gen::member::Member;
 use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::util::rand_vec;
 
-pub trait CreateEvolverFn<E: Evaluator> = Fn(Cfg) -> Evolver<E> + Sync + Send + Clone + 'static;
+pub trait CreateEvolverFn<E: Evaluator> =
+    Fn(EvolveCfg) -> Evolver<E> + Sync + Send + Clone + 'static;
 pub trait RandState<S: State> = FnMut() -> S + Send;
 
 /// Runs iterations of GA w.r.t. the given evaluator.
 pub struct Evolver<E: Evaluator> {
-    cfg: Cfg,
+    cfg: EvolveCfg,
     eval: E,
     gen: UnevaluatedGen<E::State>,
     rand_state: Box<dyn RandState<E::State>>,
@@ -26,7 +27,7 @@ pub struct Evolver<E: Evaluator> {
 impl<E: Evaluator> Evolver<E> {
     pub fn from_initial(
         eval: E,
-        cfg: Cfg,
+        cfg: EvolveCfg,
         mut gen: Vec<E::State>,
         mut rand_state: impl RandState<E::State> + 'static,
     ) -> Self {
@@ -48,7 +49,11 @@ impl<E: Evaluator> Evolver<E> {
         }
     }
 
-    pub fn new(eval: E, cfg: Cfg, mut rand_state: impl RandState<E::State> + 'static) -> Self {
+    pub fn new(
+        eval: E,
+        cfg: EvolveCfg,
+        mut rand_state: impl RandState<E::State> + 'static,
+    ) -> Self {
         #[allow(clippy::redundant_closure)] // This closure is actually necessary.
         let gen = UnevaluatedGen::initial::<E>(rand_vec(cfg.pop_size, || rand_state()), &cfg);
         Self {
@@ -98,7 +103,7 @@ impl<E: Evaluator> Evolver<E> {
         Ok(EvolveResult { unevaluated: next, gen, stagnant })
     }
 
-    pub fn cfg(&self) -> &Cfg {
+    pub fn cfg(&self) -> &EvolveCfg {
         &self.cfg
     }
 

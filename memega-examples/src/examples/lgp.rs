@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 
-use memega::cfg::Cfg;
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use memega::evaluators::lgp::eval::LgpState;
 use memega::evaluators::lgp::vm::lgpvm::LgpVm;
+use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 use num_traits::ToPrimitive;
 use rand::Rng;
@@ -48,7 +48,11 @@ pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
 }
 
 #[must_use]
-pub fn lgp_evolver(target: String, lgpcfg: LgpEvaluatorCfg, cfg: Cfg) -> Evolver<impl Evaluator> {
+pub fn lgp_evolver(
+    target: String,
+    lgpcfg: LgpEvaluatorCfg,
+    cfg: EvolveCfg,
+) -> Evolver<impl Evaluator> {
     lgp_fitness_evolver(
         lgpcfg.set_num_reg(NUM_REG).set_num_const(NUM_CONST).set_output_regs(&[OUTPUT_REG]),
         cfg,

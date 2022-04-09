@@ -1,11 +1,11 @@
 use clap::{ArgEnum, Parser};
 use eyre::Result;
-use memega::cfg::{
-    Cfg, Crossover, Mutation, Niching, Replacement, Species, Stagnation, StagnationCondition,
-    Survival,
-};
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
+use memega::evolve::cfg::{
+    Crossover, EvolveCfg, Mutation, Niching, Replacement, Species, Stagnation, StagnationCondition,
+    Survival,
+};
 use memega::evolve::evolver::CreateEvolverFn;
 use memega::evolve::result::Stats;
 use memega::harness::cfg::{HarnessCfg, Termination};
@@ -64,16 +64,16 @@ pub struct Args {
 }
 
 impl Args {
-    fn cfg(&self) -> Cfg {
-        Cfg::new(self.pop_size)
+    fn cfg(&self) -> EvolveCfg {
+        EvolveCfg::new(self.pop_size)
             .set_mutation(Mutation::Adaptive)
             .set_crossover(Crossover::Adaptive)
             .set_survival(Survival::TopProportion(0.1))
             .set_species(Species::None)
             .set_niching(Niching::None)
             .set_stagnation(Stagnation::ContinuousAfter(100))
-            .set_stagnation_condition(StagnationCondition::Epsilon(2.0))
-            .set_replacement(Replacement::ReplaceChildren(0.5))
+            .set_stagnation_condition(StagnationCondition::Epsilon(0.5))
+            .set_replacement(Replacement::ReplaceChildren(0.1))
             .set_par_fitness(true)
     }
 

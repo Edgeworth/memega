@@ -37,7 +37,6 @@
 #![allow(clippy::expl_impl_clone_on_copy)]
 #![feature(array_chunks, let_chains, is_sorted, trait_alias)]
 
-pub mod cfg;
 pub mod eval;
 pub mod evaluators;
 pub mod evolve;
