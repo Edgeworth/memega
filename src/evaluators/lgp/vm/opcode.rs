@@ -1,4 +1,5 @@
 use enumset::EnumSetType;
+use smallvec::{smallvec, SmallVec};
 use strum_macros::{Display, EnumIter};
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
@@ -11,6 +12,27 @@ pub enum Operands {
     Reg3Assign { ri: u8, ra: u8, rb: u8 },
     /// Assign immediate value to register.
     ImmAssign { ri: u8, imm: f32 },
+}
+
+impl Operands {
+    #[must_use]
+    pub fn input_regs(&self) -> SmallVec<[u8; 2]> {
+        match *self {
+            Operands::Reg2Assign { ra, .. } => smallvec![ra],
+            Operands::Reg3Assign { ra, rb, .. } | Operands::Reg2Cmp { ra, rb } => smallvec![ra, rb],
+            Operands::ImmAssign { .. } => smallvec![],
+        }
+    }
+
+    #[must_use]
+    pub fn output_regs(&self) -> SmallVec<[u8; 1]> {
+        match *self {
+            Operands::Reg2Cmp { .. } => smallvec![],
+            Operands::Reg2Assign { ri, .. }
+            | Operands::Reg3Assign { ri, .. }
+            | Operands::ImmAssign { ri, .. } => smallvec![ri],
+        }
+    }
 }
 
 /// Machine consists of N registers (up to 256) that contain f64 values.
@@ -56,5 +78,10 @@ impl Opcode {
             // Two reg compare:
             Opcode::IfLt => Operands::Reg2Cmp { ra: 0, rb: 0 },
         }
+    }
+
+    #[must_use]
+    pub fn is_branch(&self) -> bool {
+        matches!(self, Opcode::IfLt)
     }
 }

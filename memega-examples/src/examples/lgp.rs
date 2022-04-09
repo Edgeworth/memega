@@ -13,6 +13,7 @@ use savage_core::expression::{Expression, Rational};
 
 const NUM_REG: usize = 2;
 const NUM_CONST: usize = 4;
+const OUTPUT_REG: u8 = 0;
 
 #[must_use]
 pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
@@ -41,16 +42,16 @@ pub fn lgp_fitness(s: &LgpState, _gen: usize, target: &str) -> f64 {
         let mut exec = LgpVm::new(&cfg);
         exec.run();
 
-        fitness += 1.0 / (1.0 + (ans - exec.mem(0)).abs());
+        fitness += 1.0 / (1.0 + (ans - exec.mem(OUTPUT_REG)).abs());
     }
-    // TODO: Should we penalize longer programs here? Or write optimize function
-    // for code.
-    fitness / NUM_SAMPLES as f64 + 0.1 / (1.0 + s.ops.len() as f64)
+    fitness / NUM_SAMPLES as f64
 }
 
 #[must_use]
 pub fn lgp_evolver(target: String, lgpcfg: LgpEvaluatorCfg, cfg: Cfg) -> Evolver<impl Evaluator> {
-    lgp_fitness_evolver(lgpcfg.set_num_const(NUM_CONST), cfg, move |s: &LgpState, gen| {
-        lgp_fitness(s, gen, &target)
-    })
+    lgp_fitness_evolver(
+        lgpcfg.set_num_reg(NUM_REG).set_num_const(NUM_CONST).set_output_regs(&[OUTPUT_REG]),
+        cfg,
+        move |s: &LgpState, gen| lgp_fitness(s, gen, &target),
+    )
 }

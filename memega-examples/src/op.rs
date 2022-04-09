@@ -94,7 +94,9 @@ impl Args {
             Example::Knapsack => self.dispatch(knapsack_evolver),
             Example::Rastringin => self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg)),
             Example::TargetString => self.dispatch(target_string_evolver),
-            Example::Lgp => self.dispatch(move |cfg| lgp_evolver(lgp_target.clone(), lgpcfg, cfg)),
+            Example::Lgp => {
+                self.dispatch(move |cfg| lgp_evolver(lgp_target.clone(), lgpcfg.clone(), cfg))
+            }
         }
     }
 

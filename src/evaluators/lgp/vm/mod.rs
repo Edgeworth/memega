@@ -4,3 +4,4 @@ pub mod disasm;
 pub mod lgpvm;
 pub mod op;
 pub mod opcode;
+pub mod optimize;

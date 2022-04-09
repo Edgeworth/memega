@@ -1,16 +1,18 @@
 use enumset::EnumSet;
 use rand::prelude::IteratorRandom;
 use rand::Rng;
+use smallvec::{smallvec, SmallVec};
 use strum::IntoEnumIterator;
 
 use crate::evaluators::lgp::vm::op::Op;
 use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 use crate::ops::mutation::mutate_normal;
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct LgpEvaluatorCfg {
     num_reg: usize,
     num_const: usize,
+    output_regs: SmallVec<[u8; 8]>,
     max_code: usize,
     /// Number of significant figures the immediate value can have. This is
     /// useful to control how much precision loaded float values can be.
@@ -26,6 +28,7 @@ impl LgpEvaluatorCfg {
         Self {
             num_reg: 4,
             num_const: 0,
+            output_regs: smallvec![0],
             max_code: 10,
             imm_sf: 2,
             imm_range: (-100.0, 100.0),
@@ -128,6 +131,12 @@ impl LgpEvaluatorCfg {
         self
     }
 
+    #[must_use]
+    pub fn set_output_regs(mut self, output_regs: &[u8]) -> Self {
+        self.output_regs = output_regs.into();
+        self
+    }
+
 
     #[must_use]
     pub fn set_max_code(mut self, max_code: usize) -> Self {
@@ -161,6 +170,11 @@ impl LgpEvaluatorCfg {
     #[must_use]
     pub fn num_const(&self) -> usize {
         self.num_const
+    }
+
+    #[must_use]
+    pub fn output_regs(&self) -> &[u8] {
+        &self.output_regs
     }
 
     #[must_use]

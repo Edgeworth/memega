@@ -15,8 +15,8 @@ clap = { version = "3.1.8", features = ["derive", "unicode", "wrap_help"] }
 color-eyre = "0.6.1"
 concurrent_lru = "0.2.0"
 derive_more = "0.99.17"
-enumset = "1.0.8"
-eyre = "0.6.7"
+enumset = "1.0.10"
+eyre = "0.6.8"
 float-pretty-print = "0.1.1"
 log = "0.4.16"
 memega = {version = "0.1.0", path = ".."}
