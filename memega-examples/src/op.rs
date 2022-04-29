@@ -61,6 +61,9 @@ pub struct Args {
 
     #[clap(long, default_value = "2000", help = "number of generation")]
     pub num_gen: usize,
+
+    #[clap(long, help = "how often to report to tensorboard")]
+    pub report_gen: Option<usize>,
 }
 
 impl Args {
@@ -78,16 +81,18 @@ impl Args {
     }
 
     fn trainer_cfg(&self) -> TrainerCfg {
-        TrainerCfg::new()
+        let mut cfg = TrainerCfg::new()
             .set_termination(Termination::FixedGenerations(self.num_gen))
             .set_print_gen(10)
-            .set_print_summary(10)
+            .set_print_summary(10);
+        cfg.report_gen = self.report_gen;
+        cfg
     }
 
     pub fn run(&self) -> Result<()> {
         let func_dim = self.func_dim;
         let lgp_target = self.lgp_target.clone();
-        let lgpcfg = LgpEvaluatorCfg::new().set_num_reg(1);
+        let lgpcfg = LgpEvaluatorCfg::new();
         match self.example {
             Example::Ackley => self.dispatch(move |cfg| ackley_evolver(func_dim, cfg)),
             Example::Griewank => self.dispatch(move |cfg| griewank_evolver(func_dim, cfg)),
