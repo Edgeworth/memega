@@ -40,18 +40,18 @@ impl<S: State> UnevaluatedGen<S> {
         if cfg.par_fitness {
             self.mems
                 .par_iter_mut()
-                .for_each(|s| s.base_fitness = eval.fitness(&s.state, gen_count));
+                .for_each(|s| s.fitness = eval.fitness(&s.state, gen_count));
         } else {
-            self.mems.iter_mut().for_each(|s| s.base_fitness = eval.fitness(&s.state, gen_count));
+            self.mems.iter_mut().for_each(|s| s.fitness = eval.fitness(&s.state, gen_count));
         };
 
-        // Check fitnesses are non-negative.
-        if !self.mems.iter().map(|v| v.base_fitness).all(|v| v >= 0.0) {
-            return Err(eyre!("got negative fitness"));
+        // Check fitnesses are non-negative and finite.
+        if !self.mems.iter().map(|v| v.fitness).all(|v| v >= 0.0 && v.is_finite()) {
+            return Err(eyre!("got negative or non-finite fitness"));
         }
 
         // Sort by fitnesses.
-        self.mems.sort_unstable_by(|a, b| b.base_fitness.partial_cmp(&a.base_fitness).unwrap());
+        self.mems.sort_unstable_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
 
         // Speciate if necessary.
         match cfg.species {
@@ -81,7 +81,7 @@ impl<S: State> UnevaluatedGen<S> {
         match cfg.niching {
             Niching::None => {
                 for v in &mut self.mems {
-                    v.selection_fitness = v.base_fitness;
+                    v.selection_fitness = v.fitness;
                 }
             }
             Niching::SharedFitness(radius) => {

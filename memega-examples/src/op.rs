@@ -8,8 +8,8 @@ use memega::evolve::cfg::{
 };
 use memega::evolve::evolver::CreateEvolverFn;
 use memega::evolve::result::Stats;
-use memega::harness::cfg::{HarnessCfg, Termination};
-use memega::harness::evolver_harness::Harness;
+use memega::train::cfg::{Termination, TrainerCfg};
+use memega::train::trainer::Trainer;
 
 use crate::examples::ackley::ackley_evolver;
 use crate::examples::griewank::griewank_evolver;
@@ -77,8 +77,8 @@ impl Args {
             .set_par_fitness(true)
     }
 
-    fn harness_cfg(&self) -> HarnessCfg {
-        HarnessCfg::new()
+    fn trainer_cfg(&self) -> TrainerCfg {
+        TrainerCfg::new()
             .set_termination(Termination::FixedGenerations(self.num_gen))
             .set_print_gen(10)
             .set_print_summary(10)
@@ -109,8 +109,8 @@ impl Args {
 
     fn run_op<E: Evaluator>(&self, create_fn: impl CreateEvolverFn<E>) -> Result<()> {
         let evolver = create_fn(self.cfg());
-        let harness = Harness::new(self.harness_cfg());
-        let mut r = harness.evolve(evolver)?;
+        let mut trainer = Trainer::new(self.trainer_cfg());
+        let mut r = trainer.evolve(evolver)?;
         println!("Stats:");
         println!("{}", Stats::from_result(&mut r));
         Ok(())

@@ -41,6 +41,6 @@ pub mod eval;
 pub mod evaluators;
 pub mod evolve;
 pub mod gen;
-pub mod harness;
+pub mod train;
 pub mod ops;
 pub mod util;

@@ -31,7 +31,7 @@ pub struct Stats {
 impl Stats {
     pub fn from_result<S: State>(r: &mut EvolveResult<S>) -> Self {
         Self {
-            best_fitness: r.nth(0).base_fitness,
+            best_fitness: r.nth(0).fitness,
             mean_fitness: r.mean_fitness(),
             pop_size: r.size(),
             num_dup: r.num_dup(),
@@ -63,7 +63,7 @@ impl<S: State> EvolveResult<S> {
 
     #[must_use]
     pub fn mean_fitness(&self) -> f64 {
-        self.gen.mems.iter().map(|v| v.base_fitness).sum::<f64>() / self.gen.mems.len() as f64
+        self.gen.mems.iter().map(|v| v.fitness).sum::<f64>() / self.gen.mems.len() as f64
     }
 
     #[must_use]
