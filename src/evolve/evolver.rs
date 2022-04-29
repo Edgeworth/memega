@@ -71,10 +71,10 @@ impl<E: Evaluator> Evolver<E> {
         let gen = self.gen.evaluate(self.gen_count, &self.cfg, &self.eval)?;
         let stagnant = match self.cfg.stagnation_condition {
             StagnationCondition::Default => {
-                relative_eq!(gen.mems[0].base_fitness, self.last_fitness)
+                relative_eq!(gen.mems[0].fitness, self.last_fitness)
             }
             StagnationCondition::Epsilon(ep) => {
-                abs_diff_eq!(gen.mems[0].base_fitness, self.last_fitness, epsilon = ep)
+                abs_diff_eq!(gen.mems[0].fitness, self.last_fitness, epsilon = ep)
             }
         };
         self.gen_count += 1;
@@ -83,7 +83,7 @@ impl<E: Evaluator> Evolver<E> {
         } else {
             self.stagnation_count = 0;
         }
-        self.last_fitness = gen.mems[0].base_fitness;
+        self.last_fitness = gen.mems[0].fitness;
 
         let stagnant = match self.cfg.stagnation {
             Stagnation::None => false,
@@ -151,7 +151,7 @@ impl<E: Evaluator> Evolver<E> {
             for (idx, (pointer, v)) in by_species.iter_mut().enumerate() {
                 // Try adding this one.
                 if *pointer < v.len() {
-                    added.push((v[*pointer].base_fitness, idx));
+                    added.push((v[*pointer].fitness, idx));
                     *pointer += 1;
                     processed += 1;
                 }
@@ -173,8 +173,8 @@ impl<E: Evaluator> Evolver<E> {
         by_species.sort_unstable_by(|a, b| {
             b.1.first()
                 .unwrap()
-                .base_fitness
-                .partial_cmp(&a.1.first().unwrap().base_fitness)
+                .fitness
+                .partial_cmp(&a.1.first().unwrap().fitness)
                 .unwrap()
         });
 
@@ -182,7 +182,7 @@ impl<E: Evaluator> Evolver<E> {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
-                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.base_fitness), mem.state);
+                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.fitness), mem.state);
                 }
                 s += "\n";
             }

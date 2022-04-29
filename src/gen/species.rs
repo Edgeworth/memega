@@ -83,7 +83,7 @@ impl DistCache {
         radius: f64,
     ) -> (Vec<SpeciesId>, SpeciesInfo) {
         // Copy any existing species over.
-        assert!(s.is_sorted_by_key(|v| -v.base_fitness), "Must be sorted by fitness (bug)");
+        assert!(s.is_sorted_by_key(|v| -v.fitness), "Must be sorted by fitness (bug)");
         let mut ids: Vec<SpeciesId> = vec![NO_SPECIES; s.len()];
         let mut unassigned: VecDeque<usize> = (0..s.len()).collect();
         let mut num = 1;
@@ -117,7 +117,7 @@ impl DistCache {
                     sum += 1.0 - (d / radius).powf(alpha);
                 }
             }
-            s[i].selection_fitness = s[i].base_fitness / sum;
+            s[i].selection_fitness = s[i].fitness / sum;
         }
     }
 

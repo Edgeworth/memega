@@ -24,7 +24,7 @@ impl<S: State> EvaluatedGen<S> {
         // Sort by base fitness. Selection should happen using selection
         // fitness. Generate survivors using base fitness, to make sure we keep
         // the top individuals.
-        mems.sort_unstable_by(|a, b| b.base_fitness.partial_cmp(&a.base_fitness).unwrap());
+        mems.sort_unstable_by(|a, b| b.fitness.partial_cmp(&a.fitness).unwrap());
         Self { mems }
     }
 
