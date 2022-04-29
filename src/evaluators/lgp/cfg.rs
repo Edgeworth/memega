@@ -29,7 +29,7 @@ impl LgpEvaluatorCfg {
             num_reg: 4,
             num_const: 0,
             output_regs: smallvec![0],
-            max_code: 10,
+            max_code: 100,
             imm_sf: 2,
             imm_range: (-100.0, 100.0),
             opcodes: Opcode::iter().collect(),

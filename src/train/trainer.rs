@@ -1,7 +1,8 @@
+use std::mem;
+
 use eyre::Result;
 use log::warn;
-use tempfile::{tempdir, TempDir};
-use tensorboard_rs::summary_writer::SummaryWriter;
+use tempfile::TempDir;
 
 use crate::eval::Evaluator;
 use crate::evolve::evolver::Evolver;
@@ -11,24 +12,37 @@ use crate::train::cfg::{Termination, TrainerCfg};
 /// Runs evolution with the given parameters and prints some info.
 pub struct Trainer {
     cfg: TrainerCfg,
-    writer: Option<SummaryWriter>,
-    _tmp: Option<TempDir>,
+    #[cfg(feature = "tensorboard")]
+    writer: Option<tensorboard_rs::summary_writer::SummaryWriter>,
 }
 
 impl Trainer {
+    #[cfg(feature = "tensorboard")]
+    fn new_tensorboard(cfg: TrainerCfg) -> Self {
+        let report_path = if let Some(report_path) = &cfg.report_path {
+            Some(report_path.clone())
+        } else if cfg.report_gen.is_some() {
+            let path = std::env::temp_dir().join("tensorboard");
+            std::fs::create_dir_all(path.clone()).unwrap();
+            let tmp = TempDir::new_in(path).unwrap();
+            warn!("No report path specified for tensorboard, writing to {}", tmp.path().display());
+            let path = Some(tmp.path().to_path_buf());
+            mem::forget(tmp); // Don't delete the tempdir.
+            path
+        } else {
+            None
+        };
+        let writer = report_path.as_ref().map(tensorboard_rs::summary_writer::SummaryWriter::new);
+        Self { cfg, writer }
+    }
+
     #[must_use]
     pub fn new(cfg: TrainerCfg) -> Self {
-        let (report_path, tmp) = if let Some(report_path) = &cfg.report_path {
-            (Some(report_path.clone()), None)
-        } else if cfg.report_gen.is_some() {
-            let tmp = tempdir().unwrap();
-            warn!("No report path specified for tensorboard, writing to {}", tmp.path().display());
-            (Some(tmp.path().to_path_buf()), Some(tmp))
-        } else {
-            (None, None)
-        };
-        let writer = report_path.as_ref().map(SummaryWriter::new);
-        Self { cfg, writer, _tmp: tmp }
+        #[cfg(feature = "tensorboard")]
+        let s = Self::new_tensorboard(cfg);
+        #[cfg(not(feature = "tensorboard"))]
+        let s = Self { cfg };
+        s
     }
 
     pub fn evolve<E: Evaluator>(
@@ -58,9 +72,12 @@ impl Trainer {
                 println!("{}", evolver.summary(&mut r));
                 println!("{}", evolver.summary_sample(&mut r, 5));
             }
+            #[cfg(feature = "tensorboard")]
             if let Some(report_gen) = self.cfg.report_gen && let Some(writer) = &mut self.writer && i % report_gen == 0  {
                 writer.add_scalar("train fitness", (fitness_sum / fitness_count) as f32, i);
-
+                writer.flush();
+                fitness_sum = 0.0;
+                fitness_count = 0.0;
             }
             ret = Some(r);
         }
