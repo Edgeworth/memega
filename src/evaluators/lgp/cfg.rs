@@ -137,7 +137,6 @@ impl LgpEvaluatorCfg {
         self
     }
 
-
     #[must_use]
     pub fn set_max_code(mut self, max_code: usize) -> Self {
         self.max_code = max_code;

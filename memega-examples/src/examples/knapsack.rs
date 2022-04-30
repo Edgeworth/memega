@@ -27,7 +27,6 @@ impl KnapsackEvaluator {
 impl Evaluator for KnapsackEvaluator {
     type State = KnapsackState;
 
-
     fn crossover(&self, s1: &mut Self::State, s2: &mut Self::State, idx: usize) {
         match idx {
             0 => {}
@@ -44,7 +43,7 @@ impl Evaluator for KnapsackEvaluator {
         };
     }
 
-    fn fitness(&self, s: &Self::State, _gen: usize) -> f64 {
+    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> f64 {
         let mut cur_w = 0.0;
         let mut cur_v = 0.0;
         for (i, &kept) in s.iter().enumerate() {

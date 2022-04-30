@@ -24,7 +24,7 @@ impl HyperBuilder {
     /// Add a evolver for which we should optimise the hyperparameters for.
     /// Adding multiple evolvers will optimise a common set of hyperparameters
     /// over all of them.
-    pub fn add<F: CreateEvolverFn<E>, E: Evaluator>(&mut self, max_fitness: f64, f: F) {
+    pub fn add<F: CreateEvolverFn<E>, E: Evaluator<Data = ()>>(&mut self, max_fitness: f64, f: F) {
         self.num_crossover = self.num_crossover.max(E::NUM_CROSSOVER);
         self.num_mutation = self.num_mutation.max(E::NUM_MUTATION);
         let sample_dur = self.sample_dur;
@@ -35,7 +35,8 @@ impl HyperBuilder {
             let mut r2 = None;
             while (Instant::now() - st) < sample_dur {
                 swap(&mut r1, &mut r2);
-                r2 = Some(evolver.run_iter().unwrap());
+                // TODO: Support passing in data.
+                r2 = Some(evolver.run().unwrap());
             }
 
             // Get the last run that ran in time.

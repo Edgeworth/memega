@@ -21,13 +21,14 @@ version = "0.1.0"
 
 [features]
 default = ["tensorboard"]
-tensorboard = ["dep:tensorboard-rs"]
+tensorboard = ["dep:tensorboard-rs", "dep:chrono"]
 
 [workspace]
 members = ["memega-examples"]
 
 [dependencies]
 approx = "0.5.1"
+chrono = {version = "0.4.19", optional = true}
 concurrent_lru = "0.2.0"
 derive_more = "0.99.17"
 enumset = "1.0.11"

@@ -147,6 +147,23 @@ impl Distribution<Duplicates> for Standard {
     }
 }
 
+/// How to combine fitnesses for a single member, if multiple inputs are
+/// given (`Evaluator::Data`)
+#[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
+pub enum FitnessReduction {
+    ArithmeticMean,
+    GeometricMean,
+}
+
+impl Distribution<FitnessReduction> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> FitnessReduction {
+        match r.gen_range(0..1) {
+            0 => FitnessReduction::ArithmeticMean,
+            _ => FitnessReduction::GeometricMean,
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct EvolveCfg {
     pub pop_size: usize,
@@ -160,8 +177,13 @@ pub struct EvolveCfg {
     pub stagnation_condition: StagnationCondition,
     pub replacement: Replacement,
     pub duplicates: Duplicates,
-    pub par_fitness: bool, // Run fitness computations in parallel
-    pub par_dist: bool,    // Run distance computations in parallel
+    pub fitness_reduction: FitnessReduction,
+
+    /// Run fitness computations in parallel
+    pub par_fitness: bool,
+
+    /// Run distance computations in parallel
+    pub par_dist: bool,
 }
 
 impl EvolveCfg {
@@ -179,6 +201,7 @@ impl EvolveCfg {
             stagnation_condition: StagnationCondition::Default,
             replacement: Replacement::ReplaceChildren(0.2),
             duplicates: Duplicates::DisallowDuplicates,
+            fitness_reduction: FitnessReduction::ArithmeticMean,
             par_fitness: false,
             par_dist: false,
         }
@@ -237,6 +260,11 @@ impl EvolveCfg {
     #[must_use]
     pub fn set_duplicates(self, duplicates: Duplicates) -> Self {
         Self { duplicates, ..self }
+    }
+
+    #[must_use]
+    pub fn set_fitness_reduction(self, fitness_reduction: FitnessReduction) -> Self {
+        Self { fitness_reduction, ..self }
     }
 
     #[must_use]

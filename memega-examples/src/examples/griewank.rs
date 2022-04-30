@@ -5,12 +5,12 @@ use memega::evolve::evolver::Evolver;
 use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
-pub fn griewank_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator> {
+pub fn griewank_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Data = ()>> {
     func_evolver(
         dim,
         -10000.0,
         10000.0,
-        |s: &FuncState, _| {
+        |s: &'_ FuncState, _: &'_ _| {
             let mut add = 0.0;
             let mut mul = 1.0;
             for (i, &x) in s.iter().enumerate() {

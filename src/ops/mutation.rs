@@ -102,5 +102,9 @@ pub fn mutate_lognorm(v: f64, std: f64) -> f64 {
 pub fn mutate_creep<T: Num + Saturating + SampleUniform + PartialOrd>(v: T, max_diff: T) -> T {
     let mut r = rand::thread_rng();
     let diff = r.gen_range(T::zero()..max_diff);
-    if r.gen::<bool>() { v.saturating_sub(diff) } else { v.saturating_add(diff) }
+    if r.gen::<bool>() {
+        v.saturating_sub(diff)
+    } else {
+        v.saturating_add(diff)
+    }
 }

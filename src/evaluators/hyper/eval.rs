@@ -177,7 +177,7 @@ impl Evaluator for HyperEvaluator {
         }
     }
 
-    fn fitness(&self, s: &Self::State, _gen: usize) -> f64 {
+    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> f64 {
         const SAMPLES: usize = 30;
         let mut score = 0.0;
         for _ in 0..SAMPLES {

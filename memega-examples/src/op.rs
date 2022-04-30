@@ -1,6 +1,6 @@
 use clap::{ArgEnum, Parser};
 use eyre::Result;
-use memega::eval::Evaluator;
+use memega::eval::{Data, Evaluator};
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use memega::evolve::cfg::{
     Crossover, EvolveCfg, Mutation, Niching, Replacement, Species, Stagnation, StagnationCondition,
@@ -9,12 +9,13 @@ use memega::evolve::cfg::{
 use memega::evolve::evolver::CreateEvolverFn;
 use memega::evolve::result::Stats;
 use memega::train::cfg::{Termination, TrainerCfg};
+use memega::train::sampler::{DataSampler, EmptyDataSampler};
 use memega::train::trainer::Trainer;
 
 use crate::examples::ackley::ackley_evolver;
+use crate::examples::expr::{expr_evolver, ExprDataSampler};
 use crate::examples::griewank::griewank_evolver;
 use crate::examples::knapsack::knapsack_evolver;
-use crate::examples::lgp::lgp_evolver;
 use crate::examples::rastrigin::rastrigin_evolver;
 use crate::examples::target_string::target_string_evolver;
 
@@ -94,28 +95,43 @@ impl Args {
         let lgp_target = self.lgp_target.clone();
         let lgpcfg = LgpEvaluatorCfg::new();
         match self.example {
-            Example::Ackley => self.dispatch(move |cfg| ackley_evolver(func_dim, cfg)),
-            Example::Griewank => self.dispatch(move |cfg| griewank_evolver(func_dim, cfg)),
-            Example::Knapsack => self.dispatch(knapsack_evolver),
-            Example::Rastringin => self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg)),
-            Example::TargetString => self.dispatch(target_string_evolver),
-            Example::Lgp => {
-                self.dispatch(move |cfg| lgp_evolver(lgp_target.clone(), lgpcfg.clone(), cfg))
+            Example::Ackley => {
+                self.dispatch(move |cfg| ackley_evolver(func_dim, cfg), &EmptyDataSampler {})
             }
+            Example::Griewank => {
+                self.dispatch(move |cfg| griewank_evolver(func_dim, cfg), &EmptyDataSampler {})
+            }
+            Example::Knapsack => self.dispatch(knapsack_evolver, &EmptyDataSampler {}),
+            Example::Rastringin => {
+                self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg), &EmptyDataSampler {})
+            }
+            Example::TargetString => self.dispatch(target_string_evolver, &EmptyDataSampler {}),
+            Example::Lgp => self.dispatch(
+                move |cfg| expr_evolver(lgp_target.clone(), lgpcfg.clone(), cfg),
+                &ExprDataSampler::new(),
+            ),
         }
     }
 
-    fn dispatch<E: Evaluator>(&self, create_fn: impl CreateEvolverFn<E>) -> Result<()> {
+    fn dispatch<D: Data, E: Evaluator<Data = D>>(
+        &self,
+        create_fn: impl CreateEvolverFn<E>,
+        sampler: &impl DataSampler<E::Data>,
+    ) -> Result<()> {
         match self.op {
-            Op::Run => self.run_op(create_fn)?,
+            Op::Run => self.run_op(create_fn, sampler)?,
         }
         Ok(())
     }
 
-    fn run_op<E: Evaluator>(&self, create_fn: impl CreateEvolverFn<E>) -> Result<()> {
+    fn run_op<E: Evaluator>(
+        &self,
+        create_fn: impl CreateEvolverFn<E>,
+        sampler: &impl DataSampler<E::Data>,
+    ) -> Result<()> {
         let evolver = create_fn(self.cfg());
         let mut trainer = Trainer::new(self.trainer_cfg());
-        let mut r = trainer.evolve(evolver)?;
+        let mut r = trainer.train(evolver, sampler)?;
         println!("Stats:");
         println!("{}", Stats::from_result(&mut r));
         Ok(())
