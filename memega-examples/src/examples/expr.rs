@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::collections::HashMap;
 
 use memega::eval::Evaluator;
@@ -65,16 +64,16 @@ impl ExprDataSampler {
 }
 
 impl DataSampler<f64> for ExprDataSampler {
-    fn train(&self, _gen: usize) -> Cow<'_, [f64]> {
-        Cow::Borrowed(&self.train)
+    fn train(&self, _gen: usize) -> Vec<f64> {
+        self.train.clone()
     }
 
-    fn valid(&self, _gen: usize) -> Cow<'_, [f64]> {
-        Cow::Borrowed(&self.valid)
+    fn valid(&self, _gen: usize) -> Vec<f64> {
+        self.valid.clone()
     }
 
-    fn test(&self, _gen: usize) -> Cow<'_, [f64]> {
-        Cow::Borrowed(&[])
+    fn test(&self, _gen: usize) -> Vec<f64> {
+        vec![]
     }
 }
 

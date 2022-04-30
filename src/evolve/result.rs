@@ -1,5 +1,4 @@
 use derive_more::Display;
-use float_pretty_print::PrettyPrintFloat;
 
 use crate::eval::State;
 use crate::gen::evaluated::EvaluatedGen;
@@ -7,17 +6,7 @@ use crate::gen::member::Member;
 use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 
-#[derive(Debug, Copy, Clone, PartialEq, Display)]
-#[display(
-    fmt = "best: {:5.5}, mean: {:5.5}, pop: {:>5}, dupes: {:>5}, dist: {}, stagnant: {}, species: {}",
-    "PrettyPrintFloat(*best_fitness)",
-    "PrettyPrintFloat(*mean_fitness)",
-    pop_size,
-    num_dup,
-    "PrettyPrintFloat(*mean_distance)",
-    stagnant,
-    species
-)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Stats {
     pub best_fitness: f64,
     pub mean_fitness: f64,
@@ -26,6 +15,20 @@ pub struct Stats {
     pub mean_distance: f64,
     pub stagnant: bool,
     pub species: SpeciesInfo,
+}
+
+impl std::fmt::Display for Stats {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "best: {:5.5}, mean: {:5.5}\npop: {:>5}, dupes: {:>5}, stagnant: {}",
+            self.best_fitness, self.mean_fitness, self.pop_size, self.num_dup, self.stagnant
+        )?;
+        if self.mean_distance.is_finite() {
+            write!(f, "dist: {:5.5}, {}", self.mean_distance, self.species)?;
+        }
+        Ok(())
+    }
 }
 
 impl Stats {

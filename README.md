@@ -1,12 +1,10 @@
 ## GA
 
-Current fitnesses for selection don't change probabilities that much for actual cost
-
-multi-objective optimization - currently just does weird fitness combinations
+Just contains my notes about what I'm doing.
 
 ## TODO
 
-- evolve user data (vec of floats)
+multi-objective optimization - currently just does weird fitness combinations
 
 ## Selection strategies
 
@@ -23,10 +21,10 @@ multi-objective optimization - currently just does weird fitness combinations
 
 1. k-point crossover
 2. Uniform crossover
-3. Partially mapped crossover (not implemented)
-4. Edge crossover (not implemented)
-5. Order crossover (not implemented)
-6. Cycle crossover (not implemented)
+3. Partially mapped crossover
+4. Edge crossover
+5. Order crossover
+6. Cycle crossover
 
 ## Mutation strategies
 
@@ -35,10 +33,10 @@ multi-objective optimization - currently just does weird fitness combinations
 - Uniform mutation, non-uniform mutation
 
 2. Random resetting - randomly reset a state
-3. Swap mutation (not implemented) - randomly swap two genes
-4. Scramble mutation (not implemented) - scramble a substring
-5. Inversion mutation (not implemented) - invert a substring
-6. Creep mutation (not implemented) - add a value to gene; small creep, large creep
+3. Swap mutation - randomly swap two genes
+4. Scramble mutation - scramble a substring
+5. Inversion mutation - invert a substring
+6. Creep mutation - add a value to gene; small creep, large creep
 
 ## Niching
 
@@ -69,14 +67,14 @@ multi-objective optimization - currently just does weird fitness combinations
 
 ## Tuning / analysis
 
-1. Graph of GA progress + mean progress averaged over multiple runs (not implemented)
+1. Graph of GA progress + mean progress averaged over multiple runs
 2. Statistical and graph comparison of two GAs (not implemented)
 3. ANOVA test - statistical analysis of varying multiple parameters (not implemented)
 4. Two-tailed t-test
 
 ## Hyper-parameter tuning
 
-- Meta-GA (not implemented)
+- Meta-GA
   Multi-objective
   Optimisations: Sharpening, Racing
 - Adaptive mutation and crossover rates

@@ -11,6 +11,7 @@ use memega::evolve::result::Stats;
 use memega::train::cfg::{Termination, TrainerCfg};
 use memega::train::sampler::{DataSampler, EmptyDataSampler};
 use memega::train::trainer::Trainer;
+use textwrap::indent;
 
 use crate::examples::ackley::ackley_evolver;
 use crate::examples::expr::{expr_evolver, ExprDataSampler};
@@ -82,10 +83,12 @@ impl Args {
     }
 
     fn trainer_cfg(&self) -> TrainerCfg {
-        let mut cfg = TrainerCfg::new()
+        let mut cfg = TrainerCfg::new("example")
             .set_termination(Termination::FixedGenerations(self.num_gen))
             .set_print_gen(10)
-            .set_print_summary(10);
+            .set_print_summary(10)
+            .set_print_samples(100)
+            .set_print_valid(10);
         cfg.report_gen = self.report_gen;
         cfg
     }
@@ -133,7 +136,7 @@ impl Args {
         let mut trainer = Trainer::new(self.trainer_cfg());
         let mut r = trainer.train(evolver, sampler)?;
         println!("Stats:");
-        println!("{}", Stats::from_result(&mut r));
+        println!("{}", indent(&format!("{}", Stats::from_result(&mut r)), "  "));
         Ok(())
     }
 }
