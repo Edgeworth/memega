@@ -24,42 +24,43 @@ fn get_cfg() -> EvolveCfg {
 fn rastrigin(c: &mut Criterion) {
     c.bench_function("rastrigin", |b| {
         let mut r = rastrigin_evolver(2, get_cfg());
-        b.iter(|| r.run_iter())
+        b.iter(|| r.run())
     });
 }
 
 fn griewank(c: &mut Criterion) {
     c.bench_function("griewank", |b| {
         let mut r = griewank_evolver(2, get_cfg());
-        b.iter(|| r.run_iter())
+        b.iter(|| r.run())
     });
 }
 
 fn ackley(c: &mut Criterion) {
     c.bench_function("ackley", |b| {
         let mut r = ackley_evolver(2, get_cfg());
-        b.iter(|| r.run_iter())
+        b.iter(|| r.run())
     });
 }
 
 fn knapsack(c: &mut Criterion) {
     c.bench_function("knapsack", |b| {
         let mut r = knapsack_evolver(get_cfg());
-        b.iter(|| r.run_iter())
+        b.iter(|| r.run())
     });
 }
 
 fn target_string(c: &mut Criterion) {
     c.bench_function("target_string", |b| {
         let mut r = target_string_evolver(get_cfg());
-        b.iter(|| r.run_iter())
+        b.iter(|| r.run())
     });
 }
 
 fn hyper(c: &mut Criterion) {
     c.bench_function("hyper", |b| {
-        let mut r = hyper_evolver(100, Duration::from_millis(1), get_cfg());
-        b.iter(|| r.run_iter())
+        let cfg = get_cfg().set_pop_size(10);
+        let mut r = hyper_evolver(2, Duration::from_millis(1), cfg);
+        b.iter(|| r.run())
     });
 }
 

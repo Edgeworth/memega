@@ -1,4 +1,4 @@
-use crate::eval::{Evaluator, FitnessFn};
+use crate::eval::{Data, Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::eval::{LgpEvaluator, LgpState};
 use crate::evolve::cfg::EvolveCfg;
@@ -6,21 +6,22 @@ use crate::evolve::evolver::Evolver;
 use crate::ops::mutation::mutate_normal;
 use crate::ops::util::rand_vec;
 
-pub struct LgpFitnessFnEvaluator<F: FitnessFn<LgpState>> {
-    evaluator: LgpEvaluator,
+pub struct LgpFitnessFnEvaluator<D: Data, F: FitnessFn<LgpState, D>> {
+    evaluator: LgpEvaluator<D>,
     f: F,
 }
 
-impl<F: FitnessFn<LgpState>> LgpFitnessFnEvaluator<F> {
-    pub fn new(evaluator: LgpEvaluator, f: F) -> Self {
+impl<D: Data, F: FitnessFn<LgpState, D>> LgpFitnessFnEvaluator<D, F> {
+    pub fn new(evaluator: LgpEvaluator<D>, f: F) -> Self {
         Self { evaluator, f }
     }
 }
 
-impl<F: FitnessFn<LgpState>> Evaluator for LgpFitnessFnEvaluator<F> {
-    type State = <LgpEvaluator as Evaluator>::State;
-    const NUM_CROSSOVER: usize = LgpEvaluator::NUM_CROSSOVER;
-    const NUM_MUTATION: usize = LgpEvaluator::NUM_MUTATION;
+impl<D: Data, F: FitnessFn<LgpState, D>> Evaluator for LgpFitnessFnEvaluator<D, F> {
+    type State = <LgpEvaluator<D> as Evaluator>::State;
+    type Data = <LgpEvaluator<D> as Evaluator>::Data;
+    const NUM_CROSSOVER: usize = LgpEvaluator::<D>::NUM_CROSSOVER;
+    const NUM_MUTATION: usize = LgpEvaluator::<D>::NUM_MUTATION;
 
     fn crossover(&self, s1: &mut LgpState, s2: &mut LgpState, idx: usize) {
         self.evaluator.crossover(s1, s2, idx);
@@ -30,8 +31,8 @@ impl<F: FitnessFn<LgpState>> Evaluator for LgpFitnessFnEvaluator<F> {
         self.evaluator.mutate(s, rate, idx);
     }
 
-    fn fitness(&self, s: &LgpState, gen: usize) -> f64 {
-        (self.f)(s, gen)
+    fn fitness(&self, s: &LgpState, data: &Self::Data) -> f64 {
+        (self.f)(s, data)
     }
 
     fn distance(&self, s1: &LgpState, s2: &LgpState) -> f64 {
@@ -39,7 +40,11 @@ impl<F: FitnessFn<LgpState>> Evaluator for LgpFitnessFnEvaluator<F> {
     }
 }
 
-pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>(
+pub fn lgp_create_evolver<
+    D: Data,
+    E: Evaluator<State = LgpState, Data = D>,
+    F: FnOnce(LgpEvaluator<D>) -> E,
+>(
     lgpcfg: LgpEvaluatorCfg,
     cfg: EvolveCfg,
     f: F,
@@ -57,10 +62,10 @@ pub fn lgp_evolver<E: Evaluator<State = LgpState>, F: FnOnce(LgpEvaluator) -> E>
     })
 }
 
-pub fn lgp_fitness_evolver<F: FitnessFn<LgpState>>(
+pub fn lgp_fitness_evolver<D: Data, F: FitnessFn<LgpState, D>>(
     lgpcfg: LgpEvaluatorCfg,
     cfg: EvolveCfg,
     f: F,
-) -> Evolver<impl Evaluator> {
-    lgp_evolver(lgpcfg, cfg, |evaluator| LgpFitnessFnEvaluator::new(evaluator, f))
+) -> Evolver<impl Evaluator<Data = D>> {
+    lgp_create_evolver(lgpcfg, cfg, |evaluator| LgpFitnessFnEvaluator::new(evaluator, f))
 }

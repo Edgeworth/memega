@@ -3,12 +3,19 @@ use std::hash::Hash;
 
 use concurrent_lru::sharded::LruCache;
 
+use crate::evolve::cfg::FitnessReduction;
+
 pub trait State = Clone + Send + Sync + PartialOrd + PartialEq + fmt::Display;
-pub trait FitnessFn<S: State> = Fn(&S, usize) -> f64 + Sync + Send + Clone;
+pub trait Data = Clone + Send + Sync;
+pub trait FitnessFn<S: State, D: Data = ()> = Fn(&S, &D) -> f64 + Sync + Send + Clone;
 
 /// Evaluates, mutates, etc a State.
 pub trait Evaluator: Send + Sync {
     type State: State;
+    /// For data that should be passed into the fitness function - e.g. if
+    /// training on a subset of data e.g. to improve overfitting or because
+    /// the fitness function is not the exact goal.
+    type Data: Data = ();
     /// Specify the number of crossover operators.
     const NUM_CROSSOVER: usize = 2;
     /// Specify the number of mutation operators.
@@ -20,7 +27,33 @@ pub trait Evaluator: Send + Sync {
 
     /// Unlike crossover, mutation is called for every mutation operator. No need for a nop operator.
     fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize);
-    fn fitness(&self, s: &Self::State, gen: usize) -> f64;
+
+    fn fitness(&self, s: &Self::State, data: &Self::Data) -> f64;
+
+    /// Computes fitness over multiple inputs with the given reduction.
+    fn multi_fitness(
+        &self,
+        s: &Self::State,
+        inputs: &[Self::Data],
+        reduction: FitnessReduction,
+    ) -> f64 {
+        let mut cumulative = match reduction {
+            FitnessReduction::ArithmeticMean => 0.0,
+            FitnessReduction::GeometricMean => 1.0,
+        };
+        for data in inputs {
+            let fitness = self.fitness(s, data);
+            match reduction {
+                FitnessReduction::ArithmeticMean => cumulative += fitness,
+                FitnessReduction::GeometricMean => cumulative *= fitness,
+            }
+        }
+        match reduction {
+            FitnessReduction::ArithmeticMean => cumulative / inputs.len() as f64,
+            FitnessReduction::GeometricMean => cumulative.powf(1.0 / inputs.len() as f64),
+        }
+    }
+
     fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64;
 }
 
@@ -28,14 +61,16 @@ pub trait Evaluator: Send + Sync {
 pub struct CachedEvaluator<E: Evaluator>
 where
     E::State: Hash + Eq,
+    E::Data: Hash + Eq,
 {
     eval: E,
-    fitness_cache: LruCache<E::State, f64>,
+    fitness_cache: LruCache<(E::State, E::Data), f64>,
 }
 
 impl<E: Evaluator> CachedEvaluator<E>
 where
     E::State: Hash + Eq,
+    E::Data: Hash + Eq,
 {
     pub fn new(eval: E, cap: usize) -> Self {
         Self { eval, fitness_cache: LruCache::new(cap as u64) }
@@ -45,8 +80,10 @@ where
 impl<E: Evaluator> Evaluator for CachedEvaluator<E>
 where
     E::State: Hash + Eq,
+    E::Data: Hash + Eq,
 {
     type State = E::State;
+    type Data = E::Data;
     const NUM_CROSSOVER: usize = E::NUM_CROSSOVER;
     const NUM_MUTATION: usize = E::NUM_MUTATION;
 
@@ -58,8 +95,11 @@ where
         self.eval.mutate(s, rate, idx);
     }
 
-    fn fitness(&self, s: &Self::State, gen: usize) -> f64 {
-        *self.fitness_cache.get_or_init(s.clone(), 1, |s| self.eval.fitness(s, gen)).value()
+    fn fitness(&self, s: &Self::State, data: &Self::Data) -> f64 {
+        *self
+            .fitness_cache
+            .get_or_init((s.clone(), data.clone()), 1, |(s, d)| self.eval.fitness(s, d))
+            .value()
     }
 
     fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64 {

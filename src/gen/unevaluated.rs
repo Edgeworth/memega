@@ -32,17 +32,18 @@ impl<S: State> UnevaluatedGen<S> {
 
     pub fn evaluate<E: Evaluator<State = S>>(
         &mut self,
-        gen_count: usize,
+        inputs: &[E::Data],
         cfg: &EvolveCfg,
         eval: &E,
     ) -> Result<EvaluatedGen<S>> {
         // First compute plain fitnesses.
+        let compute = |s: &mut Member<S>| {
+            s.fitness = eval.multi_fitness(&s.state, inputs, cfg.fitness_reduction);
+        };
         if cfg.par_fitness {
-            self.mems
-                .par_iter_mut()
-                .for_each(|s| s.fitness = eval.fitness(&s.state, gen_count));
+            self.mems.par_iter_mut().for_each(compute);
         } else {
-            self.mems.iter_mut().for_each(|s| s.fitness = eval.fitness(&s.state, gen_count));
+            self.mems.iter_mut().for_each(compute);
         };
 
         // Check fitnesses are non-negative and finite.

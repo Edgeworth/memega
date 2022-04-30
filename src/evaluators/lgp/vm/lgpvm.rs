@@ -43,7 +43,11 @@ impl LgpVm {
     }
 
     fn peek(&mut self) -> Option<Op> {
-        if self.pc >= self.code.len() { None } else { Some(self.code[self.pc]) }
+        if self.pc >= self.code.len() {
+            None
+        } else {
+            Some(self.code[self.pc])
+        }
     }
 
     fn fetch(&mut self) -> Option<Op> {

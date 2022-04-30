@@ -24,6 +24,13 @@ pub struct Evolver<E: Evaluator> {
     last_fitness: f64,
 }
 
+/// Default runner for no data.
+impl<E: Evaluator<Data = ()>> Evolver<E> {
+    pub fn run(&mut self) -> Result<EvolveResult<E::State>> {
+        self.run_data(&[()])
+    }
+}
+
 impl<E: Evaluator> Evolver<E> {
     pub fn from_initial(
         eval: E,
@@ -67,8 +74,8 @@ impl<E: Evaluator> Evolver<E> {
         }
     }
 
-    pub fn run_iter(&mut self) -> Result<EvolveResult<E::State>> {
-        let gen = self.gen.evaluate(self.gen_count, &self.cfg, &self.eval)?;
+    pub fn run_data(&mut self, inputs: &[E::Data]) -> Result<EvolveResult<E::State>> {
+        let gen = self.gen.evaluate(inputs, &self.cfg, &self.eval)?;
         let stagnant = match self.cfg.stagnation_condition {
             StagnationCondition::Default => {
                 relative_eq!(gen.mems[0].fitness, self.last_fitness)
@@ -171,18 +178,14 @@ impl<E: Evaluator> Evolver<E> {
 
         // Order species by highest fitness individual.
         by_species.sort_unstable_by(|a, b| {
-            b.1.first()
-                .unwrap()
-                .fitness
-                .partial_cmp(&a.1.first().unwrap().fitness)
-                .unwrap()
+            b.1.first().unwrap().fitness.partial_cmp(&a.1.first().unwrap().fitness).unwrap()
         });
 
         for (count, mems) in &by_species {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
-                    s += &format!("{}\n{}\n", PrettyPrintFloat(mem.fitness), mem.state);
+                    s += &format!("{:5.5}\n{}\n", PrettyPrintFloat(mem.fitness), mem.state);
                 }
                 s += "\n";
             }

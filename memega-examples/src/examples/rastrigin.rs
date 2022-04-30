@@ -7,12 +7,12 @@ use memega::evolve::evolver::Evolver;
 use crate::examples::func::{func_evolver, FuncState};
 
 #[must_use]
-pub fn rastrigin_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator> {
+pub fn rastrigin_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Data = ()>> {
     func_evolver(
         dim,
         -5.12,
         5.12,
-        |s: &FuncState, _| {
+        |s: &'_ FuncState, _: &'_ _| {
             const A: f64 = 10.0;
             let mut v = 0.0;
             for &x in s.iter() {

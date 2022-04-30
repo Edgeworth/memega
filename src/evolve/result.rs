@@ -9,7 +9,7 @@ use crate::gen::unevaluated::UnevaluatedGen;
 
 #[derive(Debug, Copy, Clone, PartialEq, Display)]
 #[display(
-    fmt = "best: {}, mean: {}, pop: {}, dupes: {}, dist: {}, stagnant: {}, species: {}",
+    fmt = "best: {:5.5}, mean: {:5.5}, pop: {:>5}, dupes: {:>5}, dist: {}, stagnant: {}, species: {}",
     "PrettyPrintFloat(*best_fitness)",
     "PrettyPrintFloat(*mean_fitness)",
     pop_size,

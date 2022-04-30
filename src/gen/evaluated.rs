@@ -143,7 +143,6 @@ impl<S: State> EvaluatedGen<S> {
         Ok(())
     }
 
-
     pub fn next_gen<E: Evaluator<State = S>>(
         &self,
         genfn: &mut (dyn RandState<S> + '_),

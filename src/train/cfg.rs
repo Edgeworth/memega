@@ -10,6 +10,7 @@ pub struct TrainerCfg {
     pub termination: Termination,
     pub print_gen: Option<usize>, // How often to print basic generation info.
     pub print_summary: Option<usize>, // How often to print summary info.
+    pub print_valid: Option<usize>, // How often to print validation info.
     pub report_gen: Option<usize>, // How often to report generation info via tensorboard.
     pub report_path: Option<PathBuf>, // Where to write tensorboard reports.
 }
@@ -21,6 +22,7 @@ impl TrainerCfg {
             termination: Termination::FixedGenerations(2000),
             print_gen: None,
             print_summary: None,
+            print_valid: None,
             report_gen: None,
             report_path: None,
         }
@@ -41,6 +43,12 @@ impl TrainerCfg {
     #[must_use]
     pub fn set_print_summary(mut self, print_summary: usize) -> Self {
         self.print_summary = Some(print_summary);
+        self
+    }
+
+    #[must_use]
+    pub fn set_print_valid(mut self, print_valid: usize) -> Self {
+        self.print_valid = Some(print_valid);
         self
     }
 

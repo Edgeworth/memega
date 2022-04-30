@@ -1,10 +1,11 @@
 use std::fmt;
+use std::marker::PhantomData;
 
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use smallvec::SmallVec;
 
-use crate::eval::Evaluator;
+use crate::eval::{Data, Evaluator};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::vm::cfg::LgpVmCfg;
 use crate::evaluators::lgp::vm::disasm::lgp_disasm;
@@ -76,19 +77,21 @@ impl LgpState {
     }
 }
 
-pub struct LgpEvaluator {
+pub struct LgpEvaluator<D> {
     cfg: LgpEvaluatorCfg,
+    _u: PhantomData<D>,
 }
 
-impl LgpEvaluator {
+impl<D> LgpEvaluator<D> {
     #[must_use]
     pub fn new(cfg: LgpEvaluatorCfg) -> Self {
-        Self { cfg }
+        Self { cfg, _u: PhantomData }
     }
 }
 
-impl Evaluator for LgpEvaluator {
+impl<D: Data> Evaluator for LgpEvaluator<D> {
     type State = LgpState;
+    type Data = D;
     const NUM_CROSSOVER: usize = 2;
     const NUM_MUTATION: usize = 7;
 
@@ -135,7 +138,7 @@ impl Evaluator for LgpEvaluator {
         }
     }
 
-    fn fitness(&self, _: &LgpState, _gen: usize) -> f64 {
+    fn fitness(&self, _: &Self::State, _data: &Self::Data) -> f64 {
         unimplemented!()
     }
 

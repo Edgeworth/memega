@@ -43,8 +43,8 @@ impl<F: FitnessFn<FuncState>> Evaluator for FuncEvaluator<F> {
         };
     }
 
-    fn fitness(&self, s: &FuncState, gen: usize) -> f64 {
-        (self.f)(s, gen)
+    fn fitness(&self, s: &FuncState, data: &Self::Data) -> f64 {
+        (self.f)(s, data)
     }
 
     fn distance(&self, s1: &FuncState, s2: &FuncState) -> f64 {
@@ -58,7 +58,7 @@ pub fn func_evolver<F: FitnessFn<FuncState>>(
     en: f64,
     f: F,
     cfg: EvolveCfg,
-) -> Evolver<impl Evaluator> {
+) -> Evolver<impl Evaluator<Data = ()>> {
     Evolver::new(FuncEvaluator::new(dim, st, en, f), cfg, move || {
         FuncState(rand_vec(dim, || mutate_uniform(st, en)))
     })
