@@ -1,5 +1,4 @@
 use derive_more::Display;
-use float_pretty_print::PrettyPrintFloat;
 
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::EvolveCfg;
@@ -7,7 +6,7 @@ use crate::gen::params::Params;
 use crate::gen::species::{SpeciesId, NO_SPECIES};
 
 #[derive(Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "fitness {} species {}", "PrettyPrintFloat(*fitness)", species)]
+#[display(fmt = "fitness {:5.5} species {:>3}", fitness, species)]
 pub struct Member<S: State> {
     pub state: S,               // Actual state.
     pub params: Params,         // Adaptively evolved parameters

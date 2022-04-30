@@ -1,10 +1,7 @@
-use std::time::Duration;
-
 use criterion::{criterion_group, criterion_main, Criterion};
 use memega::evolve::cfg::{Crossover, EvolveCfg, Mutation, Niching, Selection, Species, Survival};
 use memega_examples::examples::ackley::ackley_evolver;
 use memega_examples::examples::griewank::griewank_evolver;
-use memega_examples::examples::hyper::hyper_evolver;
 use memega_examples::examples::knapsack::knapsack_evolver;
 use memega_examples::examples::rastrigin::rastrigin_evolver;
 use memega_examples::examples::target_string::target_string_evolver;
@@ -56,13 +53,5 @@ fn target_string(c: &mut Criterion) {
     });
 }
 
-fn hyper(c: &mut Criterion) {
-    c.bench_function("hyper", |b| {
-        let cfg = get_cfg().set_pop_size(10);
-        let mut r = hyper_evolver(2, Duration::from_millis(1), cfg);
-        b.iter(|| r.run())
-    });
-}
-
-criterion_group!(benches, rastrigin, griewank, ackley, knapsack, target_string, hyper);
+criterion_group!(benches, rastrigin, griewank, ackley, knapsack, target_string);
 criterion_main!(benches);

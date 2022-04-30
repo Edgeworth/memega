@@ -2,7 +2,6 @@ use std::collections::VecDeque;
 use std::ops::Index;
 
 use derive_more::Display;
-use float_pretty_print::PrettyPrintFloat;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::eval::{Evaluator, State};
@@ -12,7 +11,7 @@ pub type SpeciesId = u64;
 pub const NO_SPECIES: SpeciesId = 0;
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "{}, radius: {}", num, "PrettyPrintFloat(*radius)")]
+#[display(fmt = "species: {:>3}, radius: {:5.5}", num, radius)]
 pub struct SpeciesInfo {
     pub num: u64,
     pub radius: f64,

@@ -7,9 +7,11 @@ pub enum Termination {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub struct TrainerCfg {
+    pub name: String,
     pub termination: Termination,
     pub print_gen: Option<usize>, // How often to print basic generation info.
     pub print_summary: Option<usize>, // How often to print summary info.
+    pub print_samples: Option<usize>, // How often to print samples.
     pub print_valid: Option<usize>, // How often to print validation info.
     pub report_gen: Option<usize>, // How often to report generation info via tensorboard.
     pub report_path: Option<PathBuf>, // Where to write tensorboard reports.
@@ -17,11 +19,13 @@ pub struct TrainerCfg {
 
 impl TrainerCfg {
     #[must_use]
-    pub fn new() -> Self {
+    pub fn new(name: &str) -> Self {
         Self {
+            name: name.to_string(),
             termination: Termination::FixedGenerations(2000),
             print_gen: None,
             print_summary: None,
+            print_samples: None,
             print_valid: None,
             report_gen: None,
             report_path: None,
@@ -47,6 +51,12 @@ impl TrainerCfg {
     }
 
     #[must_use]
+    pub fn set_print_samples(mut self, print_samples: usize) -> Self {
+        self.print_samples = Some(print_samples);
+        self
+    }
+
+    #[must_use]
     pub fn set_print_valid(mut self, print_valid: usize) -> Self {
         self.print_valid = Some(print_valid);
         self
@@ -62,11 +72,5 @@ impl TrainerCfg {
     pub fn set_report_path(mut self, report_path: impl AsRef<Path>) -> Self {
         self.report_path = Some(report_path.as_ref().into());
         self
-    }
-}
-
-impl Default for TrainerCfg {
-    fn default() -> Self {
-        Self::new()
     }
 }

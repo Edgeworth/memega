@@ -13,7 +13,7 @@ use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 
 #[derive(Display, Clone, PartialOrd, PartialEq)]
-#[display(fmt = "pop: {}, best: {}", "mems.len()", "self.mems[0]")]
+#[display(fmt = "pop: {:>5}, best: {:5.5}", "mems.len()", "self.mems[0]")]
 pub struct EvaluatedGen<S: State> {
     pub mems: Vec<Member<S>>,
 }

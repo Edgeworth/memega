@@ -1,6 +1,6 @@
 use approx::{abs_diff_eq, relative_eq};
 use eyre::Result;
-use float_pretty_print::PrettyPrintFloat;
+use textwrap::indent;
 
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation, Stagnation, StagnationCondition};
@@ -122,16 +122,16 @@ impl<E: Evaluator> Evolver<E> {
         let mut s = String::new();
         s += &format!("{}\n", Stats::from_result(r));
         if self.cfg.mutation == Mutation::Adaptive {
-            s += "  mutation weights: ";
+            s += "mutation:  ";
             for &v in &r.nth(0).params.mutation {
-                s += &format!("{}, ", PrettyPrintFloat(v));
+                s += &format!("{:5.5}, ", v);
             }
             s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
-            s += "  crossover weights: ";
+            s += "crossover: ";
             for &v in &r.nth(0).params.crossover {
-                s += &format!("{}, ", PrettyPrintFloat(v));
+                s += &format!("{:5.5}, ", v);
             }
             s += "\n";
         }
@@ -185,7 +185,8 @@ impl<E: Evaluator> Evolver<E> {
             if *count > 0 {
                 s += &format!("Species {} top {}:\n", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
-                    s += &format!("{:5.5}\n{}\n", PrettyPrintFloat(mem.fitness), mem.state);
+                    let state_str = indent(&format!("{}", mem.state), "  ");
+                    s += &format!("fitness: {:5.5}\n{}\n", mem.fitness, state_str);
                 }
                 s += "\n";
             }
