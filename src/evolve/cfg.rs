@@ -26,6 +26,8 @@ pub enum Mutation {
 pub enum Survival {
     TopProportion(f64),
     SpeciesTopProportion(f64), // Top proportion for each species.
+    Youngest,                  // Only the youngest members survive. Age based replacement.
+    Tournament(usize),         // Tournament selection. Tournament size is given.
 }
 
 impl Distribution<Survival> for Standard {

@@ -16,6 +16,8 @@ multi-objective optimization - currently just does weird fitness combinations
 
 1. Top proportion
 2. Top proportion from each species
+3. Age based replacement (not implemented)
+4. Tournament selection (not implemented)
 
 ## Crossover strategies
 

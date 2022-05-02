@@ -1,5 +1,6 @@
 use derive_more::Display;
 use eyre::{eyre, Result};
+use rand::prelude::SliceRandom;
 
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{
@@ -49,7 +50,7 @@ impl<S: State> EvaluatedGen<S> {
     }
 
     fn survivors(&self, survival: Survival, cfg: &EvolveCfg) -> Vec<Member<S>> {
-        match survival {
+        let mut mems = match survival {
             Survival::TopProportion(prop) => {
                 // Ceiling so we don't miss keeping things for small sizes.
                 // Use the target population size rather than the size of the
@@ -68,7 +69,30 @@ impl<S: State> EvaluatedGen<S> {
                 }
                 survivors
             }
+            Survival::Youngest => {
+                let mut survivors = self.mems.clone();
+                survivors.sort_unstable_by_key(|mem| mem.age);
+                // Drop oldest until we reach the population size.
+                survivors.truncate(cfg.pop_size);
+                survivors
+            }
+            Survival::Tournament(q) => {
+                let mut survivors = Vec::new();
+                let mut rng = rand::thread_rng();
+                for mem in &self.mems {
+                    let opponents = self.mems.choose_multiple(&mut rng, q);
+                    let wins = opponents.filter(|opp| opp.fitness > mem.fitness).count();
+                    survivors.push((wins, mem));
+                }
+                survivors.sort_unstable_by_key(|(wins, _)| -(*wins as i64));
+                survivors.into_iter().map(|(_, mem)| mem.clone()).collect()
+            }
+        };
+        // Bump ages.
+        for mem in &mut mems {
+            mem.age += 1;
         }
+        mems
     }
 
     fn selection(&self, selection: Selection) -> [Member<S>; 2] {
