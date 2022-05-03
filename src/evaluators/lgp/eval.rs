@@ -143,6 +143,8 @@ impl<D: Data> Evaluator for LgpEvaluator<D> {
     }
 
     fn distance(&self, s1: &LgpState, s2: &LgpState) -> f64 {
-        dist_fn(s1.ops_unopt(), s2.ops_unopt(), 1.0, Op::dist)
+        // Use optimised operations for distance calculation, since
+        // otherwise things can be trivially very different.
+        dist_fn(&s1.ops_opt(), &s2.ops_opt(), 1.0, Op::dist)
     }
 }

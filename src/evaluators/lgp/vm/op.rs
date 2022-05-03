@@ -109,7 +109,7 @@ impl Op {
                 }
                 d += (imm1 - imm2).abs() as f64;
             }
-            _ => panic!("Unexpected operands for opcodes {} {}", a.code, b.code),
+            _ => {} // Opcodes were different, we already added a penalty.
         }
         d
     }
