@@ -2,12 +2,13 @@ use std::fmt;
 use std::hash::Hash;
 
 use concurrent_lru::sharded::LruCache;
+use eyre::Result;
 
 use crate::evolve::cfg::FitnessReduction;
 
 pub trait State = Clone + Send + Sync + PartialOrd + PartialEq + fmt::Display;
 pub trait Data = Clone + Send + Sync;
-pub trait FitnessFn<S: State, D: Data = ()> = Fn(&S, &D) -> f64 + Sync + Send + Clone;
+pub trait FitnessFn<S: State, D: Data = ()> = Fn(&S, &D) -> Result<f64> + Sync + Send + Clone;
 
 /// Evaluates, mutates, etc a State.
 pub trait Evaluator: Send + Sync {
@@ -28,7 +29,7 @@ pub trait Evaluator: Send + Sync {
     /// Unlike crossover, mutation is called for every mutation operator. No need for a nop operator.
     fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize);
 
-    fn fitness(&self, s: &Self::State, data: &Self::Data) -> f64;
+    fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64>;
 
     /// Computes fitness over multiple inputs with the given reduction.
     fn multi_fitness(
@@ -36,25 +37,26 @@ pub trait Evaluator: Send + Sync {
         s: &Self::State,
         inputs: &[Self::Data],
         reduction: FitnessReduction,
-    ) -> f64 {
+    ) -> Result<f64> {
         let mut cumulative = match reduction {
             FitnessReduction::ArithmeticMean => 0.0,
             FitnessReduction::GeometricMean => 1.0,
         };
         for data in inputs {
-            let fitness = self.fitness(s, data);
+            let fitness = self.fitness(s, data)?;
             match reduction {
                 FitnessReduction::ArithmeticMean => cumulative += fitness,
                 FitnessReduction::GeometricMean => cumulative *= fitness,
             }
         }
-        match reduction {
+        let fitness = match reduction {
             FitnessReduction::ArithmeticMean => cumulative / inputs.len() as f64,
             FitnessReduction::GeometricMean => cumulative.powf(1.0 / inputs.len() as f64),
-        }
+        };
+        Ok(fitness)
     }
 
-    fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64;
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64>;
 }
 
 /// Evaluator which uses an LRU cache to cache fitness and distance values.
@@ -95,14 +97,14 @@ where
         self.eval.mutate(s, rate, idx);
     }
 
-    fn fitness(&self, s: &Self::State, data: &Self::Data) -> f64 {
-        *self
+    fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
+        Ok(*self
             .fitness_cache
-            .get_or_init((s.clone(), data.clone()), 1, |(s, d)| self.eval.fitness(s, d))
-            .value()
+            .get_or_try_init((s.clone(), data.clone()), 1, |(s, d)| self.eval.fitness(s, d))?
+            .value())
     }
 
-    fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64 {
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
         self.eval.distance(s1, s2)
     }
 }

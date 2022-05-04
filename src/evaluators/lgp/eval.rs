@@ -1,6 +1,7 @@
 use std::fmt;
 use std::marker::PhantomData;
 
+use eyre::Result;
 use rand::prelude::SliceRandom;
 use rand::Rng;
 use smallvec::SmallVec;
@@ -138,13 +139,13 @@ impl<D: Data> Evaluator for LgpEvaluator<D> {
         }
     }
 
-    fn fitness(&self, _: &Self::State, _data: &Self::Data) -> f64 {
+    fn fitness(&self, _: &Self::State, _data: &Self::Data) -> Result<f64> {
         unimplemented!()
     }
 
-    fn distance(&self, s1: &LgpState, s2: &LgpState) -> f64 {
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
         // Use optimised operations for distance calculation, since
         // otherwise things can be trivially very different.
-        dist_fn(&s1.ops_opt(), &s2.ops_opt(), 1.0, Op::dist)
+        Ok(dist_fn(&s1.ops_opt(), &s2.ops_opt(), 1.0, Op::dist))
     }
 }

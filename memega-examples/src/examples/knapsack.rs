@@ -7,6 +7,7 @@ use memega::ops::distance::count_different;
 use memega::ops::mutation::mutate_rate;
 use memega::ops::util::rand_vec;
 use rand::Rng;
+use eyre::Result;
 
 #[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
 #[display(fmt = "{:?}", _0)]
@@ -43,7 +44,7 @@ impl Evaluator for KnapsackEvaluator {
         };
     }
 
-    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> f64 {
+    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
         let mut cur_w = 0.0;
         let mut cur_v = 0.0;
         for (i, &kept) in s.iter().enumerate() {
@@ -53,11 +54,11 @@ impl Evaluator for KnapsackEvaluator {
                 cur_v += v;
             }
         }
-        cur_v
+        Ok(cur_v)
     }
 
-    fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64 {
-        count_different(s1, s2) as f64
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+        Ok(count_different(s1, s2) as f64)
     }
 }
 

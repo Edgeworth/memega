@@ -19,7 +19,7 @@ pub fn rastrigin_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<D
                 v += A + x * x - A * (2.0 * PI * x).cos();
             }
             // Convert to a maximisation problem
-            1.0 / (1.0 + v)
+            Ok(1.0 / (1.0 + v))
         },
         cfg,
     )

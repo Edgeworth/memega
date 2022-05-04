@@ -27,7 +27,7 @@ pub fn ackley_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Data
             let cos = cos / d;
             let v = -A * squares.exp() - cos.exp() + A + E;
             // Convert to a maximisation problem
-            1.0 / (1.0 + v)
+            Ok(1.0 / (1.0 + v))
         },
         cfg,
     )

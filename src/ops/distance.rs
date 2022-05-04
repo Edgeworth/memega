@@ -90,11 +90,12 @@ mod tests {
     }
 
     #[test]
-    fn test_kendall_tau() {
-        assert_eq!(kendall_tau(&[1], &[1]).unwrap(), 0);
-        assert_eq!(kendall_tau(&[1], &[2]).unwrap(), 0);
-        assert_eq!(kendall_tau(&[1, 2], &[1, 2]).unwrap(), 0);
-        assert_eq!(kendall_tau(&[1, 2], &[2, 1]).unwrap(), 1);
-        assert_eq!(kendall_tau(&[1, 2, 3, 4, 5], &[3, 4, 1, 2, 5]).unwrap(), 4);
+    fn test_kendall_tau() -> Result<()> {
+        assert_eq!(kendall_tau(&[1], &[1])?, 0);
+        assert_eq!(kendall_tau(&[1], &[2])?, 0);
+        assert_eq!(kendall_tau(&[1, 2], &[1, 2])?, 0);
+        assert_eq!(kendall_tau(&[1, 2], &[2, 1])?, 1);
+        assert_eq!(kendall_tau(&[1, 2, 3, 4, 5], &[3, 4, 1, 2, 5])?, 4);
+        Ok(())
     }
 }

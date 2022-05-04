@@ -1,3 +1,5 @@
+use eyre::Result;
+
 use crate::eval::{Data, Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::eval::{LgpEvaluator, LgpState};
@@ -23,19 +25,19 @@ impl<D: Data, F: FitnessFn<LgpState, D>> Evaluator for LgpFitnessFnEvaluator<D, 
     const NUM_CROSSOVER: usize = LgpEvaluator::<D>::NUM_CROSSOVER;
     const NUM_MUTATION: usize = LgpEvaluator::<D>::NUM_MUTATION;
 
-    fn crossover(&self, s1: &mut LgpState, s2: &mut LgpState, idx: usize) {
+    fn crossover(&self, s1: &mut Self::State, s2: &mut Self::State, idx: usize) {
         self.evaluator.crossover(s1, s2, idx);
     }
 
-    fn mutate(&self, s: &mut LgpState, rate: f64, idx: usize) {
+    fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
         self.evaluator.mutate(s, rate, idx);
     }
 
-    fn fitness(&self, s: &LgpState, data: &Self::Data) -> f64 {
+    fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
         (self.f)(s, data)
     }
 
-    fn distance(&self, s1: &LgpState, s2: &LgpState) -> f64 {
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
         self.evaluator.distance(s1, s2)
     }
 }

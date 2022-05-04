@@ -1,6 +1,7 @@
 use std::mem::swap;
 
 use derive_more::Display;
+use eyre::Result;
 use rand::Rng;
 
 use crate::eval::Evaluator;
@@ -12,7 +13,7 @@ use crate::ops::distance::dist2;
 use crate::ops::mutation::{mutate_normal, mutate_rate};
 use crate::ops::util::rand_vec;
 
-pub trait StatFn = Fn(EvolveCfg) -> Option<Stats> + Send + Sync;
+pub trait StatFn = Fn(EvolveCfg) -> Result<Option<Stats>> + Send + Sync;
 
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd)]
 #[display(fmt = "{:?}", cfg)]
@@ -177,22 +178,22 @@ impl Evaluator for HyperEvaluator {
         }
     }
 
-    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> f64 {
+    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
         const SAMPLES: usize = 30;
         let mut score = 0.0;
         for _ in 0..SAMPLES {
             for f in &self.stat_fns {
-                if let Some(r) = f(s.cfg.clone()) {
+                if let Some(r) = f(s.cfg.clone())? {
                     // TODO: Need multi-objective GA here. Or at least configure
                     // what to optimise.
                     score += r.best_fitness;
                 }
             }
         }
-        score / SAMPLES as f64
+        Ok(score / SAMPLES as f64)
     }
 
-    fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64 {
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
         let mut dist = 0.0;
 
         let s1_cross = if let Crossover::Fixed(v) = &s1.cfg.crossover { v } else { &s1.crossover };
@@ -203,6 +204,6 @@ impl Evaluator for HyperEvaluator {
         let s2_mutation = if let Mutation::Fixed(v) = &s2.cfg.mutation { v } else { &s2.mutation };
         dist += dist2(s1_mutation, s2_mutation);
 
-        dist
+        Ok(dist)
     }
 }
