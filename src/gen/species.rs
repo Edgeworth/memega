@@ -2,6 +2,7 @@ use std::collections::VecDeque;
 use std::ops::Index;
 
 use derive_more::Display;
+use eyre::Result;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::eval::{Evaluator, State};
@@ -44,18 +45,23 @@ impl DistCache {
         Self { n: 0, cache: Vec::new(), max: 0.0, sum: 0.0 }
     }
 
-    pub fn ensure<E: Evaluator>(&mut self, s: &[Member<E::State>], par: bool, eval: &E) {
+    pub fn ensure<E: Evaluator>(
+        &mut self,
+        s: &[Member<E::State>],
+        par: bool,
+        eval: &E,
+    ) -> Result<()> {
         if self.is_empty() {
             self.n = s.len();
             self.cache = if par {
-                let cache: Vec<f64> = (0..self.n * self.n)
+                let cache = (0..self.n * self.n)
                     .into_par_iter()
                     .map(|v| {
                         let i = v / self.n;
                         let j = v % self.n;
                         eval.distance(&s[i].state, &s[j].state)
                     })
-                    .collect();
+                    .collect::<Result<Vec<f64>>>()?;
                 (self.max, self.sum) = cache
                     .par_iter()
                     .fold(|| (0.0, 0.0), |(m, s): (f64, f64), &v| (m.max(v), s + v))
@@ -65,7 +71,7 @@ impl DistCache {
                 let mut cache = vec![0.0; self.n * self.n];
                 for i in 0..self.n {
                     for j in 0..self.n {
-                        let dist = eval.distance(&s[i].state, &s[j].state);
+                        let dist = eval.distance(&s[i].state, &s[j].state)?;
                         cache[i * self.n + j] = dist;
                         self.max = self.max.max(dist);
                         self.sum += dist;
@@ -74,6 +80,7 @@ impl DistCache {
                 cache
             };
         }
+        Ok(())
     }
 
     pub fn speciate<S: State>(

@@ -28,13 +28,13 @@ members = ["memega-examples"]
 
 [dependencies]
 approx = "0.5.1"
-chrono = {version = "0.4.19", optional = true}
+chrono = { version = "0.4.19", optional = true }
 concurrent_lru = "0.2.0"
 derive_more = "0.99.17"
 enumset = "1.0.11"
 eyre = "0.6.8"
-log = "0.4.16"
-num-traits = "0.2.14"
+log = "0.4.17"
+num-traits = "0.2.15"
 rand = "0.8.5"
 rand_distr = "0.4.3"
 rayon = "1.5.2"
@@ -42,5 +42,5 @@ smallvec = "1.8.0"
 strum = "0.24.0"
 strum_macros = "0.24.0"
 tempfile = "3.3.0"
-tensorboard-rs = {version = "0.5.9", optional = true}
+tensorboard-rs = { version = "0.5.9", optional = true }
 textwrap = "0.15.0"

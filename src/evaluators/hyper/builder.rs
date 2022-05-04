@@ -36,7 +36,7 @@ impl HyperBuilder {
             while (Instant::now() - st) < sample_dur {
                 swap(&mut r1, &mut r2);
                 // TODO: Support passing in data.
-                r2 = Some(evolver.run().unwrap());
+                r2 = Some(evolver.run()?);
             }
 
             // Get the last run that ran in time.
@@ -44,9 +44,9 @@ impl HyperBuilder {
                 let mut stats = Stats::from_result(&mut r);
                 stats.best_fitness /= max_fitness;
                 stats.mean_fitness /= max_fitness;
-                Some(stats)
+                Ok(Some(stats))
             } else {
-                None
+                Ok(None)
             }
         }));
     }

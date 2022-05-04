@@ -37,13 +37,14 @@ impl<S: State> UnevaluatedGen<S> {
         eval: &E,
     ) -> Result<EvaluatedGen<S>> {
         // First compute plain fitnesses.
-        let compute = |s: &mut Member<S>| {
-            s.fitness = eval.multi_fitness(&s.state, inputs, cfg.fitness_reduction);
+        let compute = |s: &mut Member<S>| -> Result<()> {
+            s.fitness = eval.multi_fitness(&s.state, inputs, cfg.fitness_reduction)?;
+            Ok(())
         };
         if cfg.par_fitness {
-            self.mems.par_iter_mut().for_each(compute);
+            self.mems.par_iter_mut().try_for_each(compute)?;
         } else {
-            self.mems.iter_mut().for_each(compute);
+            self.mems.iter_mut().try_for_each(compute)?;
         };
 
         // Check fitnesses are non-negative and finite.
@@ -58,7 +59,7 @@ impl<S: State> UnevaluatedGen<S> {
         match cfg.species {
             Species::None => {}
             Species::TargetNumber(target) => {
-                self.dists.ensure(&self.mems, cfg.par_dist, eval);
+                self.dists.ensure(&self.mems, cfg.par_dist, eval)?;
                 let mut lo = 0.0;
                 let mut hi = self.dists.max();
                 let mut ids = Vec::new();
@@ -87,11 +88,11 @@ impl<S: State> UnevaluatedGen<S> {
             }
             Niching::SharedFitness(radius) => {
                 const ALPHA: f64 = 6.0; // Default alpha between 5 and 10.
-                self.dists.ensure(&self.mems, cfg.par_dist, eval);
+                self.dists.ensure(&self.mems, cfg.par_dist, eval)?;
                 self.dists.shared_fitness(&mut self.mems, radius, ALPHA);
             }
             Niching::SpeciesSharedFitness => {
-                self.dists.ensure(&self.mems, cfg.par_dist, eval);
+                self.dists.ensure(&self.mems, cfg.par_dist, eval)?;
                 self.dists.species_shared_fitness(&mut self.mems, &self.species);
             }
         };

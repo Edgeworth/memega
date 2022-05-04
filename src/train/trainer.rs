@@ -81,7 +81,7 @@ impl Trainer {
                     &r.nth(0).state,
                     &sampler.valid(i),
                     evolver.cfg().fitness_reduction,
-                );
+                )?;
                 println!("valid best: {:5.5}", valid_fitness);
             }
 
@@ -100,7 +100,7 @@ impl Trainer {
                     &r.nth(0).state,
                     &sampler.valid(i),
                     evolver.cfg().fitness_reduction,
-                );
+                )?;
                 let scalars = HashMap::from([
                     ("train".to_string(), (fitness_sum / fitness_count) as f32),
                     ("valid".to_string(), valid_fitness as f32),

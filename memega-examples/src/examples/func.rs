@@ -1,4 +1,5 @@
 use derive_more::{Deref, DerefMut, Display};
+use eyre::Result;
 use memega::eval::{Evaluator, FitnessFn};
 use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
@@ -28,7 +29,7 @@ impl<F: FitnessFn<FuncState>> FuncEvaluator<F> {
 impl<F: FitnessFn<FuncState>> Evaluator for FuncEvaluator<F> {
     type State = FuncState;
 
-    fn crossover(&self, s1: &mut FuncState, s2: &mut FuncState, idx: usize) {
+    fn crossover(&self, s1: &mut Self::State, s2: &mut Self::State, idx: usize) {
         match idx {
             0 => {}
             1 => crossover_arith(s1, s2),
@@ -36,19 +37,19 @@ impl<F: FitnessFn<FuncState>> Evaluator for FuncEvaluator<F> {
         };
     }
 
-    fn mutate(&self, s: &mut FuncState, rate: f64, idx: usize) {
+    fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
         match idx {
             0 => mutate_rate(s, 1.0, |v| mutate_normal(v, rate).clamp(self.st, self.en)),
             _ => panic!("bug"),
         };
     }
 
-    fn fitness(&self, s: &FuncState, data: &Self::Data) -> f64 {
+    fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
         (self.f)(s, data)
     }
 
-    fn distance(&self, s1: &FuncState, s2: &FuncState) -> f64 {
-        dist2(s1, s2)
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+        Ok(dist2(s1, s2))
     }
 }
 

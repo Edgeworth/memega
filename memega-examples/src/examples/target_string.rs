@@ -1,4 +1,5 @@
 use derive_more::{Deref, DerefMut, Display};
+use eyre::Result;
 use memega::eval::Evaluator;
 use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
@@ -43,12 +44,12 @@ impl Evaluator for TargetStringEvaluator {
         };
     }
 
-    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> f64 {
-        (self.target.len() - count_different(s, &self.target)) as f64 + 1.0
+    fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
+        Ok((self.target.len() - count_different(s, &self.target)) as f64 + 1.0)
     }
 
-    fn distance(&self, s1: &Self::State, s2: &Self::State) -> f64 {
-        count_different(s1, s2) as f64
+    fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+        Ok(count_different(s1, s2) as f64)
     }
 }
 

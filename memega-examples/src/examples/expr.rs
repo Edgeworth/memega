@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use eyre::{eyre, Result};
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
@@ -15,17 +16,16 @@ const NUM_REG: usize = 2;
 const NUM_CONST: usize = 4;
 const OUTPUT_REG: u8 = 0;
 
-#[must_use]
-pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> f64 {
-    let expr: Expression = target.parse().unwrap();
+pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> Result<f64> {
+    let expr: Expression = target.parse().map_err(|_| eyre!("failed to parse expression"))?;
 
     let mut expr_ctx = HashMap::new();
-    let x_expr = Expression::from(Rational::from_float(x).unwrap());
+    let x_expr = Expression::from(Rational::from_float(x).ok_or_else(|| eyre!("invalid x"))?);
     expr_ctx.insert("x".to_string(), x_expr);
-    let ans = expr.evaluate(expr_ctx).unwrap();
+    let ans = expr.evaluate(expr_ctx).map_err(|_| eyre!("failed to evaluate expression"))?;
     let ans = match ans {
-        Expression::Integer(integer) => integer.to_f64().unwrap(),
-        Expression::Rational(ratio, _) => ratio.to_f64().unwrap(),
+        Expression::Integer(integer) => integer.to_f64().ok_or_else(|| eyre!("invalid y"))?,
+        Expression::Rational(ratio, _) => ratio.to_f64().ok_or_else(|| eyre!("invalid y"))?,
         _ => panic!("should be number output: {}", ans),
     };
 
@@ -35,7 +35,7 @@ pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> f64 {
     let mut exec = LgpVm::new(&cfg);
     exec.run();
 
-    1.0 / (1.0 + (ans - exec.mem(OUTPUT_REG)).abs())
+    Ok(1.0 / (1.0 + (ans - exec.mem(OUTPUT_REG)).abs()))
 }
 
 pub struct ExprDataSampler {

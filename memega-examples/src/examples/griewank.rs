@@ -19,7 +19,7 @@ pub fn griewank_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Da
             }
             let v = 1.0 + add / 4000.0 - mul;
             // Convert to a maximisation problem
-            1.0 / (1.0 + v)
+            Ok(1.0 / (1.0 + v))
         },
         cfg,
     )
