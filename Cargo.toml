@@ -24,7 +24,7 @@ default = ["tensorboard"]
 tensorboard = ["dep:tensorboard-rs", "dep:chrono"]
 
 [workspace]
-members = ["memega-examples"]
+members = ["memega-examples", "memega-py"]
 
 [dependencies]
 approx = "0.5.1"

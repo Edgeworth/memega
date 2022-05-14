@@ -1,10 +1,11 @@
-use crate::evaluators::lgp::vm::op::Op;
+use std::fmt::Write;
 
+use crate::evaluators::lgp::vm::op::Op;
 #[must_use]
 pub fn lgp_disasm(code: &[Op]) -> String {
     let mut prog = String::new();
     for ins in code.iter() {
-        prog += &format!("{}\n", ins);
+        let _ = writeln!(prog, "{}", ins);
     }
     prog
 }

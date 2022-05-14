@@ -33,5 +33,6 @@ update:
   cargo upgrade --workspace
   cargo update
   cargo build --workspace --all-features --all-targets
+  maturin build -m memega-py/Cargo.toml
   pre-commit autoupdate
   SETUPTOOLS_USE_DISTUTILS=stdlib pre-commit run --all-files

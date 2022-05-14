@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 use approx::{abs_diff_eq, relative_eq};
 use eyre::Result;
 use textwrap::indent;
@@ -120,18 +122,18 @@ impl<E: Evaluator> Evolver<E> {
 
     pub fn summary(&self, r: &mut EvolveResult<E::State>) -> String {
         let mut s = String::new();
-        s += &format!("{}\n", Stats::from_result(r));
+        let _ = writeln!(s, "{}", Stats::from_result(r));
         if self.cfg.mutation == Mutation::Adaptive {
             s += "mutation:  ";
             for &v in &r.nth(0).params.mutation {
-                s += &format!("{:5.5}, ", v);
+                let _ = write!(s, "{:5.5}, ", v);
             }
             s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
             s += "crossover: ";
             for &v in &r.nth(0).params.crossover {
-                s += &format!("{:5.5}, ", v);
+                let _ = write!(s, "{:5.5}, ", v);
             }
             s += "\n";
         }
@@ -183,10 +185,10 @@ impl<E: Evaluator> Evolver<E> {
 
         for (count, mems) in &by_species {
             if *count > 0 {
-                s += &format!("Species {} top {}:\n", mems[0].species, count);
+                let _ = writeln!(s, "Species {} top {}:", mems[0].species, count);
                 for mem in mems.iter().take(*count) {
                     let state_str = indent(&format!("{}", mem.state), "  ");
-                    s += &format!("fitness: {:5.5}\n{}\n", mem.fitness, state_str);
+                    let _ = writeln!(s, "fitness: {:5.5}\n{}", mem.fitness, state_str);
                 }
                 s += "\n";
             }
