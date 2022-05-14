@@ -1,4 +1,5 @@
 use derive_more::{Deref, DerefMut, Display};
+use eyre::Result;
 use memega::eval::Evaluator;
 use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
@@ -7,7 +8,6 @@ use memega::ops::distance::count_different;
 use memega::ops::mutation::mutate_rate;
 use memega::ops::util::rand_vec;
 use rand::Rng;
-use eyre::Result;
 
 #[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
 #[display(fmt = "{:?}", _0)]

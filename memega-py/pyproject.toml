@@ -1,0 +1,57 @@
+[tool.poetry]
+authors = ["Eliot Courtney <edgeworth.dev@gmail.com>"]
+classifiers = ["License :: OSI Approved :: GPL-3.0-only"]
+description = "memega"
+name = "memega"
+readme = "README.md"
+version = "0.1.0"
+
+[build-system]
+build-backend = "maturin"
+requires = ["maturin>=0.12,<0.13"]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.dev-dependencies]
+black = "*"
+mypy = "*"
+prospector = "*"
+
+[tool.mypy]
+show_column_numbers = true
+# Require type hints
+disallow_untyped_defs = true
+
+# Allow types that is not imported to be used in annotations.
+# This is necessary because some libraries don't have annotations.
+disallow_any_unimported = false
+
+# Disallow implicit optional e.g. arg: str = None
+no_implicit_optional = true
+
+# Check bodies of functions without type annotations too
+check_untyped_defs = true
+
+# Warn about returning Any from a function annotated to not return it
+warn_return_any = true
+
+# Warn about unused ignore annotations
+warn_unused_ignores = true
+
+# Show error codes
+show_error_codes = true
+
+# Set python version.
+python_version = '3.10'
+
+[tool.black]
+line-length = 100
+target-version = ['py310']
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.messages_control]
+# Want to use f-strings in logging
+disable = ["logging-fstring-interpolation"]
