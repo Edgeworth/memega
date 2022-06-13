@@ -20,6 +20,7 @@ use crate::examples::knapsack::knapsack_evolver;
 use crate::examples::rastrigin::rastrigin_evolver;
 use crate::examples::target_string::target_string_evolver;
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ArgEnum)]
 pub enum Example {
     Ackley,
@@ -30,11 +31,13 @@ pub enum Example {
     Lgp,
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ArgEnum)]
 pub enum Op {
     Run,
 }
 
+#[must_use]
 #[derive(Debug, Parser)]
 #[clap(name = "memega cli", about = "memega cli")]
 pub struct Args {

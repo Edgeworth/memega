@@ -11,7 +11,8 @@ pub trait DataSampler<D: Data> {
     fn test(&self, gen: usize) -> Vec<D>;
 }
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[must_use]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
 pub struct EmptyDataSampler {}
 
 impl DataSampler<()> for EmptyDataSampler {
@@ -30,7 +31,8 @@ impl DataSampler<()> for EmptyDataSampler {
 
 /// Wraps a given `DataSampler` and returns random subsets of the data for
 /// each generation.
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[must_use]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd)]
 pub struct BatchDataSampler<D: Data, S: DataSampler<D>> {
     sampler: S,
     batch_size: usize,

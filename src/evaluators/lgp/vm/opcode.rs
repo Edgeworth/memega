@@ -2,6 +2,7 @@ use enumset::EnumSetType;
 use smallvec::{smallvec, SmallVec};
 use strum_macros::{Display, EnumIter};
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Operands {
     /// Compare two registers.
@@ -37,6 +38,7 @@ impl Operands {
 
 /// Machine consists of N registers (up to 256) that contain f64 values.
 /// Opcodes are 8 bit and have variable number of operands.
+#[must_use]
 #[derive(EnumSetType, Debug, Display, PartialOrd, EnumIter)]
 pub enum Opcode {
     // Arithmetic - three register assignments:
@@ -62,7 +64,6 @@ pub enum Opcode {
 }
 
 impl Opcode {
-    #[must_use]
     pub fn operands(&self) -> Operands {
         match self {
             // Three reg assign

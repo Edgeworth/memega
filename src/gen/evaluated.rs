@@ -13,6 +13,7 @@ use crate::gen::unevaluated::UnevaluatedGen;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 
+#[must_use]
 #[derive(Display, Clone, PartialOrd, PartialEq)]
 #[display(fmt = "pop: {:>5}, best: {:5.5}", "mems.len()", "self.mems[0]")]
 pub struct EvaluatedGen<S: State> {
@@ -20,7 +21,6 @@ pub struct EvaluatedGen<S: State> {
 }
 
 impl<S: State> EvaluatedGen<S> {
-    #[must_use]
     pub fn new(mut mems: Vec<Member<S>>) -> Self {
         // Sort by base fitness. Selection should happen using selection
         // fitness. Generate survivors using base fitness, to make sure we keep
@@ -29,7 +29,6 @@ impl<S: State> EvaluatedGen<S> {
         Self { mems }
     }
 
-    #[must_use]
     pub fn mems(&self) -> &[Member<S>] {
         &self.mems
     }

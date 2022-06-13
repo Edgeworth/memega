@@ -5,7 +5,7 @@ use crate::evaluators::lgp::vm::op::Op;
 pub fn lgp_disasm(code: &[Op]) -> String {
     let mut prog = String::new();
     for ins in code.iter() {
-        let _ = writeln!(prog, "{}", ins);
+        let _ = writeln!(prog, "{ins}");
     }
     prog
 }
@@ -13,6 +13,7 @@ pub fn lgp_disasm(code: &[Op]) -> String {
 #[cfg(test)]
 mod tests {
     use eyre::Result;
+    use pretty_assertions::assert_eq;
 
     use super::*;
     use crate::evaluators::lgp::vm::asm::lgp_asm;

@@ -1,6 +1,7 @@
 use rand::prelude::Distribution;
 use rand::Rng;
 
+#[must_use]
 #[derive(Debug)]
 pub struct PrintableAscii;
 

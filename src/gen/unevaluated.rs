@@ -10,6 +10,7 @@ use crate::gen::evaluated::EvaluatedGen;
 use crate::gen::member::Member;
 use crate::gen::species::{DistCache, SpeciesInfo};
 
+#[must_use]
 #[derive(Clone, PartialOrd, PartialEq)]
 pub struct UnevaluatedGen<S: State> {
     pub mems: Vec<Member<S>>,
@@ -18,13 +19,11 @@ pub struct UnevaluatedGen<S: State> {
 }
 
 impl<S: State> UnevaluatedGen<S> {
-    #[must_use]
     pub fn initial<E: Evaluator>(states: Vec<S>, cfg: &EvolveCfg) -> Self {
         let mems = states.into_iter().map(|state| Member::new::<E>(state, cfg)).collect();
         Self::new(mems)
     }
 
-    #[must_use]
     pub fn new(mems: Vec<Member<S>>) -> Self {
         assert!(!mems.is_empty(), "Generation must not be empty");
         Self { mems, species: SpeciesInfo::new(), dists: DistCache::new() }

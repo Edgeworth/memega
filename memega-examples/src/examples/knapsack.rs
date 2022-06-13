@@ -9,10 +9,12 @@ use memega::ops::mutation::mutate_rate;
 use memega::ops::util::rand_vec;
 use rand::Rng;
 
-#[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
-#[display(fmt = "{:?}", _0)]
+#[must_use]
+#[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, Eq, PartialOrd)]
+#[display(fmt = "{_0:?}")]
 pub struct KnapsackState(pub Vec<bool>);
 
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct KnapsackEvaluator {
     max_w: f64,
@@ -62,7 +64,6 @@ impl Evaluator for KnapsackEvaluator {
     }
 }
 
-#[must_use]
 pub fn knapsack_evolver(cfg: EvolveCfg) -> Evolver<KnapsackEvaluator> {
     const NUM_ITEMS: usize = 100;
     const MAX_W: f64 = 100.0;

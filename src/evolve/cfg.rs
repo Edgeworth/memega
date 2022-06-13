@@ -3,6 +3,7 @@ use rand_distr::{Distribution, Standard};
 
 use crate::gen::species::SpeciesId;
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 // Only one crossover function will be applied at a time.
 pub enum Crossover {
@@ -12,6 +13,7 @@ pub enum Crossover {
     Adaptive,
 }
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 // Each mutation function will be applied with the given rate. This is different to crossover,
 // which is only applied once.
@@ -22,6 +24,7 @@ pub enum Mutation {
     Adaptive,
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Survival {
     TopProportion(f64),
@@ -39,6 +42,7 @@ impl Distribution<Survival> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Selection {
     Sus,
@@ -54,6 +58,7 @@ impl Distribution<Selection> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Niching {
     None,
@@ -71,6 +76,7 @@ impl Distribution<Niching> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Species {
     None,
@@ -86,6 +92,7 @@ impl Distribution<Species> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Stagnation {
     None,
@@ -105,6 +112,7 @@ impl Distribution<Stagnation> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum StagnationCondition {
     // Use default epsilon and relative comparison to determine stagnation.
@@ -122,6 +130,7 @@ impl Distribution<StagnationCondition> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub enum Replacement {
     // During stagnation make a proportion of the children with random individuals.
@@ -134,6 +143,7 @@ impl Distribution<Replacement> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Duplicates {
     DisallowDuplicates, // Don't allow duplicate states in the population.
@@ -151,6 +161,7 @@ impl Distribution<Duplicates> for Standard {
 
 /// How to combine fitnesses for a single member, if multiple inputs are
 /// given (`Evaluator::Data`)
+#[must_use]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum FitnessReduction {
     ArithmeticMean,
@@ -166,6 +177,7 @@ impl Distribution<FitnessReduction> for Standard {
     }
 }
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct EvolveCfg {
     pub pop_size: usize,
@@ -189,7 +201,6 @@ pub struct EvolveCfg {
 }
 
 impl EvolveCfg {
-    #[must_use]
     pub fn new(pop_size: usize) -> Self {
         Self {
             pop_size,
@@ -209,72 +220,58 @@ impl EvolveCfg {
         }
     }
 
-    #[must_use]
     pub fn set_pop_size(self, pop_size: usize) -> Self {
         Self { pop_size, ..self }
     }
 
-    #[must_use]
     pub fn set_crossover(self, crossover: Crossover) -> Self {
         Self { crossover, ..self }
     }
 
-    #[must_use]
     pub fn set_mutation(self, mutation: Mutation) -> Self {
         Self { mutation, ..self }
     }
 
-    #[must_use]
     pub fn set_survival(self, survival: Survival) -> Self {
         Self { survival, ..self }
     }
 
-    #[must_use]
     pub fn set_selection(self, selection: Selection) -> Self {
         Self { selection, ..self }
     }
 
-    #[must_use]
     pub fn set_niching(self, niching: Niching) -> Self {
         Self { niching, ..self }
     }
 
-    #[must_use]
     pub fn set_species(self, species: Species) -> Self {
         Self { species, ..self }
     }
 
-    #[must_use]
     pub fn set_stagnation(self, stagnation: Stagnation) -> Self {
         Self { stagnation, ..self }
     }
 
-    #[must_use]
     pub fn set_stagnation_condition(self, stagnation_condition: StagnationCondition) -> Self {
         Self { stagnation_condition, ..self }
     }
 
-    #[must_use]
     pub fn set_replacement(self, replacement: Replacement) -> Self {
         Self { replacement, ..self }
     }
 
-    #[must_use]
     pub fn set_duplicates(self, duplicates: Duplicates) -> Self {
         Self { duplicates, ..self }
     }
 
-    #[must_use]
     pub fn set_fitness_reduction(self, fitness_reduction: FitnessReduction) -> Self {
         Self { fitness_reduction, ..self }
     }
 
-    #[must_use]
     pub fn set_par_fitness(self, par_fitness: bool) -> Self {
         Self { par_fitness, ..self }
     }
 
-    #[must_use]
     pub fn set_par_dist(self, par_dist: bool) -> Self {
         Self { par_dist, ..self }
     }

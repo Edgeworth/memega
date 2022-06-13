@@ -15,8 +15,9 @@ use crate::ops::util::rand_vec;
 
 pub trait StatFn = Fn(EvolveCfg) -> Result<Option<Stats>> + Send + Sync;
 
+#[must_use]
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd)]
-#[display(fmt = "{:?}", cfg)]
+#[display(fmt = "{cfg:?}")]
 pub struct HyperState {
     cfg: EvolveCfg,
     crossover: Vec<f64>, // Weights for fixed crossover.
@@ -24,7 +25,6 @@ pub struct HyperState {
 }
 
 impl HyperState {
-    #[must_use]
     pub fn rand(pop_size: usize, num_crossover: usize, num_mutation: usize) -> HyperState {
         let mut r = rand::thread_rng();
         let crossover = rand_vec(num_crossover, || r.gen());
@@ -38,12 +38,12 @@ impl HyperState {
     }
 }
 
+#[must_use]
 pub struct HyperEvaluator {
     stat_fns: Vec<Box<dyn StatFn>>,
 }
 
 impl HyperEvaluator {
-    #[must_use]
     pub fn new(stat_fns: Vec<Box<dyn StatFn>>) -> Self {
         Self { stat_fns }
     }

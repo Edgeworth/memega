@@ -16,6 +16,7 @@ pub trait CreateEvolverFn<E: Evaluator> =
 pub trait RandState<S: State> = FnMut() -> S + Send;
 
 /// Runs iterations of GA w.r.t. the given evaluator.
+#[must_use]
 pub struct Evolver<E: Evaluator> {
     cfg: EvolveCfg,
     eval: E,
@@ -126,14 +127,14 @@ impl<E: Evaluator> Evolver<E> {
         if self.cfg.mutation == Mutation::Adaptive {
             s += "mutation:  ";
             for &v in &r.nth(0).params.mutation {
-                let _ = write!(s, "{:5.5}, ", v);
+                let _ = write!(s, "{v:5.5}, ");
             }
             s += "\n";
         }
         if self.cfg.crossover == Crossover::Adaptive {
             s += "crossover: ";
             for &v in &r.nth(0).params.crossover {
-                let _ = write!(s, "{:5.5}, ", v);
+                let _ = write!(s, "{v:5.5}, ");
             }
             s += "\n";
         }
@@ -185,10 +186,10 @@ impl<E: Evaluator> Evolver<E> {
 
         for (count, mems) in &by_species {
             if *count > 0 {
-                let _ = writeln!(s, "Species {} top {}:", mems[0].species, count);
+                let _ = writeln!(s, "Species {} top {count}:", mems[0].species);
                 for mem in mems.iter().take(*count) {
                     let state_str = indent(&format!("{}", mem.state), "  ");
-                    let _ = writeln!(s, "fitness: {:5.5}\n{}", mem.fitness, state_str);
+                    let _ = writeln!(s, "fitness: {:5.5}\n{state_str}", mem.fitness);
                 }
                 s += "\n";
             }

@@ -7,6 +7,7 @@ use crate::evolve::cfg::EvolveCfg;
 use crate::evolve::evolver::{CreateEvolverFn, Evolver};
 use crate::evolve::result::Stats;
 
+#[must_use]
 pub struct HyperBuilder {
     stat_fns: Vec<Box<dyn StatFn>>,
     pop_size: usize,
@@ -16,7 +17,6 @@ pub struct HyperBuilder {
 }
 
 impl HyperBuilder {
-    #[must_use]
     pub fn new(pop_size: usize, sample_dur: Duration) -> Self {
         Self { stat_fns: Vec::new(), pop_size, num_crossover: 0, num_mutation: 0, sample_dur }
     }
@@ -33,7 +33,7 @@ impl HyperBuilder {
             let st = Instant::now();
             let mut r1 = None;
             let mut r2 = None;
-            while (Instant::now() - st) < sample_dur {
+            while st.elapsed() < sample_dur {
                 swap(&mut r1, &mut r2);
                 // TODO: Support passing in data.
                 r2 = Some(evolver.run()?);
@@ -51,7 +51,6 @@ impl HyperBuilder {
         }));
     }
 
-    #[must_use]
     pub fn build(self, cfg: EvolveCfg) -> Evolver<HyperEvaluator> {
         let pop_size = self.pop_size;
         let num_crossover = self.num_crossover;

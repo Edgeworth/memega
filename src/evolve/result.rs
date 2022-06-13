@@ -6,6 +6,7 @@ use crate::gen::member::Member;
 use crate::gen::species::SpeciesInfo;
 use crate::gen::unevaluated::UnevaluatedGen;
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Stats {
     pub best_fitness: f64,
@@ -45,8 +46,9 @@ impl Stats {
     }
 }
 
+#[must_use]
 #[derive(Display, Clone, PartialEq)]
-#[display(fmt = "Run({})", gen)]
+#[display(fmt = "Run({gen})")]
 pub struct EvolveResult<S: State> {
     pub unevaluated: UnevaluatedGen<S>,
     pub gen: EvaluatedGen<S>,
@@ -59,7 +61,6 @@ impl<S: State> EvolveResult<S> {
         self.gen.mems.len()
     }
 
-    #[must_use]
     pub fn nth(&self, n: usize) -> &Member<S> {
         &self.gen.mems[n]
     }

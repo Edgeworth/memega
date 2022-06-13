@@ -8,6 +8,7 @@ use strum::IntoEnumIterator;
 
 use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 
+#[must_use]
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 pub struct Op {
     code: Opcode,
@@ -32,12 +33,12 @@ impl fmt::Display for Op {
             Opcode::IfLt => "iflt",
         };
         let operands = match self.operands {
-            Operands::Reg2Cmp { ra, rb } => format!("r{}, r{}", ra, rb),
-            Operands::Reg2Assign { ri, ra } => format!("r{}, r{}", ri, ra),
-            Operands::Reg3Assign { ri, ra, rb } => format!("r{}, r{}, r{}", ri, ra, rb),
-            Operands::ImmAssign { ri, imm } => format!("r{}, {}", ri, imm),
+            Operands::Reg2Cmp { ra, rb } => format!("r{ra}, r{rb}"),
+            Operands::Reg2Assign { ri, ra } => format!("r{ri}, r{ra}"),
+            Operands::Reg3Assign { ri, ra, rb } => format!("r{ri}, r{ra}, r{rb}"),
+            Operands::ImmAssign { ri, imm } => format!("r{ri}, {imm}"),
         };
-        write!(f, "{} {}", mnemonic, operands)
+        write!(f, "{mnemonic} {operands}")
     }
 }
 
@@ -48,13 +49,11 @@ impl Distribution<Opcode> for Standard {
 }
 
 impl Op {
-    #[must_use]
     pub fn new(code: Opcode, operands: Operands) -> Self {
         assert!(discriminant(&code.operands()) == discriminant(&operands), "invalid operands");
         Self { code, operands }
     }
 
-    #[must_use]
     pub fn from_code(code: Opcode) -> Self {
         Self { code, operands: code.operands() }
     }
@@ -114,17 +113,14 @@ impl Op {
         d
     }
 
-    #[must_use]
     pub fn code(&self) -> Opcode {
         self.code
     }
 
-    #[must_use]
     pub fn operands(&self) -> Operands {
         self.operands
     }
 
-    #[must_use]
     pub fn operands_mut(&mut self) -> &mut Operands {
         &mut self.operands
     }

@@ -256,6 +256,7 @@ pub fn crossover_blx(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
 
 #[cfg(test)]
 mod tests {
+    use pretty_assertions::assert_eq;
     use rand::rngs::mock::StepRng;
 
     use super::*;

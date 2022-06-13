@@ -1,8 +1,8 @@
 use std::fmt;
 use std::hash::Hash;
 
-use concurrent_lru::sharded::LruCache;
-use eyre::Result;
+use eyre::{eyre, Result};
+use moka::sync::Cache;
 
 use crate::evolve::cfg::FitnessReduction;
 
@@ -60,29 +60,30 @@ pub trait Evaluator: Send + Sync {
 }
 
 /// Evaluator which uses an LRU cache to cache fitness and distance values.
+#[must_use]
 pub struct CachedEvaluator<E: Evaluator>
 where
     E::State: Hash + Eq,
     E::Data: Hash + Eq,
 {
     eval: E,
-    fitness_cache: LruCache<(E::State, E::Data), f64>,
+    fitness_cache: Cache<(E::State, E::Data), f64>,
 }
 
 impl<E: Evaluator> CachedEvaluator<E>
 where
-    E::State: Hash + Eq,
-    E::Data: Hash + Eq,
+    E::State: Hash + Eq + 'static,
+    E::Data: Hash + Eq + 'static,
 {
     pub fn new(eval: E, cap: usize) -> Self {
-        Self { eval, fitness_cache: LruCache::new(cap as u64) }
+        Self { eval, fitness_cache: Cache::new(cap as u64) }
     }
 }
 
 impl<E: Evaluator> Evaluator for CachedEvaluator<E>
 where
-    E::State: Hash + Eq,
-    E::Data: Hash + Eq,
+    E::State: Hash + Eq + 'static,
+    E::Data: Hash + Eq + 'static,
 {
     type State = E::State;
     type Data = E::Data;
@@ -98,10 +99,11 @@ where
     }
 
     fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
-        Ok(*self
+        let value = self
             .fitness_cache
-            .get_or_try_init((s.clone(), data.clone()), 1, |(s, d)| self.eval.fitness(s, d))?
-            .value())
+            .try_get_with((s.clone(), data.clone()), || self.eval.fitness(s, data))
+            .map_err(|e| eyre!("fitness error: {}", e))?;
+        Ok(value)
     }
 
     fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {

@@ -5,6 +5,7 @@ use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation};
 use crate::ops::util::rand_vec;
 
 /// Potentially self-adaptive parameters per state.
+#[must_use]
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct Params {
     // Conventionally, the first element will be the weight of doing no mutation or crossover.
@@ -13,7 +14,6 @@ pub struct Params {
 }
 
 impl Params {
-    #[must_use]
     pub fn new<E: Evaluator>(cfg: &EvolveCfg) -> Self {
         let mut r = rand::thread_rng();
         let mutation = if let Mutation::Fixed(v) = &cfg.mutation {

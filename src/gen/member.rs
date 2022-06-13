@@ -5,8 +5,9 @@ use crate::evolve::cfg::EvolveCfg;
 use crate::gen::params::Params;
 use crate::gen::species::{SpeciesId, NO_SPECIES};
 
+#[must_use]
 #[derive(Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "fitness {:5.5} species {:>3}", fitness, species)]
+#[display(fmt = "fitness {fitness:5.5} species {species:>3}")]
 pub struct Member<S: State> {
     pub state: S,               // Actual state.
     pub params: Params,         // Adaptively evolved parameters

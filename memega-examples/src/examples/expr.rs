@@ -26,7 +26,7 @@ pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> Result<f64> {
     let ans = match ans {
         Expression::Integer(integer) => integer.to_f64().ok_or_else(|| eyre!("invalid y"))?,
         Expression::Rational(ratio, _) => ratio.to_f64().ok_or_else(|| eyre!("invalid y"))?,
-        _ => panic!("should be number output: {}", ans),
+        _ => panic!("should be number output: {ans}"),
     };
 
     let regs: [f64; NUM_REG] = [0.0, 0.0];
@@ -38,6 +38,7 @@ pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> Result<f64> {
     Ok(1.0 / (1.0 + (ans - exec.mem(OUTPUT_REG)).abs()))
 }
 
+#[must_use]
 pub struct ExprDataSampler {
     train: Vec<f64>,
     valid: Vec<f64>,
@@ -50,7 +51,6 @@ impl Default for ExprDataSampler {
 }
 
 impl ExprDataSampler {
-    #[must_use]
     pub fn new() -> Self {
         const START: f64 = -100.0;
         const END: f64 = 100.0;
@@ -77,7 +77,6 @@ impl DataSampler<f64> for ExprDataSampler {
     }
 }
 
-#[must_use]
 pub fn expr_evolver(
     target: String,
     lgpcfg: LgpEvaluatorCfg,
