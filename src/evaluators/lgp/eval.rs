@@ -16,6 +16,7 @@ use crate::ops::crossover::crossover_kpx;
 use crate::ops::distance::dist_fn;
 use crate::ops::mutation::{mutate_insert, mutate_reset, mutate_scramble, mutate_swap};
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct LgpState {
     ops_unopt: Vec<Op>, // Contains program code for linear genetic programming.
@@ -39,12 +40,10 @@ impl fmt::Display for LgpState {
 }
 
 impl LgpState {
-    #[must_use]
     pub fn new(ops_unopt: Vec<Op>, num_reg: usize, num_const: usize, output_regs: &[u8]) -> Self {
         Self { ops_unopt, num_reg, num_const, output_regs: output_regs.into() }
     }
 
-    #[must_use]
     pub fn lgpvmcfg(&self, regs: &[f64], constants: &[f64]) -> LgpVmCfg {
         assert!(regs.len() == self.num_reg, "regs length mismatch");
         assert!(constants.len() == self.num_const, "constants length mismatch");
@@ -61,7 +60,6 @@ impl LgpState {
         self.num_const
     }
 
-    #[must_use]
     pub fn ops_unopt(&self) -> &[Op] {
         &self.ops_unopt
     }
@@ -78,13 +76,13 @@ impl LgpState {
     }
 }
 
+#[must_use]
 pub struct LgpEvaluator<D> {
     cfg: LgpEvaluatorCfg,
     _u: PhantomData<D>,
 }
 
 impl<D> LgpEvaluator<D> {
-    #[must_use]
     pub fn new(cfg: LgpEvaluatorCfg) -> Self {
         Self { cfg, _u: PhantomData }
     }
@@ -128,7 +126,7 @@ impl<D: Data> Evaluator for LgpEvaluator<D> {
             5 => {
                 // Remove random instruction.
                 if code_size > 1 {
-                    s.ops_unopt_mut().remove(r.gen_range(0..code_size));
+                    let _ = s.ops_unopt_mut().remove(r.gen_range(0..code_size));
                 }
             }
             6 => {

@@ -4,7 +4,6 @@ use memega::evolve::evolver::Evolver;
 
 use crate::examples::func::{func_evolver, FuncState};
 
-#[must_use]
 pub fn griewank_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Data = ()>> {
     func_evolver(
         dim,

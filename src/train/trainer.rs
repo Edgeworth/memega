@@ -9,6 +9,7 @@ use crate::train::cfg::{Termination, TrainerCfg};
 use crate::train::sampler::DataSampler;
 
 /// Runs evolution with the given parameters and prints some info.
+#[must_use]
 pub struct Trainer {
     cfg: TrainerCfg,
     #[cfg(feature = "tensorboard")]
@@ -42,7 +43,6 @@ impl Trainer {
         Self { cfg, writer }
     }
 
-    #[must_use]
     pub fn new(cfg: TrainerCfg) -> Self {
         #[cfg(feature = "tensorboard")]
         let s = Self::new_tensorboard(cfg);
@@ -73,7 +73,7 @@ impl Trainer {
             fitness_count += 1.0;
 
             if let Some(print_gen) = self.cfg.print_gen && i % print_gen == 0 {
-                 println!("Gen {:>6}\ntrain best {:5.5}", i, r.nth(0).fitness);
+                 println!("Gen {i:>6}\ntrain best {:5.5}", r.nth(0).fitness);
             }
 
             if let Some(print_valid) = self.cfg.print_valid && i % print_valid == 0 {
@@ -82,7 +82,7 @@ impl Trainer {
                     &sampler.valid(i),
                     evolver.cfg().fitness_reduction,
                 )?;
-                println!("valid best: {:5.5}", valid_fitness);
+                println!("valid best: {valid_fitness:5.5}");
             }
 
             if let Some(print_summary) = self.cfg.print_summary && i % print_summary == 0 {

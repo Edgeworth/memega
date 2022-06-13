@@ -10,10 +10,12 @@ use memega::ops::util::{rand_vec, str_to_vec};
 use memega::util::distributions::PrintableAscii;
 use rand::Rng;
 
-#[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
+#[must_use]
+#[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, Eq, PartialOrd)]
 #[display(fmt = "{}", "self.0.iter().collect::<String>()")]
 pub struct TargetStringState(pub Vec<char>);
 
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct TargetStringEvaluator {
     target: TargetStringState,
@@ -53,7 +55,6 @@ impl Evaluator for TargetStringEvaluator {
     }
 }
 
-#[must_use]
 pub fn target_string_evolver(cfg: EvolveCfg) -> Evolver<TargetStringEvaluator> {
     const TARGET: &str = "Hello world!";
     Evolver::new(TargetStringEvaluator::new(TARGET), cfg, move || {

@@ -4,6 +4,7 @@ use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 
 /// Virtual machine for lgp code. Programs should not be able to run forever,
 /// and have acyclic control flow graphs.
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct LgpVm {
     pc: usize,
@@ -14,7 +15,6 @@ pub struct LgpVm {
 }
 
 impl LgpVm {
-    #[must_use]
     pub fn new(cfg: &LgpVmCfg) -> Self {
         let num_reg = cfg.regs().len();
         let mem_size = cfg.regs().len() + cfg.constants().len();
@@ -137,7 +137,7 @@ impl LgpVm {
                         while let Some(op) = self.fetch() && op.code().is_branch() {}
                     }
                 }
-                _ => panic!("incorrect or unimplemented opcode: {:?}", op),
+                _ => panic!("incorrect or unimplemented opcode: {op:?}"),
             }
             false
         } else {

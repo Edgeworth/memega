@@ -1,10 +1,12 @@
 use std::path::{Path, PathBuf};
 
+#[must_use]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Termination {
     FixedGenerations(usize), // After fixed number of generations.
 }
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd)]
 pub struct TrainerCfg {
     pub name: String,
@@ -18,7 +20,6 @@ pub struct TrainerCfg {
 }
 
 impl TrainerCfg {
-    #[must_use]
     pub fn new(name: &str) -> Self {
         Self {
             name: name.to_string(),
@@ -32,43 +33,36 @@ impl TrainerCfg {
         }
     }
 
-    #[must_use]
     pub fn set_termination(mut self, termination: Termination) -> Self {
         self.termination = termination;
         self
     }
 
-    #[must_use]
     pub fn set_print_gen(mut self, print_gen: usize) -> Self {
         self.print_gen = Some(print_gen);
         self
     }
 
-    #[must_use]
     pub fn set_print_summary(mut self, print_summary: usize) -> Self {
         self.print_summary = Some(print_summary);
         self
     }
 
-    #[must_use]
     pub fn set_print_samples(mut self, print_samples: usize) -> Self {
         self.print_samples = Some(print_samples);
         self
     }
 
-    #[must_use]
     pub fn set_print_valid(mut self, print_valid: usize) -> Self {
         self.print_valid = Some(print_valid);
         self
     }
 
-    #[must_use]
     pub fn set_report_gen(mut self, report_gen: usize) -> Self {
         self.report_gen = Some(report_gen);
         self
     }
 
-    #[must_use]
     pub fn set_report_path(mut self, report_path: impl AsRef<Path>) -> Self {
         self.report_path = Some(report_path.as_ref().into());
         self

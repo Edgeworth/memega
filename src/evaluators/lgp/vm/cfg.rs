@@ -1,6 +1,7 @@
 use crate::evaluators::lgp::vm::op::Op;
 
-// Virtual machine for lgp code.
+/// Virtual machine for lgp code.
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct LgpVmCfg {
     /// Initial registers (readwrite memory).
@@ -18,12 +19,10 @@ impl Default for LgpVmCfg {
 }
 
 impl LgpVmCfg {
-    #[must_use]
     pub fn new() -> Self {
         Self { regs: vec![], constants: vec![], code: vec![] }
     }
 
-    #[must_use]
     pub fn set_regs(mut self, regs: &[f64]) -> Self {
         self.regs = regs.to_vec();
         assert!(
@@ -33,7 +32,6 @@ impl LgpVmCfg {
         self
     }
 
-    #[must_use]
     pub fn set_constants(mut self, constants: &[f64]) -> Self {
         self.constants = constants.to_vec();
         assert!(
@@ -43,7 +41,6 @@ impl LgpVmCfg {
         self
     }
 
-    #[must_use]
     pub fn set_code(mut self, code: &[Op]) -> Self {
         self.code = code.to_vec();
         self
@@ -59,7 +56,6 @@ impl LgpVmCfg {
         &self.constants
     }
 
-    #[must_use]
     pub fn code(&self) -> &[Op] {
         &self.code
     }

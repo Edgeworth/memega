@@ -8,6 +8,7 @@ use crate::evolve::evolver::Evolver;
 use crate::ops::mutation::mutate_normal;
 use crate::ops::util::rand_vec;
 
+#[must_use]
 pub struct LgpFitnessFnEvaluator<D: Data, F: FitnessFn<LgpState, D>> {
     evaluator: LgpEvaluator<D>,
     f: F,

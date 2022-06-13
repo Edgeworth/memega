@@ -8,10 +8,12 @@ use memega::ops::distance::dist2;
 use memega::ops::mutation::{mutate_normal, mutate_rate, mutate_uniform};
 use memega::ops::util::rand_vec;
 
+#[must_use]
 #[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
-#[display(fmt = "{:?}", _0)]
+#[display(fmt = "{_0:?}")]
 pub struct FuncState(pub Vec<f64>);
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct FuncEvaluator<F: FitnessFn<FuncState>> {
     dim: usize,

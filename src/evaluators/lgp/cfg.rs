@@ -8,6 +8,7 @@ use crate::evaluators::lgp::vm::op::Op;
 use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 use crate::ops::mutation::mutate_normal;
 
+#[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct LgpEvaluatorCfg {
     num_reg: usize,
@@ -23,7 +24,6 @@ pub struct LgpEvaluatorCfg {
 }
 
 impl LgpEvaluatorCfg {
-    #[must_use]
     pub fn new() -> Self {
         Self {
             num_reg: 4,
@@ -36,7 +36,6 @@ impl LgpEvaluatorCfg {
         }
     }
 
-    #[must_use]
     pub fn rand_op(&self) -> Op {
         let mut r = rand::thread_rng();
         let mut op = Op::from_code(self.opcodes.iter().choose(&mut r).unwrap());
@@ -119,43 +118,36 @@ impl LgpEvaluatorCfg {
         }
     }
 
-    #[must_use]
     pub fn set_num_reg(mut self, num_reg: usize) -> Self {
         self.num_reg = num_reg;
         self
     }
 
-    #[must_use]
     pub fn set_num_const(mut self, num_const: usize) -> Self {
         self.num_const = num_const;
         self
     }
 
-    #[must_use]
     pub fn set_output_regs(mut self, output_regs: &[u8]) -> Self {
         self.output_regs = output_regs.into();
         self
     }
 
-    #[must_use]
     pub fn set_max_code(mut self, max_code: usize) -> Self {
         self.max_code = max_code;
         self
     }
 
-    #[must_use]
     pub fn set_imm_sf(mut self, imm_sf: usize) -> Self {
         self.imm_sf = imm_sf;
         self
     }
 
-    #[must_use]
     pub fn set_imm_range(mut self, imm_range: (f64, f64)) -> Self {
         self.imm_range = imm_range;
         self
     }
 
-    #[must_use]
     pub fn set_opcodes(mut self, opcodes: EnumSet<Opcode>) -> Self {
         self.opcodes = opcodes;
         self

@@ -11,15 +11,15 @@ use crate::gen::member::Member;
 pub type SpeciesId = u64;
 pub const NO_SPECIES: SpeciesId = 0;
 
+#[must_use]
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "species: {:>3}, radius: {:5.5}", num, radius)]
+#[display(fmt = "species: {num:>3}, radius: {radius:5.5}")]
 pub struct SpeciesInfo {
     pub num: u64,
     pub radius: f64,
 }
 
 impl SpeciesInfo {
-    #[must_use]
     pub fn new() -> Self {
         Self { num: 1, radius: 1.0 }
     }
@@ -31,6 +31,7 @@ impl Default for SpeciesInfo {
     }
 }
 
+#[must_use]
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct DistCache {
     n: usize,
@@ -40,7 +41,6 @@ pub struct DistCache {
 }
 
 impl DistCache {
-    #[must_use]
     pub fn new() -> Self {
         Self { n: 0, cache: Vec::new(), max: 0.0, sum: 0.0 }
     }

@@ -4,6 +4,7 @@ use crate::evaluators::lgp::vm::op::Op;
 
 /// Virtual machine for lgp code. Programs should not be able to run forever,
 /// and have acyclic control flow graphs.
+#[must_use]
 #[derive(Debug, Clone)]
 pub struct LgpOptimizer {
     code: Vec<Op>,
@@ -11,7 +12,6 @@ pub struct LgpOptimizer {
 }
 
 impl LgpOptimizer {
-    #[must_use]
     pub fn new(code: &[Op], output_regs: &[u8]) -> Self {
         Self { code: code.to_vec(), output_regs: output_regs.into() }
     }
@@ -72,6 +72,7 @@ impl LgpOptimizer {
 #[cfg(test)]
 mod tests {
     use eyre::Result;
+    use pretty_assertions::assert_eq;
 
     use super::*;
     use crate::evaluators::lgp::vm::asm::lgp_asm;
