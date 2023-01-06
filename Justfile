@@ -30,7 +30,7 @@ fix:
 update:
   rustup update
   cargo install cargo-udeps cargo-edit
-  cargo upgrade
+  cargo upgrade --incompatible
   cargo update
   cargo build --workspace --all-features --all-targets
   maturin build -m memega-py/Cargo.toml

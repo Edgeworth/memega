@@ -1,4 +1,4 @@
-use clap::{ArgEnum, Parser};
+use clap::{Parser, ValueEnum};
 use eyre::Result;
 use memega::eval::{Data, Evaluator};
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
@@ -21,7 +21,7 @@ use crate::examples::rastrigin::rastrigin_evolver;
 use crate::examples::target_string::target_string_evolver;
 
 #[must_use]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ArgEnum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ValueEnum)]
 pub enum Example {
     Ackley,
     Griewank,
@@ -32,7 +32,7 @@ pub enum Example {
 }
 
 #[must_use]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ArgEnum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, ValueEnum)]
 pub enum Op {
     Run,
 }
@@ -41,10 +41,10 @@ pub enum Op {
 #[derive(Debug, Parser)]
 #[clap(name = "memega cli", about = "memega cli")]
 pub struct Args {
-    #[clap(arg_enum, help = "which operation to run")]
+    #[clap(value_enum, help = "which operation to run")]
     pub op: Op,
 
-    #[clap(arg_enum, help = "which example problem to solve")]
+    #[clap(value_enum, help = "which example problem to solve")]
     pub example: Example,
 
     #[clap(
