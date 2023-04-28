@@ -16,4 +16,4 @@ name = "memega"
 
 [dependencies]
 memega = {version = "0.1.0", path = ".."}
-pyo3 = { version = "0.17.3", features = ["extension-module", "auto-initialize", "nightly", "eyre"] }
+pyo3 = { version = "0.18.3", features = ["extension-module", "auto-initialize", "nightly", "eyre"] }
