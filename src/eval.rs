@@ -1,8 +1,8 @@
 use std::fmt;
 use std::hash::Hash;
 
-use eyre::{eyre, Result};
-use moka::sync::Cache;
+use eyre::Result;
+use stretto::Cache;
 
 use crate::evolve::cfg::FitnessReduction;
 
@@ -76,7 +76,7 @@ where
     E::Data: Hash + Eq + 'static,
 {
     pub fn new(eval: E, cap: usize) -> Self {
-        Self { eval, fitness_cache: Cache::new(cap as u64) }
+        Self { eval, fitness_cache: Cache::new(cap * 10, cap as i64).unwrap() }
     }
 }
 
@@ -99,11 +99,14 @@ where
     }
 
     fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
-        let value = self
-            .fitness_cache
-            .try_get_with((s.clone(), data.clone()), || self.eval.fitness(s, data))
-            .map_err(|e| eyre!("fitness error: {}", e))?;
-        Ok(value)
+        let key = (Self::State::clone(s), Self::Data::clone(data));
+        if let Some(value) = self.fitness_cache.get(&key) {
+            Ok(*value.value())
+        } else {
+            let value = self.eval.fitness(s, data)?;
+            self.fitness_cache.insert(key, value, 1);
+            Ok(value)
+        }
     }
 
     fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
