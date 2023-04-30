@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use eyre::{eyre, Result};
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
@@ -19,7 +17,7 @@ const OUTPUT_REG: u8 = 0;
 pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> Result<f64> {
     let expr: Expression = target.parse().map_err(|_| eyre!("failed to parse expression"))?;
 
-    let mut expr_ctx = HashMap::new();
+    let mut expr_ctx = std::collections::HashMap::default();
     let x_expr = Expression::from(Rational::from_float(x).ok_or_else(|| eyre!("invalid x"))?);
     expr_ctx.insert("x".to_string(), x_expr);
     let ans = expr.evaluate(expr_ctx).map_err(|_| eyre!("failed to evaluate expression"))?;

@@ -1,7 +1,7 @@
-use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::mem::swap;
 
+use ahash::{HashMap, HashSet};
 use rand::prelude::IteratorRandom;
 use rand::Rng;
 use smallvec::SmallVec;
@@ -52,7 +52,7 @@ pub fn crossover_pmx_single<T: Copy + Hash + Default + Eq>(
     }
 
     let mut c1 = vec![Default::default(); s1.len()];
-    let mut m: HashMap<T, T> = HashMap::new();
+    let mut m: HashMap<T, T> = HashMap::default();
     for i in st..=en {
         c1[i] = s1[i]; // Copy substring from s1 into c1.
         m.entry(s1[i]).or_insert(s2[i]); // Map from s1 => s2.
@@ -109,7 +109,7 @@ pub fn crossover_order_single<T: Copy + Hash + Default + Eq>(
     }
 
     let mut c1 = vec![Default::default(); s1.len()];
-    let mut m: HashSet<T> = HashSet::new();
+    let mut m: HashSet<T> = HashSet::default();
     for i in st..=en {
         c1[i] = s1[i]; // Copy substring from s1 into c1.
         m.insert(s1[i]); // Record stuff already in c1.
@@ -156,7 +156,7 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
     let mut c1: Vec<T> = vec![Default::default(); s1.len()];
     let mut c2: Vec<T> = vec![Default::default(); s1.len()];
     // Build map from values in s1 to positions.
-    let mut m: HashMap<T, usize> = HashMap::new();
+    let mut m: HashMap<T, usize> = HashMap::default();
     for (i, v) in s1.iter().enumerate() {
         m.entry(*v).or_insert(i);
     }

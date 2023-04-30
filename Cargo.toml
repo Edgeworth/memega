@@ -27,18 +27,19 @@ tensorboard = ["dep:tensorboard-rs", "dep:chrono"]
 members = ["memega-examples", "memega-py"]
 
 [dependencies]
+ahash = "0.8.3"
 approx = "0.5.1"
 chrono = {version = "0.4.24", optional = true}
 derive_more = "0.99.17"
 enumset = "1.0.12"
 eyre = "0.6.8"
 log = "0.4.17"
-moka = "0.10.2"
 num-traits = "0.2.15"
 rand = "0.8.5"
 rand_distr = "0.4.3"
 rayon = "1.7.0"
 smallvec = "1.10.0"
+stretto = {version = "0.8.1", features = ["sync"]}
 strum = "0.24.1"
 strum_macros = "0.24.3"
 tempfile = "3.5.0"

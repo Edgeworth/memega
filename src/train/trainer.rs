@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use eyre::Result;
 
 use crate::eval::Evaluator;
@@ -101,7 +99,7 @@ impl Trainer {
                     &sampler.valid(i),
                     evolver.cfg().fitness_reduction,
                 )?;
-                let scalars = HashMap::from([
+                let scalars = std::collections::HashMap::from([
                     ("train".to_string(), (fitness_sum / fitness_count) as f32),
                     ("valid".to_string(), valid_fitness as f32),
                 ]);
