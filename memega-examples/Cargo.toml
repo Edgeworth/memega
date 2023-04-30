@@ -11,10 +11,10 @@ version = "0.1.0"
 
 [dependencies]
 approx = "0.5.1"
-clap = {version = "4.2.4", features = ["derive", "unicode", "wrap_help"]}
+clap = {version = "4.2.7", features = ["derive", "unicode", "wrap_help"]}
 color-eyre = "0.6.2"
 derive_more = "0.99.17"
-enumset = "1.0.12"
+enumset = "1.0.13"
 eyre = "0.6.8"
 log = "0.4.17"
 memega = {version = "0.1.0", path = ".."}
