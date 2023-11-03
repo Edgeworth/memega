@@ -17,7 +17,7 @@ pub trait StatFn = Fn(EvolveCfg) -> Result<Option<Stats>> + Send + Sync;
 
 #[must_use]
 #[derive(Debug, Display, Clone, PartialEq, PartialOrd)]
-#[display(fmt = "{cfg:?}")]
+#[display("{cfg:?}")]
 pub struct HyperState {
     cfg: EvolveCfg,
     crossover: Vec<f64>, // Weights for fixed crossover.
@@ -26,14 +26,14 @@ pub struct HyperState {
 
 impl HyperState {
     pub fn rand(pop_size: usize, num_crossover: usize, num_mutation: usize) -> HyperState {
-        let mut r = rand::thread_rng();
-        let crossover = rand_vec(num_crossover, || r.gen());
-        let mutation = rand_vec(num_mutation, || r.gen());
+        let mut r = rand::rng();
+        let crossover = rand_vec(num_crossover, || r.random());
+        let mutation = rand_vec(num_mutation, || r.random());
         let mut cfg = EvolveCfg::new(pop_size);
-        cfg.survival = r.gen();
-        cfg.selection = r.gen();
-        cfg.niching = r.gen();
-        cfg.species = r.gen();
+        cfg.survival = r.random();
+        cfg.selection = r.random();
+        cfg.niching = r.random();
+        cfg.species = r.random();
         HyperState { cfg, crossover, mutation }
     }
 }
@@ -55,33 +55,33 @@ impl Evaluator for HyperEvaluator {
     const NUM_MUTATION: usize = 10;
 
     fn crossover(&self, s1: &mut Self::State, s2: &mut Self::State, idx: usize) {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         match idx {
             0 => {}
             1 => {
                 // Uniform crossover-like operation:
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.crossover, &mut s2.cfg.crossover);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.mutation, &mut s2.cfg.mutation);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.survival, &mut s2.cfg.survival);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.selection, &mut s2.cfg.selection);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.niching, &mut s2.cfg.niching);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.species, &mut s2.cfg.species);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.stagnation, &mut s2.cfg.stagnation);
                 }
-                if r.gen::<bool>() {
+                if r.random::<bool>() {
                     swap(&mut s1.cfg.duplicates, &mut s2.cfg.duplicates);
                 }
             }
@@ -92,14 +92,14 @@ impl Evaluator for HyperEvaluator {
     }
 
     fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         match idx {
             0 => {
                 // Mutate crossover - change type
-                if r.gen_bool(rate) {
+                if r.random_bool(rate) {
                     match &s.cfg.crossover {
                         Crossover::Fixed(v) => {
-                            s.crossover = v.clone();
+                            s.crossover.clone_from(v);
                             s.cfg.crossover = Crossover::Adaptive;
                         }
                         Crossover::Adaptive => {
@@ -121,10 +121,10 @@ impl Evaluator for HyperEvaluator {
             }
             2 => {
                 // Mutate mutation - change type
-                if r.gen_bool(rate) {
+                if r.random_bool(rate) {
                     match &s.cfg.mutation {
                         Mutation::Fixed(v) => {
-                            s.mutation = v.clone();
+                            s.mutation.clone_from(v);
                             s.cfg.mutation = Mutation::Adaptive;
                         }
                         Mutation::Adaptive => {
@@ -145,33 +145,33 @@ impl Evaluator for HyperEvaluator {
                 }
             }
             4 => {
-                if r.gen_bool(rate) {
-                    s.cfg.survival = r.gen();
+                if r.random_bool(rate) {
+                    s.cfg.survival = r.random();
                 }
             }
             5 => {
-                if r.gen_bool(rate) {
-                    s.cfg.selection = r.gen();
+                if r.random_bool(rate) {
+                    s.cfg.selection = r.random();
                 }
             }
             6 => {
-                if r.gen_bool(rate) {
-                    s.cfg.niching = r.gen();
+                if r.random_bool(rate) {
+                    s.cfg.niching = r.random();
                 }
             }
             7 => {
-                if r.gen_bool(rate) {
-                    s.cfg.species = r.gen();
+                if r.random_bool(rate) {
+                    s.cfg.species = r.random();
                 }
             }
             8 => {
-                if r.gen_bool(rate) {
-                    s.cfg.stagnation = r.gen();
+                if r.random_bool(rate) {
+                    s.cfg.stagnation = r.random();
                 }
             }
             9 => {
-                if r.gen_bool(rate) {
-                    s.cfg.duplicates = r.gen();
+                if r.random_bool(rate) {
+                    s.cfg.duplicates = r.random();
                 }
             }
             _ => panic!("bug"),

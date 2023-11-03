@@ -34,7 +34,7 @@
     clippy::too_many_lines,
     clippy::unreadable_literal
 )]
-#![feature(array_chunks, is_sorted, trait_alias)]
+#![feature(array_chunks, trait_alias)]
 
 pub mod examples;
 pub mod op;

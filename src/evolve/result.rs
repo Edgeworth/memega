@@ -1,10 +1,10 @@
 use derive_more::Display;
 
 use crate::eval::State;
-use crate::gen::evaluated::EvaluatedGen;
-use crate::gen::member::Member;
-use crate::gen::species::SpeciesInfo;
-use crate::gen::unevaluated::UnevaluatedGen;
+use crate::genr::evaluated::EvaluatedGen;
+use crate::genr::member::Member;
+use crate::genr::species::SpeciesInfo;
+use crate::genr::unevaluated::UnevaluatedGenr;
 
 #[must_use]
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -48,26 +48,26 @@ impl Stats {
 
 #[must_use]
 #[derive(Display, Clone, PartialEq)]
-#[display(fmt = "Run({gen})")]
+#[display("Run({genr})")]
 pub struct EvolveResult<S: State> {
-    pub unevaluated: UnevaluatedGen<S>,
-    pub gen: EvaluatedGen<S>,
+    pub unevaluated: UnevaluatedGenr<S>,
+    pub genr: EvaluatedGen<S>,
     pub stagnant: bool,
 }
 
 impl<S: State> EvolveResult<S> {
     #[must_use]
     pub fn size(&self) -> usize {
-        self.gen.mems.len()
+        self.genr.mems.len()
     }
 
     pub fn nth(&self, n: usize) -> &Member<S> {
-        &self.gen.mems[n]
+        &self.genr.mems[n]
     }
 
     #[must_use]
     pub fn mean_fitness(&self) -> f64 {
-        self.gen.mems.iter().map(|v| v.fitness).sum::<f64>() / self.gen.mems.len() as f64
+        self.genr.mems.iter().map(|v| v.fitness).sum::<f64>() / self.genr.mems.len() as f64
     }
 
     #[must_use]
@@ -77,9 +77,9 @@ impl<S: State> EvolveResult<S> {
 
     #[must_use]
     pub fn num_dup(&self) -> usize {
-        let mut states = self.gen.mems.iter().map(|v| &v.state).cloned().collect::<Vec<_>>();
+        let mut states = self.genr.mems.iter().map(|v| &v.state).cloned().collect::<Vec<_>>();
         states.sort_unstable_by(|a, b| a.partial_cmp(b).unwrap());
         states.dedup();
-        self.gen.mems.len() - states.len()
+        self.genr.mems.len() - states.len()
     }
 }

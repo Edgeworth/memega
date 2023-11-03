@@ -7,8 +7,8 @@ use textwrap::indent;
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation, Stagnation, StagnationCondition};
 use crate::evolve::result::{EvolveResult, Stats};
-use crate::gen::member::Member;
-use crate::gen::unevaluated::UnevaluatedGen;
+use crate::genr::member::Member;
+use crate::genr::unevaluated::UnevaluatedGenr;
 use crate::ops::util::rand_vec;
 
 pub trait CreateEvolverFn<E: Evaluator> =
@@ -20,7 +20,7 @@ pub trait RandState<S: State> = FnMut() -> S + Send;
 pub struct Evolver<E: Evaluator> {
     cfg: EvolveCfg,
     eval: E,
-    gen: UnevaluatedGen<E::State>,
+    genr: UnevaluatedGenr<E::State>,
     rand_state: Box<dyn RandState<E::State>>,
     gen_count: usize,
     stagnation_count: usize,
@@ -38,20 +38,20 @@ impl<E: Evaluator> Evolver<E> {
     pub fn from_initial(
         eval: E,
         cfg: EvolveCfg,
-        mut gen: Vec<E::State>,
+        mut genr: Vec<E::State>,
         mut rand_state: impl RandState<E::State> + 'static,
     ) -> Self {
-        // Fill out the rest of |gen| if it's smaller than pop_size.
+        // Fill out the rest of |genr| if it's smaller than pop_size.
         // If speciation is on, this lets more random species be generated at
         // the beginning.
-        while gen.len() < cfg.pop_size {
-            gen.push(rand_state());
+        while genr.len() < cfg.pop_size {
+            genr.push(rand_state());
         }
-        let gen = UnevaluatedGen::initial::<E>(gen, &cfg);
+        let genr = UnevaluatedGenr::initial::<E>(genr, &cfg);
         Self {
             cfg,
             eval,
-            gen,
+            genr,
             rand_state: Box::new(rand_state),
             gen_count: 0,
             stagnation_count: 0,
@@ -65,11 +65,11 @@ impl<E: Evaluator> Evolver<E> {
         mut rand_state: impl RandState<E::State> + 'static,
     ) -> Self {
         #[allow(clippy::redundant_closure)] // This closure is actually necessary.
-        let gen = UnevaluatedGen::initial::<E>(rand_vec(cfg.pop_size, || rand_state()), &cfg);
+        let genr = UnevaluatedGenr::initial::<E>(rand_vec(cfg.pop_size, || rand_state()), &cfg);
         Self {
             eval,
             cfg,
-            gen,
+            genr,
             rand_state: Box::new(rand_state),
             gen_count: 0,
             stagnation_count: 0,
@@ -78,13 +78,13 @@ impl<E: Evaluator> Evolver<E> {
     }
 
     pub fn run_data(&mut self, inputs: &[E::Data]) -> Result<EvolveResult<E::State>> {
-        let gen = self.gen.evaluate(inputs, &self.cfg, &self.eval)?;
+        let genr = self.genr.evaluate(inputs, &self.cfg, &self.eval)?;
         let stagnant = match self.cfg.stagnation_condition {
             StagnationCondition::Default => {
-                relative_eq!(gen.mems[0].fitness, self.last_fitness)
+                relative_eq!(genr.mems[0].fitness, self.last_fitness)
             }
             StagnationCondition::Epsilon(ep) => {
-                abs_diff_eq!(gen.mems[0].fitness, self.last_fitness, epsilon = ep)
+                abs_diff_eq!(genr.mems[0].fitness, self.last_fitness, epsilon = ep)
             }
         };
         self.gen_count += 1;
@@ -93,7 +93,7 @@ impl<E: Evaluator> Evolver<E> {
         } else {
             self.stagnation_count = 0;
         }
-        self.last_fitness = gen.mems[0].fitness;
+        self.last_fitness = genr.mems[0].fitness;
 
         let stagnant = match self.cfg.stagnation {
             Stagnation::None => false,
@@ -108,9 +108,9 @@ impl<E: Evaluator> Evolver<E> {
             Stagnation::ContinuousAfter(count) => self.stagnation_count >= count,
         };
 
-        let mut next = gen.next_gen(self.rand_state.as_mut(), stagnant, &self.cfg, &self.eval)?;
-        std::mem::swap(&mut next, &mut self.gen);
-        Ok(EvolveResult { unevaluated: next, gen, stagnant })
+        let mut next = genr.next_gen(self.rand_state.as_mut(), stagnant, &self.cfg, &self.eval)?;
+        std::mem::swap(&mut next, &mut self.genr);
+        Ok(EvolveResult { unevaluated: next, genr, stagnant })
     }
 
     pub fn cfg(&self) -> &EvolveCfg {
@@ -148,10 +148,10 @@ impl<E: Evaluator> Evolver<E> {
     #[allow(clippy::unused_self)]
     pub fn summary_sample(&self, r: &mut EvolveResult<E::State>, n: usize) -> String {
         let mut s = String::new();
-        let species = r.gen.species();
+        let species = r.genr.species();
         let mut by_species: Vec<(usize, Vec<Member<E::State>>)> = Vec::new();
         for &id in &species {
-            by_species.push((0, r.gen.species_mems(id)));
+            by_species.push((0, r.genr.species_mems(id)));
         }
 
         let mut processed = 0;

@@ -15,17 +15,17 @@ pub struct Params {
 
 impl Params {
     pub fn new<E: Evaluator>(cfg: &EvolveCfg) -> Self {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         let mutation = if let Mutation::Fixed(v) = &cfg.mutation {
             v.clone()
         } else {
-            rand_vec(E::NUM_MUTATION, || r.gen())
+            rand_vec(E::NUM_MUTATION, || r.random())
         };
 
         let crossover = if let Crossover::Fixed(v) = &cfg.crossover {
             v.clone()
         } else {
-            rand_vec(E::NUM_CROSSOVER, || r.gen())
+            rand_vec(E::NUM_CROSSOVER, || r.random())
         };
 
         Self { mutation, crossover }

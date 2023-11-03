@@ -6,14 +6,14 @@ use eyre::Result;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
 use crate::eval::{Evaluator, State};
-use crate::gen::member::Member;
+use crate::genr::member::Member;
 
 pub type SpeciesId = u64;
 pub const NO_SPECIES: SpeciesId = 0;
 
 #[must_use]
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "species: {num:>3}, radius: {radius:5.5}")]
+#[display("species: {num:>3}, radius: {radius:5.5}")]
 pub struct SpeciesInfo {
     pub num: u64,
     pub radius: f64,

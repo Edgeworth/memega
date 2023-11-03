@@ -11,7 +11,7 @@ pub fn rastrigin_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<D
         dim,
         -5.12,
         5.12,
-        |s: &'_ FuncState, _: &'_ _| {
+        |s: &'_ FuncState, (): &'_ _| {
             const A: f64 = 10.0;
             let mut v = 0.0;
             for &x in s.iter() {

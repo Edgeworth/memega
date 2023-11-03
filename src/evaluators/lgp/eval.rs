@@ -2,7 +2,7 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use eyre::Result;
-use rand::prelude::SliceRandom;
+use rand::seq::IndexedMutRandom;
 use rand::Rng;
 use smallvec::SmallVec;
 
@@ -102,12 +102,12 @@ impl<D: Data> Evaluator for LgpEvaluator<D> {
                 crossover_kpx(s1.ops_unopt_mut(), s2.ops_unopt_mut(), 2);
             }
             _ => panic!("unknown crossover strategy"),
-        };
+        }
     }
 
     fn mutate(&self, s: &mut LgpState, rate: f64, idx: usize) {
-        let mut r = rand::thread_rng();
-        if r.gen::<f64>() > rate {
+        let mut r = rand::rng();
+        if r.random::<f64>() > rate {
             return;
         }
         let code_size = s.ops_unopt().len();
@@ -120,13 +120,13 @@ impl<D: Data> Evaluator for LgpEvaluator<D> {
             4 => {
                 // Add new random instruction.
                 if code_size < self.cfg.max_code() {
-                    s.ops_unopt_mut().insert(r.gen_range(0..code_size), op);
+                    s.ops_unopt_mut().insert(r.random_range(0..code_size), op);
                 }
             }
             5 => {
                 // Remove random instruction.
                 if code_size > 1 {
-                    let _ = s.ops_unopt_mut().remove(r.gen_range(0..code_size));
+                    let _ = s.ops_unopt_mut().remove(r.random_range(0..code_size));
                 }
             }
             6 => {

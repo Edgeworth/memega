@@ -1,7 +1,7 @@
 use enumset::EnumSet;
-use rand::prelude::IteratorRandom;
 use rand::Rng;
-use smallvec::{smallvec, SmallVec};
+use rand::prelude::IteratorRandom;
+use smallvec::{SmallVec, smallvec};
 use strum::IntoEnumIterator;
 
 use crate::evaluators::lgp::vm::op::Op;
@@ -37,27 +37,27 @@ impl LgpEvaluatorCfg {
     }
 
     pub fn rand_op(&self) -> Op {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         let mut op = Op::from_code(self.opcodes.iter().choose(&mut r).unwrap());
 
         let mem_size = self.num_reg + self.num_const;
         match op.operands_mut() {
             Operands::Reg2Cmp { ra, rb } => {
-                *ra = r.gen_range(0..mem_size) as u8;
-                *rb = r.gen_range(0..mem_size) as u8;
+                *ra = r.random_range(0..mem_size) as u8;
+                *rb = r.random_range(0..mem_size) as u8;
             }
             Operands::Reg2Assign { ri, ra } => {
-                *ri = r.gen_range(0..self.num_reg) as u8;
-                *ra = r.gen_range(0..mem_size) as u8;
+                *ri = r.random_range(0..self.num_reg) as u8;
+                *ra = r.random_range(0..mem_size) as u8;
             }
             Operands::Reg3Assign { ri, ra, rb } => {
-                *ri = r.gen_range(0..self.num_reg) as u8;
-                *ra = r.gen_range(0..mem_size) as u8;
-                *rb = r.gen_range(0..mem_size) as u8;
+                *ri = r.random_range(0..self.num_reg) as u8;
+                *ra = r.random_range(0..mem_size) as u8;
+                *rb = r.random_range(0..mem_size) as u8;
             }
             Operands::ImmAssign { ri, imm } => {
-                *ri = r.gen_range(0..self.num_reg) as u8;
-                let v = r.gen_range(self.imm_range.0..=self.imm_range.1);
+                *ri = r.random_range(0..self.num_reg) as u8;
+                let v = r.random_range(self.imm_range.0..=self.imm_range.1);
                 *imm = Self::round_sf(v, self.imm_sf()) as f32;
             }
         }
@@ -72,45 +72,45 @@ impl LgpEvaluatorCfg {
 
     // Micro-mutation of the instruction without changing the opcode.
     pub fn mutate(&self, op: &mut Op) {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
 
         let mem_size = self.num_reg + self.num_const;
         match op.operands_mut() {
             Operands::Reg2Cmp { ra, rb } => {
-                if r.gen::<bool>() {
-                    *ra = r.gen_range(0..mem_size) as u8;
+                if r.random::<bool>() {
+                    *ra = r.random_range(0..mem_size) as u8;
                 } else {
-                    *rb = r.gen_range(0..mem_size) as u8;
+                    *rb = r.random_range(0..mem_size) as u8;
                 }
             }
             Operands::Reg2Assign { ri, ra } => {
-                if r.gen::<bool>() {
-                    *ri = r.gen_range(0..self.num_reg) as u8;
+                if r.random::<bool>() {
+                    *ri = r.random_range(0..self.num_reg) as u8;
                 } else {
-                    *ra = r.gen_range(0..mem_size) as u8;
+                    *ra = r.random_range(0..mem_size) as u8;
                 }
             }
             Operands::Reg3Assign { ri, ra, rb } => {
-                match r.gen_range(0..3) {
+                match r.random_range(0..3) {
                     0 => {
-                        *ri = r.gen_range(0..self.num_reg) as u8;
+                        *ri = r.random_range(0..self.num_reg) as u8;
                     }
                     1 => {
-                        *ra = r.gen_range(0..mem_size) as u8;
+                        *ra = r.random_range(0..mem_size) as u8;
                     }
                     2 => {
-                        *rb = r.gen_range(0..mem_size) as u8;
+                        *rb = r.random_range(0..mem_size) as u8;
                     }
                     _ => unreachable!(),
-                };
+                }
             }
             Operands::ImmAssign { ri, imm } => {
-                if r.gen::<bool>() {
-                    *ri = r.gen_range(0..self.num_reg) as u8;
+                if r.random::<bool>() {
+                    *ri = r.random_range(0..self.num_reg) as u8;
                 } else {
                     // Large/small mutation.
                     let range = self.imm_range.1 - self.imm_range.0;
-                    let stddev = if r.gen::<bool>() { range.sqrt() } else { range.log10() };
+                    let stddev = if r.random::<bool>() { range.sqrt() } else { range.log10() };
                     let v = mutate_normal(*imm as f64, stddev);
                     *imm = Self::round_sf(v, self.imm_sf) as f32;
                 }

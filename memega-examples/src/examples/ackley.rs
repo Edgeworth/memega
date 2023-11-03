@@ -11,7 +11,7 @@ pub fn ackley_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Data
         dim,
         -32.768,
         32.768,
-        |s: &'_ FuncState, _: &'_ _| {
+        |s: &'_ FuncState, (): &'_ _| {
             const A: f64 = 20.0;
             const B: f64 = 0.2;
             const C: f64 = 2.0 * PI;

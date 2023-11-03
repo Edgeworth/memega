@@ -59,8 +59,8 @@ impl Trainer {
         let mut fitness_count = 0.0;
         for i in 0.. {
             match self.cfg.termination {
-                Termination::FixedGenerations(gen) => {
-                    if i >= gen {
+                Termination::FixedGenerations(genr) => {
+                    if i >= genr {
                         break;
                     }
                 }
@@ -70,11 +70,15 @@ impl Trainer {
             fitness_sum += r.nth(0).fitness;
             fitness_count += 1.0;
 
-            if let Some(print_gen) = self.cfg.print_gen && i % print_gen == 0 {
-                 println!("Gen {i:>6}\ntrain best {:5.5}", r.nth(0).fitness);
+            if let Some(print_gen) = self.cfg.print_gen
+                && i % print_gen == 0
+            {
+                println!("Genr {i:>6}\ntrain best {:5.5}", r.nth(0).fitness);
             }
 
-            if let Some(print_valid) = self.cfg.print_valid && i % print_valid == 0 {
+            if let Some(print_valid) = self.cfg.print_valid
+                && i % print_valid == 0
+            {
                 let valid_fitness = evolver.eval().multi_fitness(
                     &r.nth(0).state,
                     &sampler.valid(i),
@@ -83,17 +87,23 @@ impl Trainer {
                 println!("valid best: {valid_fitness:5.5}");
             }
 
-            if let Some(print_summary) = self.cfg.print_summary && i % print_summary == 0 {
+            if let Some(print_summary) = self.cfg.print_summary
+                && i % print_summary == 0
+            {
                 println!("{}", evolver.summary(&mut r));
             }
 
-            if let Some(print_samples) = self.cfg.print_samples && i % print_samples == 0 {
+            if let Some(print_samples) = self.cfg.print_samples
+                && i % print_samples == 0
+            {
                 println!("{}", evolver.summary_sample(&mut r, 5));
             }
 
             #[cfg(feature = "tensorboard")]
-            if let Some(report_gen) = self.cfg.report_gen &&
-                    let Some(writer) = &mut self.writer && i % report_gen == 0 {
+            if let Some(report_gen) = self.cfg.report_gen
+                && let Some(writer) = &mut self.writer
+                && i % report_gen == 0
+            {
                 let valid_fitness = evolver.eval().multi_fitness(
                     &r.nth(0).state,
                     &sampler.valid(i),

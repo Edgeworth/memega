@@ -1,21 +1,21 @@
 use derive_more::Display;
-use eyre::{eyre, Result};
-use rand::prelude::SliceRandom;
+use eyre::{Result, eyre};
+use rand::seq::IndexedRandom;
 
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{
     Crossover, Duplicates, EvolveCfg, Mutation, Replacement, Selection, Survival,
 };
 use crate::evolve::evolver::RandState;
-use crate::gen::member::Member;
-use crate::gen::species::SpeciesId;
-use crate::gen::unevaluated::UnevaluatedGen;
+use crate::genr::member::Member;
+use crate::genr::species::SpeciesId;
+use crate::genr::unevaluated::UnevaluatedGenr;
 use crate::ops::mutation::{mutate_lognorm, mutate_normal, mutate_rate};
 use crate::ops::sampling::{multi_rws, rws, sus};
 
 #[must_use]
 #[derive(Display, Clone, PartialOrd, PartialEq)]
-#[display(fmt = "pop: {:>5}, best: {:5.5}", "mems.len()", "self.mems[0]")]
+#[display("pop: {:>5}, best: {:5.5}", mems.len(), self.mems[0])]
 pub struct EvaluatedGen<S: State> {
     pub mems: Vec<Member<S>>,
 }
@@ -77,7 +77,7 @@ impl<S: State> EvaluatedGen<S> {
             }
             Survival::Tournament(q) => {
                 let mut survivors = Vec::new();
-                let mut rng = rand::thread_rng();
+                let mut rng = rand::rng();
                 for mem in &self.mems {
                     let opponents = self.mems.choose_multiple(&mut rng, q);
                     let wins = opponents.filter(|opp| opp.fitness > mem.fitness).count();
@@ -107,7 +107,7 @@ impl<S: State> EvaluatedGen<S> {
         if weights.len() != l {
             return Err(eyre!("number of fixed weights {} doesn't match {}", weights.len(), l));
         }
-        for &v in weights.iter() {
+        for &v in weights {
             if v < 0.0 {
                 return Err(eyre!("weights must all be non-negative: {}", v));
             }
@@ -124,15 +124,15 @@ impl<S: State> EvaluatedGen<S> {
     ) -> Result<()> {
         match crossover {
             Crossover::Fixed(rates) => {
-                s1.params.crossover = rates.clone();
-                s2.params.crossover = rates.clone();
+                s1.params.crossover.clone_from(rates);
+                s2.params.crossover.clone_from(rates);
             }
             Crossover::Adaptive => {
                 let lrate = 1.0 / (self.mems.len() as f64).sqrt();
                 mutate_rate(&mut s1.params.crossover, 1.0, |v| mutate_normal(v, lrate).max(0.0));
                 mutate_rate(&mut s2.params.crossover, 1.0, |v| mutate_normal(v, lrate).max(0.0));
             }
-        };
+        }
         Self::check_weights(&s1.params.crossover, E::NUM_CROSSOVER)?;
         Self::check_weights(&s2.params.crossover, E::NUM_CROSSOVER)?;
         let idx = rws(&s1.params.crossover).unwrap();
@@ -148,7 +148,7 @@ impl<S: State> EvaluatedGen<S> {
     ) -> Result<()> {
         match mutation {
             Mutation::Fixed(rates) => {
-                s.params.mutation = rates.clone();
+                s.params.mutation.clone_from(rates);
             }
             Mutation::Adaptive => {
                 // Apply every mutation with the given rate.
@@ -158,7 +158,7 @@ impl<S: State> EvaluatedGen<S> {
                     mutate_lognorm(v, lrate).clamp(0.0, 1.0)
                 });
             }
-        };
+        }
         Self::check_weights(&s.params.mutation, E::NUM_MUTATION)?;
         for (idx, &rate) in s.params.mutation.iter().enumerate() {
             eval.mutate(&mut s.state, rate, idx);
@@ -172,7 +172,7 @@ impl<S: State> EvaluatedGen<S> {
         stagnant: bool,
         cfg: &EvolveCfg,
         eval: &E,
-    ) -> Result<UnevaluatedGen<S>> {
+    ) -> Result<UnevaluatedGenr<S>> {
         // Pick survivors:
         let mut new_mems = self.survivors(cfg.survival, cfg);
         // Min here to avoid underflow - can happen if we produce too many parents.
@@ -211,6 +211,6 @@ impl<S: State> EvaluatedGen<S> {
                 new_mems.dedup_by(|a, b| a.state.eq(&b.state));
             }
         }
-        Ok(UnevaluatedGen::new(new_mems))
+        Ok(UnevaluatedGenr::new(new_mems))
     }
 }

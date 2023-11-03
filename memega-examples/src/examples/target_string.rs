@@ -12,7 +12,7 @@ use rand::Rng;
 
 #[must_use]
 #[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, Eq, PartialOrd)]
-#[display(fmt = "{}", "self.0.iter().collect::<String>()")]
+#[display("{}", self.0.iter().collect::<String>())]
 pub struct TargetStringState(pub Vec<char>);
 
 #[must_use]
@@ -35,15 +35,15 @@ impl Evaluator for TargetStringEvaluator {
             0 => {}
             1 => crossover_kpx(s1, s2, 2),
             _ => panic!("bug"),
-        };
+        }
     }
 
     fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         match idx {
             0 => mutate_rate(s, rate, |_| r.sample(PrintableAscii)),
             _ => panic!("bug"),
-        };
+        }
     }
 
     fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
@@ -58,7 +58,7 @@ impl Evaluator for TargetStringEvaluator {
 pub fn target_string_evolver(cfg: EvolveCfg) -> Evolver<TargetStringEvaluator> {
     const TARGET: &str = "Hello world!";
     Evolver::new(TargetStringEvaluator::new(TARGET), cfg, move || {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         TargetStringState(rand_vec(TARGET.len(), || r.sample::<char, _>(PrintableAscii)))
     })
 }

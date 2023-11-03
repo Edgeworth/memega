@@ -1,7 +1,5 @@
-use std::iter::Iterator;
-
-use rand::prelude::IteratorRandom;
 use rand::Rng;
+use rand::prelude::IteratorRandom;
 
 // Roulette wheel selection:
 #[must_use]
@@ -15,7 +13,7 @@ pub fn rws_rng<R: Rng + ?Sized>(w: &[f64], r: &mut R) -> Option<usize> {
 
 #[must_use]
 pub fn multi_rws(w: &[f64], k: usize) -> Vec<usize> {
-    let mut r = rand::thread_rng();
+    let mut r = rand::rng();
     multi_rws_rng(w, k, &mut r)
 }
 
@@ -27,7 +25,7 @@ pub fn multi_rws_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usi
 
     let mut idxs = Vec::new();
     for _ in 0..k {
-        let cursor = r.gen_range(0.0..=sum);
+        let cursor = r.random_range(0.0..=sum);
         let mut cursum = 0.0;
         for (i, v) in w.iter().enumerate() {
             cursum += v;
@@ -43,7 +41,7 @@ pub fn multi_rws_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usi
 // Stochastic universal sampling:
 #[must_use]
 pub fn sus(w: &[f64], k: usize) -> Vec<usize> {
-    let mut r = rand::thread_rng();
+    let mut r = rand::rng();
     sus_rng(w, k, &mut r)
 }
 
@@ -59,7 +57,7 @@ pub fn sus_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
     let mut idxs = Vec::new();
     let mut idx = 0;
     let mut cursum = 0.0;
-    let mut cursor = r.gen_range(0.0..=step);
+    let mut cursor = r.random_range(0.0..=step);
     for _ in 0..k {
         while cursum + w[idx] < cursor {
             cursum += w[idx];

@@ -9,7 +9,7 @@ pub fn griewank_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Da
         dim,
         -10000.0,
         10000.0,
-        |s: &'_ FuncState, _: &'_ _| {
+        |s: &'_ FuncState, (): &'_ _| {
             let mut add = 0.0;
             let mut mul = 1.0;
             for (i, &x) in s.iter().enumerate() {

@@ -33,18 +33,11 @@
     clippy::too_many_lines,
     clippy::unreadable_literal
 )]
-#![feature(array_chunks, is_sorted, trait_alias)]
+#![feature(array_chunks, trait_alias)]
 
 use pyo3::prelude::*;
 
-/// Formats the sum of two numbers as string.
-#[pyfunction]
-fn sum_as_string(a: usize, b: usize) -> String {
-    (a - b).to_string()
-}
-
 #[pymodule]
-fn memega(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(sum_as_string, m)?)?;
+fn memega(_m: &Bound<'_, PyModule>) -> PyResult<()> {
     Ok(())
 }

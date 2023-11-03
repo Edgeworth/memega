@@ -6,19 +6,19 @@ use rayon::prelude::*;
 
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{EvolveCfg, Niching, Species};
-use crate::gen::evaluated::EvaluatedGen;
-use crate::gen::member::Member;
-use crate::gen::species::{DistCache, SpeciesInfo};
+use crate::genr::evaluated::EvaluatedGen;
+use crate::genr::member::Member;
+use crate::genr::species::{DistCache, SpeciesInfo};
 
 #[must_use]
 #[derive(Clone, PartialOrd, PartialEq)]
-pub struct UnevaluatedGen<S: State> {
+pub struct UnevaluatedGenr<S: State> {
     pub mems: Vec<Member<S>>,
     pub species: SpeciesInfo,
     pub dists: DistCache,
 }
 
-impl<S: State> UnevaluatedGen<S> {
+impl<S: State> UnevaluatedGenr<S> {
     pub fn initial<E: Evaluator>(states: Vec<S>, cfg: &EvolveCfg) -> Self {
         let mems = states.into_iter().map(|state| Member::new::<E>(state, cfg)).collect();
         Self::new(mems)
@@ -44,7 +44,7 @@ impl<S: State> UnevaluatedGen<S> {
             self.mems.par_iter_mut().try_for_each(compute)?;
         } else {
             self.mems.iter_mut().try_for_each(compute)?;
-        };
+        }
 
         // Check fitnesses are non-negative and finite.
         if !self.mems.iter().map(|v| v.fitness).all(|v| v >= 0.0 && v.is_finite()) {
@@ -94,7 +94,7 @@ impl<S: State> UnevaluatedGen<S> {
                 self.dists.ensure(&self.mems, cfg.par_dist, eval)?;
                 self.dists.species_shared_fitness(&mut self.mems, &self.species);
             }
-        };
+        }
 
         Ok(EvaluatedGen::new(self.mems.clone()))
     }

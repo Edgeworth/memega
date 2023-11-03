@@ -4,7 +4,7 @@ use crate::evaluators::lgp::vm::op::Op;
 #[must_use]
 pub fn lgp_disasm(code: &[Op]) -> String {
     let mut prog = String::new();
-    for ins in code.iter() {
+    for ins in code {
         let _ = writeln!(prog, "{ins}");
     }
     prog
@@ -17,7 +17,6 @@ mod tests {
 
     use super::*;
     use crate::evaluators::lgp::vm::asm::lgp_asm;
-    use crate::evaluators::lgp::vm::op::Op;
     use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 
     #[test]

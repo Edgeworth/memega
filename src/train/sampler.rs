@@ -1,14 +1,15 @@
 use std::marker::PhantomData;
 
-use rand::prelude::{SliceRandom, StdRng};
+use rand::prelude::StdRng;
+use rand::seq::IndexedRandom;
 use rand::SeedableRng;
 
 use crate::eval::Data;
 
 pub trait DataSampler<D: Data> {
-    fn train(&self, gen: usize) -> Vec<D>;
-    fn valid(&self, gen: usize) -> Vec<D>;
-    fn test(&self, gen: usize) -> Vec<D>;
+    fn train(&self, genr: usize) -> Vec<D>;
+    fn valid(&self, genr: usize) -> Vec<D>;
+    fn test(&self, genr: usize) -> Vec<D>;
 }
 
 #[must_use]
@@ -46,19 +47,19 @@ impl<D: Data, S: DataSampler<D>> BatchDataSampler<D, S> {
 }
 
 impl<D: Data, S: DataSampler<D>> DataSampler<D> for BatchDataSampler<D, S> {
-    fn train(&self, gen: usize) -> Vec<D> {
+    fn train(&self, genr: usize) -> Vec<D> {
         // Randomly select batch_size samples from the training set,
         // randomly seeded based on the generation to keep it consistent.
-        let mut r = StdRng::seed_from_u64(gen as u64);
-        let v = self.sampler.train(gen);
+        let mut r = StdRng::seed_from_u64(genr as u64);
+        let v = self.sampler.train(genr);
         v.choose_multiple(&mut r, self.batch_size).cloned().collect()
     }
 
-    fn valid(&self, gen: usize) -> Vec<D> {
-        self.sampler.valid(gen)
+    fn valid(&self, genr: usize) -> Vec<D> {
+        self.sampler.valid(genr)
     }
 
-    fn test(&self, gen: usize) -> Vec<D> {
-        self.sampler.test(gen)
+    fn test(&self, genr: usize) -> Vec<D> {
+        self.sampler.test(genr)
     }
 }

@@ -7,7 +7,7 @@ pub struct PrintableAscii;
 
 impl Distribution<u8> for PrintableAscii {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> u8 {
-        r.gen_range(32..=126)
+        r.random_range(32..=126)
     }
 }
 

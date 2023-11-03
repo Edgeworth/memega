@@ -35,12 +35,12 @@
     clippy::unreadable_literal
 )]
 #![allow(clippy::expl_impl_clone_on_copy)]
-#![feature(array_chunks, associated_type_defaults, is_sorted, let_chains, trait_alias)]
+#![feature(array_chunks, associated_type_defaults, let_chains, trait_alias)]
 
 pub mod eval;
 pub mod evaluators;
 pub mod evolve;
-pub mod gen;
+pub mod genr;
 pub mod ops;
 pub mod train;
 pub mod util;

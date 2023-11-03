@@ -10,7 +10,7 @@ use memega::ops::util::rand_vec;
 
 #[must_use]
 #[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, PartialOrd)]
-#[display(fmt = "{_0:?}")]
+#[display("{_0:?}")]
 pub struct FuncState(pub Vec<f64>);
 
 #[must_use]
@@ -36,14 +36,14 @@ impl<F: FitnessFn<FuncState>> Evaluator for FuncEvaluator<F> {
             0 => {}
             1 => crossover_arith(s1, s2),
             _ => panic!("bug"),
-        };
+        }
     }
 
     fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
         match idx {
             0 => mutate_rate(s, 1.0, |v| mutate_normal(v, rate).clamp(self.st, self.en)),
             _ => panic!("bug"),
-        };
+        }
     }
 
     fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {

@@ -31,9 +31,11 @@ fix:
 update:
   rustup update
   cargo install cargo-udeps cargo-edit
-  cargo upgrade --incompatible
+  # Need to use git repo, see https://github.com/killercup/cargo-edit/issues/869
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git cargo fetch
+  CARGO_REGISTRIES_CRATES_IO_PROTOCOL=git cargo upgrade --incompatible
   cargo update
   cargo build --workspace --all-features --all-targets
   maturin build -m memega-py/Cargo.toml
   pre-commit autoupdate
-  SETUPTOOLS_USE_DISTUTILS=stdlib pre-commit run --all-files
+  pre-commit run --all-files

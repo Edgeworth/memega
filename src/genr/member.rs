@@ -2,12 +2,12 @@ use derive_more::Display;
 
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::EvolveCfg;
-use crate::gen::params::Params;
-use crate::gen::species::{SpeciesId, NO_SPECIES};
+use crate::genr::params::Params;
+use crate::genr::species::{SpeciesId, NO_SPECIES};
 
 #[must_use]
 #[derive(Clone, PartialOrd, PartialEq, Debug, Display)]
-#[display(fmt = "fitness {fitness:5.5} species {species:>3}")]
+#[display("fitness {fitness:5.5} species {species:>3}")]
 pub struct Member<S: State> {
     pub state: S,               // Actual state.
     pub params: Params,         // Adaptively evolved parameters

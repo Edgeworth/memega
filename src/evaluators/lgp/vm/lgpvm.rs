@@ -134,7 +134,9 @@ impl LgpVm {
                 (Opcode::IfLt, Operands::Reg2Cmp { ra, rb }) => {
                     if self.mem(ra) >= self.mem(rb) {
                         // Find first non if instruction and skip it (last fetch will skip).
-                        while let Some(op) = self.fetch() && op.code().is_branch() {}
+                        while let Some(op) = self.fetch()
+                            && op.code().is_branch()
+                        {}
                     }
                 }
                 _ => panic!("incorrect or unimplemented opcode: {op:?}"),

@@ -1,9 +1,9 @@
 use std::fmt;
 use std::mem::discriminant;
 
-use rand::prelude::IteratorRandom;
 use rand::Rng;
-use rand_distr::{Distribution, Standard};
+use rand::prelude::IteratorRandom;
+use rand_distr::{Distribution, StandardUniform};
 use strum::IntoEnumIterator;
 
 use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
@@ -42,7 +42,7 @@ impl fmt::Display for Op {
     }
 }
 
-impl Distribution<Opcode> for Standard {
+impl Distribution<Opcode> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> Opcode {
         Opcode::iter().choose(rng).unwrap()
     }

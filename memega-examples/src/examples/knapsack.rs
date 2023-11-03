@@ -11,7 +11,7 @@ use rand::Rng;
 
 #[must_use]
 #[derive(Debug, Display, Deref, DerefMut, Clone, PartialEq, Eq, PartialOrd)]
-#[display(fmt = "{_0:?}")]
+#[display("{_0:?}")]
 pub struct KnapsackState(pub Vec<bool>);
 
 #[must_use]
@@ -35,15 +35,15 @@ impl Evaluator for KnapsackEvaluator {
             0 => {}
             1 => crossover_kpx(s1, s2, 2),
             _ => panic!("bug"),
-        };
+        }
     }
 
     fn mutate(&self, s: &mut Self::State, rate: f64, idx: usize) {
-        let mut r = rand::thread_rng();
+        let mut r = rand::rng();
         match idx {
-            0 => mutate_rate(s, rate, |_| r.gen::<bool>()),
+            0 => mutate_rate(s, rate, |_| r.random::<bool>()),
             _ => panic!("bug"),
-        };
+        }
     }
 
     fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
@@ -68,14 +68,14 @@ pub fn knapsack_evolver(cfg: EvolveCfg) -> Evolver<KnapsackEvaluator> {
     const NUM_ITEMS: usize = 100;
     const MAX_W: f64 = 100.0;
 
-    let mut r = rand::thread_rng();
+    let mut r = rand::rng();
     let items = rand_vec(NUM_ITEMS, || {
-        let w = r.gen_range(0.0..MAX_W);
-        let v = r.gen_range(0.1..10.0) * w;
+        let w = r.random_range(0.0..MAX_W);
+        let v = r.random_range(0.1..10.0) * w;
         (w, v)
     });
     Evolver::new(KnapsackEvaluator::new(MAX_W, items), cfg, move || {
-        let mut r = rand::thread_rng();
-        KnapsackState(rand_vec(NUM_ITEMS, || r.gen::<bool>()))
+        let mut r = rand::rng();
+        KnapsackState(rand_vec(NUM_ITEMS, || r.random::<bool>()))
     })
 }

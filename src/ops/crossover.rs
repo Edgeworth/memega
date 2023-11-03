@@ -2,8 +2,8 @@ use std::hash::Hash;
 use std::mem::swap;
 
 use ahash::{HashMap, HashSet};
-use rand::prelude::IteratorRandom;
 use rand::Rng;
+use rand::prelude::IteratorRandom;
 use smallvec::SmallVec;
 
 // Permutation crossover operators ////////////////////////////////////////////
@@ -31,9 +31,9 @@ use smallvec::SmallVec;
 //
 // s1 and s2 must have the same length.
 pub fn crossover_pmx<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
-    let mut r = rand::thread_rng();
-    let st = r.gen_range(0..s1.len());
-    let en = r.gen_range(st..s1.len());
+    let mut r = rand::rng();
+    let st = r.random_range(0..s1.len());
+    let en = r.random_range(st..s1.len());
     let c1 = crossover_pmx_single(s1, s2, st, en);
     let c2 = crossover_pmx_single(s2, s1, st, en);
     s1.copy_from_slice(&c1);
@@ -88,9 +88,9 @@ pub fn crossover_pmx_single<T: Copy + Hash + Default + Eq>(
 //
 // s1 and s2 must have the same length.
 pub fn crossover_order<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]) {
-    let mut r = rand::thread_rng();
-    let st = r.gen_range(0..s1.len());
-    let en = r.gen_range(st..s1.len());
+    let mut r = rand::rng();
+    let st = r.random_range(0..s1.len());
+    let en = r.random_range(st..s1.len());
     let c1 = crossover_order_single(s1, s2, st, en);
     let c2 = crossover_order_single(s2, s1, st, en);
     s1.copy_from_slice(&c1);
@@ -186,7 +186,7 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
 
 // Random point K-point crossover. Lengths of s1 and s2 can be different.
 pub fn crossover_kpx<T>(s1: &mut [T], s2: &mut [T], k: usize) {
-    let mut r = rand::thread_rng();
+    let mut r = rand::rng();
     let xpoints = (0..s1.len().min(s2.len())).choose_multiple(&mut r, k);
     crossover_kpx_pts(s1, s2, &xpoints);
 }
@@ -206,14 +206,14 @@ pub fn crossover_kpx_pts<T>(s1: &mut [T], s2: &mut [T], xpoints: &[usize]) {
 
 // Uniform crossover.
 pub fn crossover_ux<T>(s1: &mut [T], s2: &mut [T]) {
-    let mut r = rand::thread_rng();
+    let mut r = rand::rng();
     crossover_ux_rng(s1, s2, &mut r);
 }
 
 pub fn crossover_ux_rng<T, R: Rng + ?Sized>(s1: &mut [T], s2: &mut [T], r: &mut R) {
     let min = s1.len().min(s2.len());
     for i in 0..min {
-        if r.gen::<bool>() {
+        if r.random::<bool>() {
             swap(&mut s1[i], &mut s2[i]);
         }
     }
@@ -234,14 +234,14 @@ pub fn crossover_arith_alpha(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
 
 // Whole arithmetic recombination with a random combination multiplier.
 pub fn crossover_arith(s1: &mut [f64], s2: &mut [f64]) {
-    let mut r = rand::thread_rng();
-    crossover_arith_alpha(s1, s2, r.gen());
+    let mut r = rand::rng();
+    crossover_arith_alpha(s1, s2, r.random());
 }
 
 // Blend crossover. For each element x < y, randomly generate a value in
 // [x - |y - x| * alpha, y + |y - x| * alpha]. A good choice for alpha is 0.5.
 pub fn crossover_blx(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
-    let mut r = rand::thread_rng();
+    let mut r = rand::rng();
     let min = s1.len().min(s2.len());
     for i in 0..min {
         let x = s1[i].min(s2[i]);
@@ -249,8 +249,8 @@ pub fn crossover_blx(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
         let dist = y - x;
         let left = x - dist * alpha;
         let right = y + dist * alpha;
-        s1[i] = r.gen_range(left..=right);
-        s2[i] = r.gen_range(left..=right);
+        s1[i] = r.random_range(left..=right);
+        s2[i] = r.random_range(left..=right);
     }
 }
 
