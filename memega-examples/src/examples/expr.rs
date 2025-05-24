@@ -1,4 +1,4 @@
-use eyre::{eyre, Result};
+use eyre::{Result, eyre};
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;

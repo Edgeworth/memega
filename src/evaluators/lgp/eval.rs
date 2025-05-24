@@ -2,8 +2,8 @@ use std::fmt;
 use std::marker::PhantomData;
 
 use eyre::Result;
-use rand::seq::IndexedMutRandom;
 use rand::Rng;
+use rand::seq::IndexedMutRandom;
 use smallvec::SmallVec;
 
 use crate::eval::{Data, Evaluator};

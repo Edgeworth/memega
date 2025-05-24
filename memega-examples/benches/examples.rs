@@ -1,4 +1,4 @@
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{Criterion, criterion_group, criterion_main};
 use memega::evolve::cfg::{Crossover, EvolveCfg, Mutation, Niching, Selection, Species, Survival};
 use memega_examples::examples::ackley::ackley_evolver;
 use memega_examples::examples::griewank::griewank_evolver;

@@ -1,5 +1,5 @@
-use rand::prelude::Distribution;
 use rand::Rng;
+use rand::prelude::Distribution;
 
 #[must_use]
 #[derive(Debug)]

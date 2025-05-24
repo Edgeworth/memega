@@ -4,7 +4,7 @@ use memega::eval::Evaluator;
 use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 
-use crate::examples::func::{func_evolver, FuncState};
+use crate::examples::func::{FuncState, func_evolver};
 
 pub fn ackley_evolver(dim: usize, cfg: EvolveCfg) -> Evolver<impl Evaluator<Data = ()>> {
     func_evolver(

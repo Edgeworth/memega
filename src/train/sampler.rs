@@ -1,8 +1,8 @@
 use std::marker::PhantomData;
 
+use rand::SeedableRng;
 use rand::prelude::StdRng;
 use rand::seq::IndexedRandom;
-use rand::SeedableRng;
 
 use crate::eval::Data;
 

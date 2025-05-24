@@ -1,5 +1,5 @@
 use enumset::EnumSetType;
-use smallvec::{smallvec, SmallVec};
+use smallvec::{SmallVec, smallvec};
 use strum_macros::{Display, EnumIter};
 
 #[must_use]

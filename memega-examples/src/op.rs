@@ -14,7 +14,7 @@ use memega::train::trainer::Trainer;
 use textwrap::indent;
 
 use crate::examples::ackley::ackley_evolver;
-use crate::examples::expr::{expr_evolver, ExprDataSampler};
+use crate::examples::expr::{ExprDataSampler, expr_evolver};
 use crate::examples::griewank::griewank_evolver;
 use crate::examples::knapsack::knapsack_evolver;
 use crate::examples::rastrigin::rastrigin_evolver;

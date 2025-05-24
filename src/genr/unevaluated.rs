@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use approx::relative_eq;
-use eyre::{eyre, Result};
+use eyre::{Result, eyre};
 use rayon::prelude::*;
 
 use crate::eval::{Evaluator, State};

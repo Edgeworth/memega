@@ -1,4 +1,4 @@
-use eyre::{eyre, Result};
+use eyre::{Result, eyre};
 
 use crate::evaluators::lgp::vm::op::Op;
 use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};

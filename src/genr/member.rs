@@ -3,7 +3,7 @@ use derive_more::Display;
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::EvolveCfg;
 use crate::genr::params::Params;
-use crate::genr::species::{SpeciesId, NO_SPECIES};
+use crate::genr::species::{NO_SPECIES, SpeciesId};
 
 #[must_use]
 #[derive(Clone, PartialOrd, PartialEq, Debug, Display)]

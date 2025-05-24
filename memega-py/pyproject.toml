@@ -13,7 +13,7 @@ requires = ["maturin>=0.14"]
 [tool.poetry.dependencies]
 python = "~3.13"
 
-[tool.poetry.dev-dependencies]
+[tool.poetry.group.dev.dependencies]
 mypy = ">=1.6.1"
 poetry-plugin-up = ">=0.4.0"
 

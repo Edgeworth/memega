@@ -90,20 +90,18 @@ impl LgpEvaluatorCfg {
                     *ra = r.random_range(0..mem_size) as u8;
                 }
             }
-            Operands::Reg3Assign { ri, ra, rb } => {
-                match r.random_range(0..3) {
-                    0 => {
-                        *ri = r.random_range(0..self.num_reg) as u8;
-                    }
-                    1 => {
-                        *ra = r.random_range(0..mem_size) as u8;
-                    }
-                    2 => {
-                        *rb = r.random_range(0..mem_size) as u8;
-                    }
-                    _ => unreachable!(),
+            Operands::Reg3Assign { ri, ra, rb } => match r.random_range(0..3) {
+                0 => {
+                    *ri = r.random_range(0..self.num_reg) as u8;
                 }
-            }
+                1 => {
+                    *ra = r.random_range(0..mem_size) as u8;
+                }
+                2 => {
+                    *rb = r.random_range(0..mem_size) as u8;
+                }
+                _ => unreachable!(),
+            },
             Operands::ImmAssign { ri, imm } => {
                 if r.random::<bool>() {
                     *ri = r.random_range(0..self.num_reg) as u8;

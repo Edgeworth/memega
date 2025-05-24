@@ -1,6 +1,6 @@
 use std::mem::swap;
 
-use eyre::{eyre, Result};
+use eyre::{Result, eyre};
 use num_traits::{Num, NumAssign};
 
 // Generalised distance - add missing * difference in lengths distance if the

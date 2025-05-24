@@ -27,24 +27,24 @@ tensorboard = ["dep:tensorboard-rs", "dep:chrono"]
 members = ["memega-examples", "memega-py"]
 
 [dependencies]
-ahash = "0.8.11"
+ahash = "0.8.12"
 approx = "0.5.1"
-chrono = {version = "0.4.39", optional = true}
+chrono = {version = "0.4.41", optional = true}
 derive_more = {version = "2.0.1", features = ["display", "deref", "deref_mut"]}
-enumset = "1.1.5"
+enumset = "1.1.6"
 eyre = "0.6.12"
-log = "0.4.26"
+log = "0.4.27"
 num-traits = "0.2.19"
-rand = "0.9.0"
+rand = "0.9.1"
 rand_distr = "0.5.1"
 rayon = "1.10.0"
-smallvec = "1.14.0"
+smallvec = "1.15.0"
 stretto = {version = "0.8.4", features = ["sync"]}
 strum = "0.27.1"
 strum_macros = "0.27.1"
-tempfile = "3.17.1"
+tempfile = "3.20.0"
 tensorboard-rs = {version = "0.5.9", optional = true}
-textwrap = "0.16.1"
+textwrap = "0.16.2"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
