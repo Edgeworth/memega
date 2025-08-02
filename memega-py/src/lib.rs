@@ -33,7 +33,7 @@
     clippy::too_many_lines,
     clippy::unreadable_literal
 )]
-#![feature(array_chunks, trait_alias)]
+#![feature(trait_alias)]
 
 use pyo3::prelude::*;
 

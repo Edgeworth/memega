@@ -18,7 +18,7 @@ pub fn multi_rws(w: &[f64], k: usize) -> Vec<usize> {
 }
 
 pub fn multi_rws_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
-    let sum = w.iter().sum();
+    let sum: f64 = w.iter().sum();
     if sum == 0.0 {
         return (0..w.len()).choose_multiple(r, k);
     }
@@ -72,13 +72,14 @@ pub fn sus_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use rand::rngs::mock::StepRng;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
 
     use super::*;
 
     #[test]
     fn test_rws() {
-        let mut r = StepRng::new(1 << 31, 1 << 31);
+        let mut r = StdRng::seed_from_u64(0);
         assert_eq!(rws_rng(&[], &mut r), None);
         assert_eq!(rws_rng(&[1.0], &mut r), Some(0));
         assert_eq!(rws_rng(&[0.0, 1.0], &mut r), Some(1));
@@ -86,7 +87,7 @@ mod tests {
 
     #[test]
     fn test_multi_rws() {
-        let mut r = StepRng::new(1 << 31, 1 << 31);
+        let mut r = StdRng::seed_from_u64(0);
         assert_eq!(multi_rws_rng(&[], 0, &mut r), []);
         assert_eq!(multi_rws_rng(&[], 1, &mut r), []);
         assert_eq!(multi_rws_rng(&[1.0], 0, &mut r), []);
@@ -97,7 +98,7 @@ mod tests {
 
     #[test]
     fn test_sus() {
-        let mut r = StepRng::new(1 << 31, 1 << 31);
+        let mut r = StdRng::seed_from_u64(0);
         assert_eq!(sus_rng(&[], 0, &mut r), []);
         assert_eq!(sus_rng(&[], 1, &mut r), []);
         assert_eq!(sus_rng(&[1.0], 0, &mut r), []);

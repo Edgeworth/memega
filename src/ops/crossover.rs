@@ -187,7 +187,8 @@ pub fn crossover_cycle<T: Copy + Hash + Default + Eq>(s1: &mut [T], s2: &mut [T]
 // Random point K-point crossover. Lengths of s1 and s2 can be different.
 pub fn crossover_kpx<T>(s1: &mut [T], s2: &mut [T], k: usize) {
     let mut r = rand::rng();
-    let xpoints = (0..s1.len().min(s2.len())).choose_multiple(&mut r, k);
+    let xpoints =
+        (0..s1.len().min(s2.len())).choose_multiple(&mut r, k).into_iter().collect::<Vec<_>>();
     crossover_kpx_pts(s1, s2, &xpoints);
 }
 
@@ -197,8 +198,8 @@ pub fn crossover_kpx_pts<T>(s1: &mut [T], s2: &mut [T], xpoints: &[usize]) {
     let min = s1.len().min(s2.len());
     xpoints.push(min);
     xpoints.sort_unstable();
-    for &[st, en] in xpoints.array_chunks::<2>() {
-        for i in st..en {
+    for [st, en] in xpoints.iter().array_chunks::<2>() {
+        for i in *st..*en {
             swap(&mut s1[i], &mut s2[i]);
         }
     }
@@ -213,7 +214,7 @@ pub fn crossover_ux<T>(s1: &mut [T], s2: &mut [T]) {
 pub fn crossover_ux_rng<T, R: Rng + ?Sized>(s1: &mut [T], s2: &mut [T], r: &mut R) {
     let min = s1.len().min(s2.len());
     for i in 0..min {
-        if r.random::<bool>() {
+        if r.random() {
             swap(&mut s1[i], &mut s2[i]);
         }
     }
@@ -257,7 +258,8 @@ pub fn crossover_blx(s1: &mut [f64], s2: &mut [f64], alpha: f64) {
 #[cfg(test)]
 mod tests {
     use pretty_assertions::assert_eq;
-    use rand::rngs::mock::StepRng;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
 
     use super::*;
     use crate::ops::util::{str_to_vec, vec_to_str};
@@ -381,7 +383,7 @@ mod tests {
 
     #[test]
     fn test_crossover_ux() {
-        let mut r = StepRng::new(1 << 31, 1 << 31);
+        let mut r = StdRng::seed_from_u64(3);
         let mut a = str_to_vec("abcd");
         let mut b = str_to_vec("wxyz");
         crossover_ux_rng(&mut a, &mut b, &mut r);

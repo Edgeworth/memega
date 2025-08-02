@@ -35,7 +35,7 @@
     clippy::unreadable_literal
 )]
 #![allow(clippy::expl_impl_clone_on_copy)]
-#![feature(array_chunks, associated_type_defaults, let_chains, trait_alias)]
+#![feature(associated_type_defaults, iter_array_chunks, trait_alias)]
 
 pub mod eval;
 pub mod evaluators;

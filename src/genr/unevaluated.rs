@@ -63,7 +63,7 @@ impl<S: State> UnevaluatedGenr<S> {
                 let mut hi = self.dists.max();
                 let mut ids = Vec::new();
                 while !relative_eq!(lo, hi, epsilon = 1.0e-6) {
-                    let r = (lo + hi) / 2.0;
+                    let r = f64::midpoint(lo, hi);
                     (ids, self.species) = self.dists.speciate(&self.mems, r);
                     match self.species.num.cmp(&target) {
                         Ordering::Less => hi = self.species.radius,

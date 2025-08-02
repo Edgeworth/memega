@@ -1,17 +1,15 @@
-[tool.poetry]
-authors = ["Eliot Courtney <edgeworth.dev@gmail.com>"]
-classifiers = ["License :: OSI Approved :: GPL-3.0-only"]
+[project]
+authors = [{name = "Eliot Courtney", email = "edgeworth.dev@gmail.com"}]
 description = "memega"
+dynamic = ["dependencies"]
+license = {text = "GPL-3.0-only"}
 name = "memega"
-readme = "README.md"
+requires-python = ">=3.13,<4.0"
 version = "0.1.0"
 
 [build-system]
 build-backend = "maturin"
 requires = ["maturin>=0.14"]
-
-[tool.poetry.dependencies]
-python = "~3.13"
 
 [tool.poetry.group.dev.dependencies]
 mypy = ">=1.6.1"
@@ -46,7 +44,7 @@ python_version = '3.13'
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.format]
 # Make sure lists etc can go back onto one line if they get shorter.
@@ -77,6 +75,7 @@ ignore = [
   "PD901", # allow 'df'
   "PLR0912", # allow more branches in functions
   "PLR0913", # allow more arguments in functions
+  "PLR0915", # allow more statements in functions
   "PLR2004", # allow magic numbers
   "PYI021", # allow docstrings in stubs
   "RET504", # allow return statements after assignment of variable
