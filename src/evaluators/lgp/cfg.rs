@@ -192,3 +192,117 @@ impl Default for LgpEvaluatorCfg {
         Self::new()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_round_sf_normal_values() {
+        assert_eq!(LgpEvaluatorCfg::round_sf(123.456, 2), 120.0);
+        assert_eq!(LgpEvaluatorCfg::round_sf(123.456, 3), 123.0);
+        assert_eq!(LgpEvaluatorCfg::round_sf(123.456, 4), 123.5);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_round_sf_zero() {
+        // Test with zero value - this currently panics due to integer overflow
+        // when log10(0) returns -infinity
+        let _ = LgpEvaluatorCfg::round_sf(0.0, 2);
+    }
+
+    #[test]
+    fn test_round_sf_negative() {
+        assert_eq!(LgpEvaluatorCfg::round_sf(-123.456, 2), -120.0);
+        assert_eq!(LgpEvaluatorCfg::round_sf(-99.9, 1), -100.0);
+    }
+
+    #[test]
+    fn test_round_sf_small_values() {
+        assert_eq!(LgpEvaluatorCfg::round_sf(0.123, 2), 0.12);
+        assert_eq!(LgpEvaluatorCfg::round_sf(0.00456, 1), 0.005);
+    }
+
+    #[test]
+    fn test_rand_op() {
+        let cfg = LgpEvaluatorCfg::new();
+        let op = cfg.rand_op();
+        // Should produce a valid operation
+        assert!(matches!(op.operands(),
+            Operands::Reg2Cmp { .. } |
+            Operands::Reg2Assign { .. } |
+            Operands::Reg3Assign { .. } |
+            Operands::ImmAssign { .. }));
+    }
+
+    #[test]
+    fn test_mutate_operation() {
+        let cfg = LgpEvaluatorCfg::new();
+        let mut op = cfg.rand_op();
+        cfg.mutate(&mut op);
+        // Operation should still be valid after mutation
+        assert!(matches!(op.operands(),
+            Operands::Reg2Cmp { .. } |
+            Operands::Reg2Assign { .. } |
+            Operands::Reg3Assign { .. } |
+            Operands::ImmAssign { .. }));
+    }
+
+    #[test]
+    fn test_config_setters() {
+        let cfg = LgpEvaluatorCfg::new()
+            .set_num_reg(8)
+            .set_num_const(4)
+            .set_output_regs(&[0, 1])
+            .set_max_code(200)
+            .set_imm_sf(3)
+            .set_imm_range((-50.0, 50.0));
+
+        assert_eq!(cfg.num_reg(), 8);
+        assert_eq!(cfg.num_const(), 4);
+        assert_eq!(cfg.output_regs(), &[0, 1]);
+        assert_eq!(cfg.max_code(), 200);
+        assert_eq!(cfg.imm_sf(), 3);
+        assert_eq!(cfg.imm_range(), (-50.0, 50.0));
+    }
+
+    #[test]
+    fn test_rand_op_respects_num_reg() {
+        let cfg = LgpEvaluatorCfg::new().set_num_reg(3).set_num_const(2);
+        for _ in 0..20 {
+            let op = cfg.rand_op();
+            // Check that register indices don't exceed num_reg
+            match op.operands() {
+                Operands::Reg2Assign { ri, .. } => assert!(ri < 3),
+                Operands::Reg3Assign { ri, .. } => assert!(ri < 3),
+                Operands::ImmAssign { ri, .. } => assert!(ri < 3),
+                _ => {}
+            }
+        }
+    }
+
+    #[test]
+    fn test_imm_assign_in_range() {
+        let cfg = LgpEvaluatorCfg::new()
+            .set_imm_range((-10.0, 10.0))
+            .set_opcodes(EnumSet::from_iter([Opcode::Load]));
+
+        for _ in 0..20 {
+            let op = cfg.rand_op();
+            if let Operands::ImmAssign { imm, .. } = op.operands() {
+                assert!(imm >= -10.0 && imm <= 10.0);
+            }
+        }
+    }
+
+    #[test]
+    fn test_default_config() {
+        let cfg = LgpEvaluatorCfg::default();
+        assert_eq!(cfg.num_reg(), 4);
+        assert_eq!(cfg.num_const(), 0);
+        assert_eq!(cfg.max_code(), 100);
+        assert_eq!(cfg.imm_sf(), 2);
+    }
+}

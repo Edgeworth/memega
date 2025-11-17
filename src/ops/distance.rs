@@ -100,4 +100,96 @@ mod tests {
         assert_eq!(kendall_tau(&[1, 2, 3, 4, 5], &[3, 4, 1, 2, 5])?, 4);
         Ok(())
     }
+
+    #[test]
+    fn test_kendall_tau_different_lengths() {
+        let result = kendall_tau(&[1, 2, 3], &[1, 2]);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_dist_abs() {
+        assert_eq!(dist_abs(5, 3), 2);
+        assert_eq!(dist_abs(3, 5), 2);
+        assert_eq!(dist_abs(10, 10), 0);
+    }
+
+    #[test]
+    fn test_dist1() {
+        assert_eq!(dist1(&[1, 2, 3], &[1, 2, 3]), 0);
+        assert_eq!(dist1(&[0, 0, 0], &[1, 1, 1]), 3);
+        assert_eq!(dist1(&[1, 2, 3], &[4, 5, 6]), 9);
+    }
+
+    #[test]
+    fn test_dist1_different_lengths() {
+        assert_eq!(dist1(&[1, 2, 3], &[1, 2]), 3);
+        assert_eq!(dist1(&[1, 2], &[1, 2, 3]), 3);
+    }
+
+    #[test]
+    fn test_dist2() {
+        assert_eq!(dist2(&[1.0, 2.0, 3.0], &[1.0, 2.0, 3.0]), 0.0);
+        assert!((dist2(&[0.0, 0.0], &[3.0, 4.0]) - 5.0).abs() < 1e-10); // 3-4-5 triangle
+    }
+
+    #[test]
+    fn test_dist2_different_lengths() {
+        let result = dist2(&[1.0, 2.0, 3.0], &[1.0, 2.0]);
+        assert!((result - 3.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_dist_fn() {
+        let s1 = vec![1i32, 2, 3];
+        let s2 = vec![1i32, 2, 3];
+        let result = dist_fn(&s1, &s2, 10.0, |a, b| (*a - *b).abs() as f64);
+        assert_eq!(result, 0.0);
+    }
+
+    #[test]
+    fn test_dist_fn_with_missing() {
+        let s1 = vec![1i32, 2, 3];
+        let s2 = vec![1i32, 2];
+        let result = dist_fn(&s1, &s2, 10.0, |a, b| (*a - *b).abs() as f64);
+        assert_eq!(result, 10.0); // 1 missing element * 10.0
+    }
+
+    #[test]
+    fn test_dist_fn_custom_function() {
+        let s1 = vec![1.0f64, 2.0, 3.0];
+        let s2 = vec![2.0f64, 4.0, 6.0];
+        let result = dist_fn(&s1, &s2, 0.0, |a, b| (*a - *b).powi(2));
+        // (1-2)^2 + (2-4)^2 + (3-6)^2 = 1 + 4 + 9 = 14
+        assert!((result - 14.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_count_different_all_same() {
+        assert_eq!(count_different(&[1, 2, 3], &[1, 2, 3]), 0);
+    }
+
+    #[test]
+    fn test_count_different_all_different() {
+        assert_eq!(count_different(&[1, 2, 3], &[4, 5, 6]), 3);
+    }
+
+    #[test]
+    fn test_count_different_empty() {
+        let empty: Vec<i32> = vec![];
+        assert_eq!(count_different(&empty, &empty), 0);
+        assert_eq!(count_different(&[1, 2], &empty), 2);
+    }
+
+    #[test]
+    fn test_dist1_empty() {
+        let empty: Vec<i32> = vec![];
+        assert_eq!(dist1(&empty, &empty), 0);
+    }
+
+    #[test]
+    fn test_dist2_empty() {
+        let empty: Vec<f64> = vec![];
+        assert_eq!(dist2(&empty, &empty), 0.0);
+    }
 }

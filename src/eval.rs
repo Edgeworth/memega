@@ -113,3 +113,196 @@ where
         self.eval.distance(s1, s2)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[derive(Debug, Clone, PartialEq, PartialOrd)]
+    struct TestState(f64);
+
+    impl std::fmt::Display for TestState {
+        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    struct TestEvaluator;
+
+    impl Evaluator for TestEvaluator {
+        type State = TestState;
+        type Data = f64;
+
+        fn crossover(&self, _s1: &mut Self::State, _s2: &mut Self::State, _idx: usize) {}
+
+        fn mutate(&self, _s: &mut Self::State, _rate: f64, _idx: usize) {}
+
+        fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
+            Ok(s.0 * data)
+        }
+
+        fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+            Ok((s1.0 - s2.0).abs())
+        }
+    }
+
+    #[test]
+    fn test_multi_fitness_arithmetic_mean() {
+        let eval = TestEvaluator;
+        let state = TestState(2.0);
+        let inputs = vec![1.0, 2.0, 3.0, 4.0];
+        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::ArithmeticMean).unwrap();
+        // (2*1 + 2*2 + 2*3 + 2*4) / 4 = (2 + 4 + 6 + 8) / 4 = 20 / 4 = 5.0
+        assert!((result - 5.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_multi_fitness_geometric_mean() {
+        let eval = TestEvaluator;
+        let state = TestState(2.0);
+        let inputs = vec![1.0, 2.0, 4.0, 8.0];
+        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::GeometricMean).unwrap();
+        // (2*1 * 2*2 * 2*4 * 2*8)^(1/4) = (2 * 4 * 8 * 16)^(1/4) = 1024^(1/4) = 5.656...
+        let expected = (2.0_f64 * 4.0 * 8.0 * 16.0).powf(0.25);
+        assert!((result - expected).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_multi_fitness_empty_inputs() {
+        let eval = TestEvaluator;
+        let state = TestState(2.0);
+        let inputs: Vec<f64> = vec![];
+
+        // Arithmetic mean with empty inputs
+        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::ArithmeticMean);
+        assert!(result.is_ok()); // Will produce 0/0 = NaN, but doesn't error
+
+        // Geometric mean with empty inputs
+        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::GeometricMean);
+        assert!(result.is_ok()); // Will produce 1^inf = 1, but doesn't error
+    }
+
+    #[test]
+    fn test_multi_fitness_single_input() {
+        let eval = TestEvaluator;
+        let state = TestState(3.0);
+
+        let result = eval.multi_fitness(&state, &[5.0], FitnessReduction::ArithmeticMean).unwrap();
+        assert!((result - 15.0).abs() < 1e-10);
+
+        let result = eval.multi_fitness(&state, &[5.0], FitnessReduction::GeometricMean).unwrap();
+        assert!((result - 15.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_cached_evaluator() {
+        use std::sync::Mutex;
+
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        struct HashableState(i32);
+
+        impl std::fmt::Display for HashableState {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+
+        struct CountingEvaluator {
+            count: Mutex<usize>,
+        }
+
+        impl Evaluator for CountingEvaluator {
+            type State = HashableState;
+            type Data = i32;
+
+            fn crossover(&self, _s1: &mut Self::State, _s2: &mut Self::State, _idx: usize) {}
+            fn mutate(&self, _s: &mut Self::State, _rate: f64, _idx: usize) {}
+
+            fn fitness(&self, s: &Self::State, data: &Self::Data) -> Result<f64> {
+                *self.count.lock().unwrap() += 1;
+                Ok((s.0 * data) as f64)
+            }
+
+            fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+                Ok((s1.0 - s2.0).abs() as f64)
+            }
+        }
+
+        let eval = CountingEvaluator { count: Mutex::new(0) };
+        let cached = CachedEvaluator::new(eval, 100);
+
+        let state = HashableState(5);
+        let data = 3;
+
+        // First call - should compute
+        let result1 = cached.fitness(&state, &data).unwrap();
+        assert_eq!(result1, 15.0);
+        let count1 = *cached.eval.count.lock().unwrap();
+        assert!(count1 >= 1);
+
+        // Different data - should compute again
+        let result2 = cached.fitness(&state, &4).unwrap();
+        assert_eq!(result2, 20.0);
+        let count2 = *cached.eval.count.lock().unwrap();
+        assert!(count2 > count1); // Should have computed again
+    }
+
+    #[test]
+    fn test_cached_evaluator_delegates() {
+        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+        struct SimpleState(i32);
+
+        impl std::fmt::Display for SimpleState {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}", self.0)
+            }
+        }
+
+        struct SimpleEvaluator;
+
+        impl Evaluator for SimpleEvaluator {
+            type State = SimpleState;
+            type Data = ();
+            const NUM_CROSSOVER: usize = 3;
+            const NUM_MUTATION: usize = 5;
+
+            fn crossover(&self, s1: &mut Self::State, s2: &mut Self::State, _idx: usize) {
+                std::mem::swap(&mut s1.0, &mut s2.0);
+            }
+
+            fn mutate(&self, s: &mut Self::State, _rate: f64, _idx: usize) {
+                s.0 += 1;
+            }
+
+            fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
+                Ok(s.0 as f64)
+            }
+
+            fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+                Ok((s1.0 - s2.0).abs() as f64)
+            }
+        }
+
+        let cached = CachedEvaluator::new(SimpleEvaluator, 10);
+
+        // Test constants are delegated
+        assert_eq!(CachedEvaluator::<SimpleEvaluator>::NUM_CROSSOVER, 3);
+        assert_eq!(CachedEvaluator::<SimpleEvaluator>::NUM_MUTATION, 5);
+
+        // Test crossover is delegated
+        let mut s1 = SimpleState(10);
+        let mut s2 = SimpleState(20);
+        cached.crossover(&mut s1, &mut s2, 0);
+        assert_eq!(s1.0, 20);
+        assert_eq!(s2.0, 10);
+
+        // Test mutate is delegated
+        let mut s = SimpleState(5);
+        cached.mutate(&mut s, 1.0, 0);
+        assert_eq!(s.0, 6);
+
+        // Test distance is delegated
+        let d = cached.distance(&SimpleState(10), &SimpleState(15)).unwrap();
+        assert!((d - 5.0).abs() < 1e-10);
+    }
+}
