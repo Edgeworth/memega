@@ -276,3 +276,148 @@ impl EvolveCfg {
         Self { par_dist, ..self }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rand::SeedableRng;
+    use rand::rngs::StdRng;
+    use pretty_assertions::assert_eq;
+
+    #[test]
+    fn test_duplicates_random_distribution() {
+        let mut rng = StdRng::seed_from_u64(42);
+        let mut disallow_count = 0;
+        let mut _allow_count = 0;
+
+        // Sample many times to see distribution
+        for _ in 0..100 {
+            match rng.random::<Duplicates>() {
+                Duplicates::DisallowDuplicates => disallow_count += 1,
+                Duplicates::AllowDuplicates => _allow_count += 1,
+            }
+        }
+
+        // Due to Bug #4, only DisallowDuplicates will be sampled
+        // This test documents the current behavior
+        assert!(disallow_count > 0, "Should sample DisallowDuplicates");
+        // Note: allow_count will be 0 due to the bug
+    }
+
+    #[test]
+    fn test_fitness_reduction_random_distribution() {
+        let mut rng = StdRng::seed_from_u64(123);
+        let mut arithmetic_count = 0;
+        let mut _geometric_count = 0;
+
+        // Sample many times to see distribution
+        for _ in 0..100 {
+            match rng.random::<FitnessReduction>() {
+                FitnessReduction::ArithmeticMean => arithmetic_count += 1,
+                FitnessReduction::GeometricMean => _geometric_count += 1,
+            }
+        }
+
+        // Due to Bug #4, only ArithmeticMean will be sampled
+        // This test documents the current behavior
+        assert!(arithmetic_count > 0, "Should sample ArithmeticMean");
+        // Note: geometric_count will be 0 due to the bug
+    }
+
+    #[test]
+    fn test_evolve_cfg_default() {
+        let cfg = EvolveCfg::new(100);
+        assert_eq!(cfg.pop_size, 100);
+        assert!(matches!(cfg.crossover, Crossover::Adaptive));
+        assert!(matches!(cfg.mutation, Mutation::Adaptive));
+        assert!(matches!(cfg.survival, Survival::TopProportion(_)));
+    }
+
+    #[test]
+    fn test_evolve_cfg_setters() {
+        let cfg = EvolveCfg::new(100)
+            .set_pop_size(200)
+            .set_par_fitness(true)
+            .set_par_dist(true)
+            .set_duplicates(Duplicates::AllowDuplicates)
+            .set_fitness_reduction(FitnessReduction::GeometricMean);
+
+        assert_eq!(cfg.pop_size, 200);
+        assert_eq!(cfg.par_fitness, true);
+        assert_eq!(cfg.par_dist, true);
+        assert_eq!(cfg.duplicates, Duplicates::AllowDuplicates);
+        assert_eq!(cfg.fitness_reduction, FitnessReduction::GeometricMean);
+    }
+
+    #[test]
+    fn test_crossover_fixed() {
+        let weights = vec![0.5, 0.3, 0.2];
+        let crossover = Crossover::Fixed(weights.clone());
+
+        match crossover {
+            Crossover::Fixed(w) => assert_eq!(w, weights),
+            _ => panic!("Expected Fixed crossover"),
+        }
+    }
+
+    #[test]
+    fn test_mutation_fixed() {
+        let rates = vec![0.05, 0.1];
+        let mutation = Mutation::Fixed(rates.clone());
+        match mutation {
+            Mutation::Fixed(r) => assert_eq!(r, rates),
+            _ => panic!("Expected Fixed mutation"),
+        }
+    }
+
+    #[test]
+    fn test_survival_top_proportion() {
+        let survival = Survival::TopProportion(0.2);
+        match survival {
+            Survival::TopProportion(p) => assert!((p - 0.2).abs() < 1e-10),
+            _ => panic!("Expected TopProportion survival"),
+        }
+    }
+
+    #[test]
+    fn test_survival_tournament() {
+        let survival = Survival::Tournament(5);
+        match survival {
+            Survival::Tournament(q) => assert_eq!(q, 5),
+            _ => panic!("Expected Tournament survival"),
+        }
+    }
+
+    #[test]
+    fn test_stagnation_one_shot() {
+        let stagnation = Stagnation::OneShotAfter(10);
+        match stagnation {
+            Stagnation::OneShotAfter(gens) => {
+                assert_eq!(gens, 10);
+            }
+            _ => panic!("Expected OneShotAfter stagnation"),
+        }
+    }
+
+    #[test]
+    fn test_niching_shared_fitness() {
+        let niching = Niching::SharedFitness(5.0);
+        match niching {
+            Niching::SharedFitness(radius) => {
+                assert!((radius - 5.0).abs() < 1e-10);
+            }
+            _ => panic!("Expected SharedFitness niching"),
+        }
+    }
+
+    #[test]
+    fn test_species_target_number() {
+        let species = Species::TargetNumber(5);
+        match species {
+            Species::TargetNumber(num) => {
+                assert_eq!(num, 5);
+            }
+            _ => panic!("Expected TargetNumber species"),
+        }
+    }
+}

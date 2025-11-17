@@ -117,12 +117,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fmt;
 
     #[derive(Debug, Clone, PartialEq, PartialOrd)]
     struct TestState(f64);
 
-    impl std::fmt::Display for TestState {
-        fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    impl fmt::Display for TestState {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{}", self.0)
         }
     }
@@ -201,8 +202,8 @@ mod tests {
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
         struct HashableState(i32);
 
-        impl std::fmt::Display for HashableState {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        impl fmt::Display for HashableState {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "{}", self.0)
             }
         }
@@ -252,8 +253,8 @@ mod tests {
         #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
         struct SimpleState(i32);
 
-        impl std::fmt::Display for SimpleState {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        impl fmt::Display for SimpleState {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, "{}", self.0)
             }
         }

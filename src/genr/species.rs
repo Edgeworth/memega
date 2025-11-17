@@ -180,7 +180,7 @@ mod tests {
 
     struct TestEvaluator;
 
-    impl crate::eval::Evaluator for TestEvaluator {
+    impl Evaluator for TestEvaluator {
         type State = TestState;
 
         fn crossover(&self, _s1: &mut Self::State, _s2: &mut Self::State, _idx: usize) {}
@@ -287,7 +287,7 @@ mod tests {
         let mut cache = DistCache::new();
         // Members must be sorted by fitness (descending)
         // Two clusters: (100, 98) and (15, 13)
-        let mut members = make_members(&[100.0, 98.0, 15.0, 13.0]); // Two clusters, sorted
+        let members = make_members(&[100.0, 98.0, 15.0, 13.0]); // Two clusters, sorted
         let eval = TestEvaluator;
 
         cache.ensure(&members, false, &eval).unwrap();
@@ -357,7 +357,7 @@ mod tests {
     fn test_speciate_sorted_by_fitness() {
         let mut cache = DistCache::new();
         // Members should be sorted by fitness (highest first)
-        let mut members = make_members(&[100.0, 50.0, 25.0]);
+        let members = make_members(&[100.0, 50.0, 25.0]);
         let eval = TestEvaluator;
 
         cache.ensure(&members, false, &eval).unwrap();
