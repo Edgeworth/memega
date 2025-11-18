@@ -298,10 +298,10 @@ mod tests {
             }
         }
 
-        // Due to Bug #4, only DisallowDuplicates will be sampled
+        // Currently only DisallowDuplicates is sampled due to random range being 0..1
         // This test documents the current behavior
         assert!(disallow_count > 0, "Should sample DisallowDuplicates");
-        // Note: allow_count will be 0 due to the bug
+        // Note: allow_count will be 0 with current implementation
     }
 
     #[test]
@@ -318,10 +318,10 @@ mod tests {
             }
         }
 
-        // Due to Bug #4, only ArithmeticMean will be sampled
+        // Currently only ArithmeticMean is sampled due to random range being 0..1
         // This test documents the current behavior
         assert!(arithmetic_count > 0, "Should sample ArithmeticMean");
-        // Note: geometric_count will be 0 due to the bug
+        // Note: geometric_count will be 0 with current implementation
     }
 
     #[test]
