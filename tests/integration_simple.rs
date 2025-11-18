@@ -61,7 +61,6 @@ impl Evaluator for MaximizeSumEvaluator {
 
 #[test]
 fn test_evolution_improves_fitness() {
-    let mut rng = StdRng::seed_from_u64(42);
     let cfg = EvolveCfg::new(20); // Small population for quick test
     let eval = MaximizeSumEvaluator;
 
@@ -178,7 +177,7 @@ fn test_evolution_converges_on_simple_problem() {
     const MAX_GENS: usize = 50;
     const STABILITY_THRESHOLD: usize = 5;
 
-    for generation in 0..MAX_GENS {
+    for _generation in 0..MAX_GENS {
         let result = evolver.run().unwrap();
         let fitness = result.nth(0).fitness;
 

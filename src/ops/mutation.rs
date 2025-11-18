@@ -236,8 +236,9 @@ mod tests {
     fn test_mutate_creep_saturating() {
         let v: u8 = 250;
         let result = mutate_creep(v, 10);
-        // Should not overflow
-        assert!(result <= 255);
+        // Should saturate at 255, not overflow
+        assert!(result >= v);
+        assert!(result == 255 || result >= 240); // Either saturated or near original value
     }
 
     #[test]
