@@ -65,6 +65,9 @@ impl LgpEvaluatorCfg {
     }
 
     fn round_sf(v: f64, sf: usize) -> f64 {
+        if v == 0.0 {
+            return 0.0;
+        }
         let digits = v.abs().log10().ceil() as i32;
         let power = 10f64.powi(digits - sf as i32);
         (v / power).round() * power
@@ -206,11 +209,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
     fn test_round_sf_zero() {
-        // Test with zero value - this currently panics due to integer overflow
-        // when log10(0) returns -infinity
-        let _ = LgpEvaluatorCfg::round_sf(0.0, 2);
+        // Test with zero value - should return 0.0
+        let result = LgpEvaluatorCfg::round_sf(0.0, 2);
+        assert_eq!(result, 0.0);
     }
 
     #[test]

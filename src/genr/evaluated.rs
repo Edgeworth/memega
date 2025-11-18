@@ -84,7 +84,9 @@ impl<S: State> EvaluatedGen<S> {
                     survivors.push((wins, mem));
                 }
                 survivors.sort_unstable_by_key(|(wins, _)| -(*wins as i64));
-                survivors.into_iter().map(|(_, mem)| mem.clone()).collect()
+                // Keep top 30% by default, similar to TopProportion
+                let num = (cfg.pop_size as f64 * 0.3).ceil() as usize;
+                survivors.into_iter().take(num).map(|(_, mem)| mem.clone()).collect()
             }
         };
         // Bump ages.

@@ -107,7 +107,7 @@ impl<D: Data> Evaluator for LgpEvaluator<D> {
 
     fn mutate(&self, s: &mut LgpState, rate: f64, idx: usize) {
         let mut r = rand::rng();
-        if r.random::<f64>() > rate {
+        if r.random::<f64>() >= rate {
             return;
         }
         let code_size = s.ops_unopt().len();

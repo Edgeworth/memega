@@ -152,7 +152,7 @@ pub enum Duplicates {
 
 impl Distribution<Duplicates> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Duplicates {
-        match r.random_range(0..1) {
+        match r.random_range(0..2) {
             0 => Duplicates::DisallowDuplicates,
             _ => Duplicates::AllowDuplicates,
         }
@@ -170,7 +170,7 @@ pub enum FitnessReduction {
 
 impl Distribution<FitnessReduction> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> FitnessReduction {
-        match r.random_range(0..1) {
+        match r.random_range(0..2) {
             0 => FitnessReduction::ArithmeticMean,
             _ => FitnessReduction::GeometricMean,
         }
@@ -288,40 +288,38 @@ mod tests {
     fn test_duplicates_random_distribution() {
         let mut rng = StdRng::seed_from_u64(42);
         let mut disallow_count = 0;
-        let mut _allow_count = 0;
+        let mut allow_count = 0;
 
         // Sample many times to see distribution
         for _ in 0..100 {
             match rng.random::<Duplicates>() {
                 Duplicates::DisallowDuplicates => disallow_count += 1,
-                Duplicates::AllowDuplicates => _allow_count += 1,
+                Duplicates::AllowDuplicates => allow_count += 1,
             }
         }
 
-        // Currently only DisallowDuplicates is sampled due to random range being 0..1
-        // This test documents the current behavior
+        // Both variants should be sampled
         assert!(disallow_count > 0, "Should sample DisallowDuplicates");
-        // Note: allow_count will be 0 with current implementation
+        assert!(allow_count > 0, "Should sample AllowDuplicates");
     }
 
     #[test]
     fn test_fitness_reduction_random_distribution() {
         let mut rng = StdRng::seed_from_u64(123);
         let mut arithmetic_count = 0;
-        let mut _geometric_count = 0;
+        let mut geometric_count = 0;
 
         // Sample many times to see distribution
         for _ in 0..100 {
             match rng.random::<FitnessReduction>() {
                 FitnessReduction::ArithmeticMean => arithmetic_count += 1,
-                FitnessReduction::GeometricMean => _geometric_count += 1,
+                FitnessReduction::GeometricMean => geometric_count += 1,
             }
         }
 
-        // Currently only ArithmeticMean is sampled due to random range being 0..1
-        // This test documents the current behavior
+        // Both variants should be sampled
         assert!(arithmetic_count > 0, "Should sample ArithmeticMean");
-        // Note: geometric_count will be 0 with current implementation
+        assert!(geometric_count > 0, "Should sample GeometricMean");
     }
 
     #[test]

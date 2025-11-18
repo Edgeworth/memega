@@ -59,11 +59,11 @@ pub fn sus_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
     let mut cursum = 0.0;
     let mut cursor = r.random_range(0.0..=step);
     for _ in 0..k {
-        while cursum + w[idx] < cursor {
+        while idx < w.len() && cursum + w[idx] < cursor {
             cursum += w[idx];
             idx += 1;
         }
-        idxs.push(idx);
+        idxs.push(idx.min(w.len() - 1));
         cursor += step;
     }
     idxs

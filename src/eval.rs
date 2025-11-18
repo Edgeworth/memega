@@ -38,6 +38,9 @@ pub trait Evaluator: Send + Sync {
         inputs: &[Self::Data],
         reduction: FitnessReduction,
     ) -> Result<f64> {
+        if inputs.is_empty() {
+            return Ok(0.0);
+        }
         let mut cumulative = match reduction {
             FitnessReduction::ArithmeticMean => 0.0,
             FitnessReduction::GeometricMean => 1.0,
@@ -174,13 +177,13 @@ mod tests {
         let state = TestState(2.0);
         let inputs: Vec<f64> = vec![];
 
-        // Arithmetic mean with empty inputs
-        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::ArithmeticMean);
-        assert!(result.is_ok()); // Will produce 0/0 = NaN, but doesn't error
+        // Arithmetic mean with empty inputs - returns 0.0
+        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::ArithmeticMean).unwrap();
+        assert_eq!(result, 0.0);
 
-        // Geometric mean with empty inputs
-        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::GeometricMean);
-        assert!(result.is_ok()); // Will produce 1^inf = 1, but doesn't error
+        // Geometric mean with empty inputs - returns 0.0
+        let result = eval.multi_fitness(&state, &inputs, FitnessReduction::GeometricMean).unwrap();
+        assert_eq!(result, 0.0);
     }
 
     #[test]
