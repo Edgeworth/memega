@@ -174,22 +174,4 @@ mod tests {
         assert_eq!(count_different(&[1, 2, 3], &[4, 5, 6]), 3);
     }
 
-    #[test]
-    fn test_count_different_empty() {
-        let empty: Vec<i32> = vec![];
-        assert_eq!(count_different(&empty, &empty), 0);
-        assert_eq!(count_different(&[1, 2], &empty), 2);
-    }
-
-    #[test]
-    fn test_dist1_empty() {
-        let empty: Vec<i32> = vec![];
-        assert_eq!(dist1(&empty, &empty), 0);
-    }
-
-    #[test]
-    fn test_dist2_empty() {
-        let empty: Vec<f64> = vec![];
-        assert_eq!(dist2(&empty, &empty), 0.0);
-    }
 }

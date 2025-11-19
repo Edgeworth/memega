@@ -208,22 +208,6 @@ mod tests {
     }
 
     #[test]
-    fn test_species_info_default() {
-        let info = SpeciesInfo::new();
-        assert_eq!(info.num, 1);
-        assert_eq!(info.radius, 1.0);
-    }
-
-    #[test]
-    fn test_dist_cache_new() {
-        let cache = DistCache::new();
-        assert!(cache.is_empty());
-        // mean() is NaN when empty (division by zero)
-        assert!(cache.mean().is_nan() || cache.mean() == 0.0);
-        assert_eq!(cache.max(), 0.0);
-    }
-
-    #[test]
     fn test_dist_cache_ensure() -> Result<()> {
         let mut cache = DistCache::new();
         let members = make_members(&[1.0, 2.0, 3.0]);

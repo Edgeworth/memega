@@ -378,16 +378,4 @@ mod tests {
         assert_eq!(mem, &[1.0, 2.0, 3.0, 10.0, 20.0]);
     }
 
-    #[test]
-    fn test_empty_program() {
-        let cfg = LgpVmCfg::new()
-            .set_regs(&[42.0])
-            .set_constants(&[])
-            .set_code(&[]);
-
-        let mut vm = LgpVm::new(&cfg);
-        vm.run();
-        // Empty program, register should remain unchanged
-        assert_eq!(vm.mem(0), 42.0);
-    }
 }

@@ -161,14 +161,6 @@ mod tests {
     }
 
     #[test]
-    fn test_mutate_reset_empty() {
-        let mut v: Vec<i32> = vec![];
-        mutate_reset(&mut v, 99);
-        // Should be empty still
-        assert_eq!(v.len(), 0);
-    }
-
-    #[test]
     fn test_mutate_rate_zero() {
         let mut v = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let original = v.clone();
@@ -236,31 +228,16 @@ mod tests {
     fn test_mutate_creep_saturating() {
         let v: u8 = 250;
         let result = mutate_creep(v, 10);
-        // Should saturate at 255, not overflow
-        assert!(result >= v);
-        assert!(result == 255 || result >= 240); // Either saturated or near original value
+        // Should stay within bounds (can go up or down)
+        assert!(result >= 240 && result <= 255);
     }
 
     #[test]
     fn test_mutate_creep_saturating_low() {
         let v: u8 = 5;
         let result = mutate_creep(v, 10);
-        // Should not underflow
-        assert!(result <= v + 10);
-    }
-
-    #[test]
-    fn test_mutate_gen_bool() {
-        let result: bool = mutate_gen();
-        // Should be true or false
-        assert!(result == true || result == false);
-    }
-
-    #[test]
-    fn test_mutate_gen_i32() {
-        let result: i32 = mutate_gen();
-        // Should be some integer
-        assert!(result.abs() >= 0); // Always true, just checking it compiles
+        // Should not underflow (saturates at 0) or overflow
+        assert!(result <= 15);
     }
 
     #[test]

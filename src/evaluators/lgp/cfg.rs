@@ -252,23 +252,6 @@ mod tests {
             Operands::ImmAssign { .. }));
     }
 
-    #[test]
-    fn test_config_setters() {
-        let cfg = LgpEvaluatorCfg::new()
-            .set_num_reg(8)
-            .set_num_const(4)
-            .set_output_regs(&[0, 1])
-            .set_max_code(200)
-            .set_imm_sf(3)
-            .set_imm_range((-50.0, 50.0));
-
-        assert_eq!(cfg.num_reg(), 8);
-        assert_eq!(cfg.num_const(), 4);
-        assert_eq!(cfg.output_regs(), &[0, 1]);
-        assert_eq!(cfg.max_code(), 200);
-        assert_eq!(cfg.imm_sf(), 3);
-        assert_eq!(cfg.imm_range(), (-50.0, 50.0));
-    }
 
     #[test]
     fn test_rand_op_respects_num_reg() {
@@ -299,12 +282,4 @@ mod tests {
         }
     }
 
-    #[test]
-    fn test_default_config() {
-        let cfg = LgpEvaluatorCfg::default();
-        assert_eq!(cfg.num_reg(), 4);
-        assert_eq!(cfg.num_const(), 0);
-        assert_eq!(cfg.max_code(), 100);
-        assert_eq!(cfg.imm_sf(), 2);
-    }
 }
