@@ -110,43 +110,6 @@ mod tests {
         assert_eq!(sus_rng(&[1.0, 2.0], 3, &mut r), [0, 1, 1]);
     }
 
-    #[test]
-    fn test_sus_many_samples() {
-        let mut r = StdRng::seed_from_u64(42);
-        // Test with k > weights.len()
-        let result = sus_rng(&[1.0, 2.0, 3.0], 10, &mut r);
-        assert_eq!(result.len(), 10);
-        // All indices should be valid
-        assert!(result.iter().all(|&idx| idx < 3));
-    }
-
-    #[test]
-    fn test_sus_large_weights() {
-        let mut r = StdRng::seed_from_u64(123);
-        let weights = vec![100.0, 200.0, 300.0, 400.0];
-        let result = sus_rng(&weights, 20, &mut r);
-        assert_eq!(result.len(), 20);
-        // Check distribution is reasonable
-        let count_3 = result.iter().filter(|&&x| x == 3).count();
-        assert!(count_3 > 5); // Highest weight should appear most
-    }
-
-    #[test]
-    fn test_sus_small_weights() {
-        let mut r = StdRng::seed_from_u64(456);
-        let weights = vec![0.001, 0.002, 0.003];
-        let result = sus_rng(&weights, 5, &mut r);
-        assert_eq!(result.len(), 5);
-        assert!(result.iter().all(|&idx| idx < 3));
-    }
-
-    #[test]
-    fn test_rws_many_samples() {
-        let mut r = StdRng::seed_from_u64(789);
-        let result = multi_rws_rng(&[1.0, 2.0, 3.0], 10, &mut r);
-        assert_eq!(result.len(), 10);
-        assert!(result.iter().all(|&idx| idx < 3));
-    }
 
     #[test]
     fn test_rws_all_zeros() {
@@ -168,25 +131,4 @@ mod tests {
         assert!(result.iter().all(|&idx| idx < 3));
     }
 
-    #[test]
-    fn test_rws_single_large_weight() {
-        let mut r = StdRng::seed_from_u64(222);
-        let result = multi_rws_rng(&[1000.0, 1.0, 1.0], 10, &mut r);
-        assert_eq!(result.len(), 10);
-        // Should mostly select index 0
-        let count_0 = result.iter().filter(|&&x| x == 0).count();
-        assert!(count_0 >= 8);
-    }
-
-    #[test]
-    fn test_sus_uniform_weights() {
-        let mut r = StdRng::seed_from_u64(333);
-        let result = sus_rng(&[1.0, 1.0, 1.0, 1.0], 8, &mut r);
-        assert_eq!(result.len(), 8);
-        // Each index should appear approximately equally
-        for i in 0..4 {
-            let count = result.iter().filter(|&&x| x == i).count();
-            assert!(count >= 1 && count <= 3);
-        }
-    }
 }

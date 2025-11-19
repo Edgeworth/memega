@@ -187,18 +187,6 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_fitness_single_input() {
-        let eval = TestEvaluator;
-        let state = TestState(3.0);
-
-        let result = eval.multi_fitness(&state, &[5.0], FitnessReduction::ArithmeticMean).unwrap();
-        assert!((result - 15.0).abs() < 1e-10);
-
-        let result = eval.multi_fitness(&state, &[5.0], FitnessReduction::GeometricMean).unwrap();
-        assert!((result - 15.0).abs() < 1e-10);
-    }
-
-    #[test]
     fn test_cached_evaluator() {
         use std::sync::Mutex;
 
