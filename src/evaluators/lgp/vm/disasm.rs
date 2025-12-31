@@ -12,10 +12,10 @@ pub fn lgp_disasm(code: &[Op]) -> String {
 
 #[cfg(test)]
 mod tests {
-    use eyre::Result;
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::Result;
     use crate::evaluators::lgp::vm::asm::lgp_asm;
     use crate::evaluators::lgp::vm::opcode::{Opcode, Operands};
 

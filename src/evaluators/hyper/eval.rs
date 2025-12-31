@@ -1,9 +1,9 @@
 use std::mem::swap;
 
 use derive_more::Display;
-use eyre::Result;
 use rand::Rng;
 
+use crate::error::Result;
 use crate::eval::Evaluator;
 use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation};
 use crate::evolve::evolver::CreateEvolverFn;

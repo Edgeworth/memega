@@ -1,5 +1,5 @@
 use derive_more::{Deref, DerefMut, Display};
-use eyre::Result;
+use memega::Result;
 use memega::eval::Evaluator;
 use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;

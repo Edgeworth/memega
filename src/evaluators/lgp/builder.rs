@@ -1,5 +1,4 @@
-use eyre::Result;
-
+use crate::error::Result;
 use crate::eval::{Data, Evaluator, FitnessFn};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::eval::{LgpEvaluator, LgpState};

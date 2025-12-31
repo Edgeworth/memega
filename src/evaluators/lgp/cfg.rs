@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use enumset::EnumSet;
 use rand::Rng;
 use rand::prelude::IteratorRandom;
@@ -17,7 +19,7 @@ pub struct LgpEvaluatorCfg {
     max_code: usize,
     /// Number of significant figures the immediate value can have. This is
     /// useful to control how much precision loaded float values can be.
-    imm_sf: usize,
+    imm_sf: NonZeroUsize,
     /// Range randomly generated floating point numbers can be in.
     imm_range: (f64, f64),
     opcodes: EnumSet<Opcode>,
@@ -30,7 +32,7 @@ impl LgpEvaluatorCfg {
             num_const: 0,
             output_regs: smallvec![0],
             max_code: 100,
-            imm_sf: 2,
+            imm_sf: NonZeroUsize::new(2).unwrap(),
             imm_range: (-100.0, 100.0),
             opcodes: Opcode::iter().collect(),
         }
@@ -64,10 +66,15 @@ impl LgpEvaluatorCfg {
         op
     }
 
-    fn round_sf(v: f64, sf: usize) -> f64 {
-        let digits = v.abs().log10().ceil() as i32;
-        let power = 10f64.powi(digits - sf as i32);
-        (v / power).round() * power
+    fn round_sf(v: f64, sf: NonZeroUsize) -> f64 {
+        if !v.is_finite() || v == 0.0 {
+            return v;
+        }
+
+        let exp = v.abs().log10().floor() as i32;
+        let scale_exp = (sf.get() as i32 - 1 - exp).clamp(-308, 308);
+        let scale = 10f64.powi(scale_exp);
+        (v * scale).round() / scale
     }
 
     // Micro-mutation of the instruction without changing the opcode.
@@ -136,7 +143,7 @@ impl LgpEvaluatorCfg {
         self
     }
 
-    pub fn set_imm_sf(mut self, imm_sf: usize) -> Self {
+    pub fn set_imm_sf(mut self, imm_sf: NonZeroUsize) -> Self {
         self.imm_sf = imm_sf;
         self
     }
@@ -172,7 +179,7 @@ impl LgpEvaluatorCfg {
     }
 
     #[must_use]
-    pub fn imm_sf(&self) -> usize {
+    pub fn imm_sf(&self) -> NonZeroUsize {
         self.imm_sf
     }
 
@@ -190,5 +197,34 @@ impl LgpEvaluatorCfg {
 impl Default for LgpEvaluatorCfg {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::num::NonZeroUsize;
+
+    use approx::assert_relative_eq;
+
+    use super::*;
+
+    #[test]
+    fn round_sf_zero() {
+        let sf = NonZeroUsize::new(2).unwrap();
+        assert_relative_eq!(0.0, LgpEvaluatorCfg::round_sf(0.0, sf));
+    }
+
+    #[test]
+    fn round_sf_basic() {
+        let sf = NonZeroUsize::new(2).unwrap();
+        assert_relative_eq!(1.2, LgpEvaluatorCfg::round_sf(1.2345, sf));
+        assert_relative_eq!(1200.0, LgpEvaluatorCfg::round_sf(1234.5, sf));
+    }
+
+    #[test]
+    fn round_sf_subnormal_no_panic() {
+        let sf = NonZeroUsize::new(2).unwrap();
+        let v = LgpEvaluatorCfg::round_sf(1.0e-320, sf);
+        assert!(v.is_finite());
     }
 }

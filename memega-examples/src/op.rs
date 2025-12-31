@@ -1,5 +1,7 @@
+use std::num::NonZeroUsize;
+
 use clap::{Parser, ValueEnum};
-use eyre::Result;
+use memega::Result;
 use memega::eval::{Data, Evaluator};
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use memega::evolve::cfg::{
@@ -26,7 +28,7 @@ pub enum Example {
     Ackley,
     Griewank,
     Knapsack,
-    Rastringin,
+    Rastrigin,
     TargetString,
     Lgp,
 }
@@ -65,10 +67,10 @@ pub struct Args {
     pub pop_size: usize,
 
     #[clap(long, default_value = "2000", help = "number of generation")]
-    pub num_gen: usize,
+    pub num_gen: NonZeroUsize,
 
     #[clap(long, help = "how often to report to tensorboard")]
-    pub report_gen: Option<usize>,
+    pub report_gen: Option<NonZeroUsize>,
 }
 
 impl Args {
@@ -79,7 +81,7 @@ impl Args {
             .set_survival(Survival::TopProportion(0.1))
             .set_species(Species::None)
             .set_niching(Niching::None)
-            .set_stagnation(Stagnation::ContinuousAfter(100))
+            .set_stagnation(Stagnation::ContinuousAfter(NonZeroUsize::new(100).unwrap()))
             .set_stagnation_condition(StagnationCondition::Epsilon(0.5))
             .set_replacement(Replacement::ReplaceChildren(0.1))
             .set_par_fitness(true)
@@ -88,10 +90,10 @@ impl Args {
     fn trainer_cfg(&self) -> TrainerCfg {
         let mut cfg = TrainerCfg::new("example")
             .set_termination(Termination::FixedGenerations(self.num_gen))
-            .set_print_gen(10)
-            .set_print_summary(10)
-            .set_print_samples(100)
-            .set_print_valid(10);
+            .set_print_gen(NonZeroUsize::new(10).unwrap())
+            .set_print_summary(NonZeroUsize::new(10).unwrap())
+            .set_print_samples(NonZeroUsize::new(100).unwrap())
+            .set_print_valid(NonZeroUsize::new(10).unwrap());
         cfg.report_gen = self.report_gen;
         cfg
     }
@@ -108,7 +110,7 @@ impl Args {
                 self.dispatch(move |cfg| griewank_evolver(func_dim, cfg), &EmptyDataSampler {})
             }
             Example::Knapsack => self.dispatch(knapsack_evolver, &EmptyDataSampler {}),
-            Example::Rastringin => {
+            Example::Rastrigin => {
                 self.dispatch(move |cfg| rastrigin_evolver(func_dim, cfg), &EmptyDataSampler {})
             }
             Example::TargetString => self.dispatch(target_string_evolver, &EmptyDataSampler {}),

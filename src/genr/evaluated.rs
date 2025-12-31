@@ -1,7 +1,7 @@
 use derive_more::Display;
-use eyre::{Result, eyre};
 use rand::seq::IndexedRandom;
 
+use crate::error::{Error, Result};
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{
     Crossover, Duplicates, EvolveCfg, Mutation, Replacement, Selection, Survival,
@@ -60,7 +60,7 @@ impl<S: State> EvaluatedGen<S> {
                 self.mems.iter().take(num).cloned().collect()
             }
             Survival::SpeciesTopProportion(prop) => {
-                let mut survivors = Vec::new();
+                let mut survivors = Vec::with_capacity(cfg.pop_size);
                 let species = self.species();
                 let num = (cfg.pop_size as f64 * prop / species.len() as f64).ceil() as usize;
                 for id in species {
@@ -76,15 +76,19 @@ impl<S: State> EvaluatedGen<S> {
                 survivors
             }
             Survival::Tournament(q) => {
-                let mut survivors = Vec::new();
                 let mut rng = rand::rng();
-                for mem in &self.mems {
-                    let opponents = self.mems.choose_multiple(&mut rng, q);
-                    let wins = opponents.filter(|opp| opp.fitness > mem.fitness).count();
-                    survivors.push((wins, mem));
+                let mut survivors = Vec::with_capacity(cfg.pop_size);
+                for _ in 0..cfg.pop_size {
+                    let mut best = self.mems.choose(&mut rng).expect("non-empty");
+                    for _ in 1..q.get() {
+                        let cand = self.mems.choose(&mut rng).expect("non-empty");
+                        if cand.fitness > best.fitness {
+                            best = cand;
+                        }
+                    }
+                    survivors.push(best.clone());
                 }
-                survivors.sort_unstable_by_key(|(wins, _)| -(*wins as i64));
-                survivors.into_iter().map(|(_, mem)| mem.clone()).collect()
+                survivors
             }
         };
         // Bump ages.
@@ -94,22 +98,26 @@ impl<S: State> EvaluatedGen<S> {
         mems
     }
 
-    fn selection(&self, selection: Selection) -> [Member<S>; 2] {
-        let fitnesses = self.mems.iter().map(|v| v.selection_fitness).collect::<Vec<_>>();
+    fn selection(&self, fitnesses: &[f64], selection: Selection) -> [Member<S>; 2] {
         let idxs = match selection {
-            Selection::Sus => sus(&fitnesses, 2),
-            Selection::Roulette => multi_rws(&fitnesses, 2),
+            Selection::Sus => sus(fitnesses, 2),
+            Selection::Roulette => multi_rws(fitnesses, 2),
         };
         [self.mems[idxs[0]].clone(), self.mems[idxs[1]].clone()]
     }
 
     fn check_weights(weights: &[f64], l: usize) -> Result<()> {
         if weights.len() != l {
-            return Err(eyre!("number of fixed weights {} doesn't match {}", weights.len(), l));
+            return Err(Error::EvolverError(format!(
+                "number of fixed weights {} doesn't match {l}",
+                weights.len()
+            )));
         }
         for &v in weights {
-            if v < 0.0 {
-                return Err(eyre!("weights must all be non-negative: {}", v));
+            if v < 0.0 || !v.is_finite() {
+                return Err(Error::EvolverError(format!(
+                    "weights must all be non-negative and finite: {v}"
+                )));
             }
         }
         Ok(())
@@ -173,6 +181,8 @@ impl<S: State> EvaluatedGen<S> {
         cfg: &EvolveCfg,
         eval: &E,
     ) -> Result<UnevaluatedGenr<S>> {
+        let selection_fitnesses = self.mems.iter().map(|v| v.selection_fitness).collect::<Vec<_>>();
+
         // Pick survivors:
         let mut new_mems = self.survivors(cfg.survival, cfg);
         // Min here to avoid underflow - can happen if we produce too many parents.
@@ -197,10 +207,12 @@ impl<S: State> EvaluatedGen<S> {
         for _ in 0..NUM_TRIES {
             // Reproduce.
             while new_mems.len() < cfg.pop_size {
-                let [mut s1, mut s2] = self.selection(cfg.selection);
-                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2).unwrap();
-                self.mutation(&cfg.mutation, eval, &mut s1).unwrap();
-                self.mutation(&cfg.mutation, eval, &mut s2).unwrap();
+                let [mut s1, mut s2] = self.selection(&selection_fitnesses, cfg.selection);
+                self.crossover(&cfg.crossover, eval, &mut s1, &mut s2)?;
+                self.mutation(&cfg.mutation, eval, &mut s1)?;
+                self.mutation(&cfg.mutation, eval, &mut s2)?;
+                s1.reset();
+                s2.reset();
                 new_mems.push(s1);
                 new_mems.push(s2);
             }

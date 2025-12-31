@@ -1,9 +1,9 @@
 use std::fmt;
 use std::hash::Hash;
 
-use eyre::Result;
 use stretto::Cache;
 
+use crate::error::Result;
 use crate::evolve::cfg::FitnessReduction;
 
 pub trait State = Clone + Send + Sync + PartialOrd + PartialEq + fmt::Display;
@@ -38,6 +38,10 @@ pub trait Evaluator: Send + Sync {
         inputs: &[Self::Data],
         reduction: FitnessReduction,
     ) -> Result<f64> {
+        if inputs.is_empty() {
+            return Ok(0.0);
+        }
+
         let mut cumulative = match reduction {
             FitnessReduction::ArithmeticMean => 0.0,
             FitnessReduction::GeometricMean => 1.0,

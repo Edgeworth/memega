@@ -1,9 +1,9 @@
 use std::cmp::Ordering;
 
 use approx::relative_eq;
-use eyre::{Result, eyre};
 use rayon::prelude::*;
 
+use crate::error::{Error, Result};
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{EvolveCfg, Niching, Species};
 use crate::genr::evaluated::EvaluatedGen;
@@ -48,7 +48,7 @@ impl<S: State> UnevaluatedGenr<S> {
 
         // Check fitnesses are non-negative and finite.
         if !self.mems.iter().map(|v| v.fitness).all(|v| v >= 0.0 && v.is_finite()) {
-            return Err(eyre!("got negative or non-finite fitness"));
+            return Err(Error::EvolverError("got negative or non-finite fitness".to_string()));
         }
 
         // Sort by fitnesses.
@@ -61,16 +61,22 @@ impl<S: State> UnevaluatedGenr<S> {
                 self.dists.ensure(&self.mems, cfg.par_dist, eval)?;
                 let mut lo = 0.0;
                 let mut hi = self.dists.max();
-                let mut ids = Vec::new();
-                while !relative_eq!(lo, hi, epsilon = 1.0e-6) {
+                let mut ids;
+
+                loop {
                     let r = f64::midpoint(lo, hi);
                     (ids, self.species) = self.dists.speciate(&self.mems, r);
-                    match self.species.num.cmp(&target) {
+                    match self.species.num.cmp(&target.get()) {
                         Ordering::Less => hi = self.species.radius,
                         Ordering::Equal => break,
                         Ordering::Greater => lo = self.species.radius,
                     }
+
+                    if relative_eq!(lo, hi, epsilon = 1.0e-6) {
+                        break;
+                    }
                 }
+
                 // Assign species into mems if speciated.
                 for (i, &id) in ids.iter().enumerate() {
                     self.mems[i].species = id;
@@ -97,5 +103,59 @@ impl<S: State> UnevaluatedGenr<S> {
         }
 
         Ok(EvaluatedGen::new(self.mems.clone()))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fmt;
+    use std::num::NonZeroUsize;
+
+    use super::UnevaluatedGenr;
+    use crate::Result;
+    use crate::eval::Evaluator;
+    use crate::evolve::cfg::{EvolveCfg, Species};
+
+    #[derive(Clone, PartialOrd, PartialEq, Debug)]
+    struct TestState(u8);
+
+    impl fmt::Display for TestState {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    #[derive(Debug, Default)]
+    struct ConstFitnessEval;
+
+    impl Evaluator for ConstFitnessEval {
+        type State = TestState;
+        type Data = ();
+
+        fn crossover(&self, _s1: &mut Self::State, _s2: &mut Self::State, _idx: usize) {}
+        fn mutate(&self, _s: &mut Self::State, _rate: f64, _idx: usize) {}
+
+        fn fitness(&self, _s: &Self::State, _data: &Self::Data) -> Result<f64> {
+            Ok(1.0)
+        }
+
+        fn distance(&self, _s1: &Self::State, _s2: &Self::State) -> Result<f64> {
+            Ok(0.0)
+        }
+    }
+
+    #[test]
+    fn evaluate_assigns_species_when_all_dists_zero() -> Result<()> {
+        let eval = ConstFitnessEval;
+        let cfg = EvolveCfg::new(4)
+            .set_species(Species::TargetNumber(NonZeroUsize::new(3).unwrap()))
+            .set_par_dist(false);
+        let mut genr = UnevaluatedGenr::initial::<ConstFitnessEval>(
+            vec![TestState(0), TestState(1), TestState(2), TestState(3)],
+            &cfg,
+        );
+        let evaluated = genr.evaluate(&[()], &cfg, &eval)?;
+        assert!(evaluated.mems.iter().all(|m| m.species == 1));
+        Ok(())
     }
 }

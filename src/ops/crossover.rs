@@ -265,7 +265,7 @@ mod tests {
     use crate::ops::util::{str_to_vec, vec_to_str};
 
     #[test]
-    fn test_crossover_pmx() {
+    fn crossover_pmx_basic() {
         let a: [i32; 0] = [];
         let b: [i32; 0] = [];
         assert_eq!(crossover_pmx_single(&a, &b, 0, 0), []);
@@ -292,7 +292,7 @@ mod tests {
     }
 
     #[test]
-    fn test_crossover_order() {
+    fn crossover_order_basic() {
         let a: [i32; 0] = [];
         let b: [i32; 0] = [];
         assert_eq!(crossover_order_single(&a, &b, 0, 0), []);
@@ -319,7 +319,7 @@ mod tests {
     }
 
     #[test]
-    fn test_crossover_cycle() {
+    fn crossover_cycle_basic() {
         let mut a: [i32; 0] = [];
         let mut b: [i32; 0] = [];
         crossover_cycle(&mut a, &mut b);
@@ -364,7 +364,7 @@ mod tests {
     }
 
     #[test]
-    fn test_crossover_1px() {
+    fn crossover_1px_basic() {
         let mut a = str_to_vec("abcd");
         let mut b = str_to_vec("wxyz");
         crossover_kpx_pts(&mut a, &mut b, &[3]);
@@ -373,7 +373,7 @@ mod tests {
     }
 
     #[test]
-    fn test_crossover_2px() {
+    fn crossover_2px_basic() {
         let mut a = str_to_vec("abcd");
         let mut b = str_to_vec("wxyz");
         crossover_kpx_pts(&mut a, &mut b, &[1, 2]);
@@ -382,7 +382,7 @@ mod tests {
     }
 
     #[test]
-    fn test_crossover_ux() {
+    fn crossover_ux_basic() {
         let mut r = StdRng::seed_from_u64(3);
         let mut a = str_to_vec("abcd");
         let mut b = str_to_vec("wxyz");

@@ -13,7 +13,7 @@ pub struct Stats {
     pub mean_fitness: f64,
     pub pop_size: usize,
     pub num_dup: usize,
-    pub mean_distance: f64,
+    pub mean_distance: Option<f64>,
     pub stagnant: bool,
     pub species: SpeciesInfo,
 }
@@ -25,8 +25,8 @@ impl std::fmt::Display for Stats {
             "best: {:5.5}, mean: {:5.5}\npop: {:>5}, dupes: {:>5}, stagnant: {}",
             self.best_fitness, self.mean_fitness, self.pop_size, self.num_dup, self.stagnant
         )?;
-        if self.mean_distance.is_finite() {
-            write!(f, "dist: {:5.5}, {}", self.mean_distance, self.species)?;
+        if let Some(mean_distance) = self.mean_distance {
+            write!(f, ", dist: {:5.5}, {}", mean_distance, self.species)?;
         }
         Ok(())
     }
@@ -71,7 +71,7 @@ impl<S: State> EvolveResult<S> {
     }
 
     #[must_use]
-    pub fn mean_distance(&self) -> f64 {
+    pub fn mean_distance(&self) -> Option<f64> {
         self.unevaluated.dists.mean()
     }
 

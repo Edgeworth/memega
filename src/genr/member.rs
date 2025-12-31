@@ -28,4 +28,11 @@ impl<S: State> Member<S> {
             age: 0,
         }
     }
+
+    pub fn reset(&mut self) {
+        self.age = 0;
+        self.species = NO_SPECIES;
+        self.fitness = 0.0;
+        self.selection_fitness = 0.0;
+    }
 }

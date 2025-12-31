@@ -1,11 +1,11 @@
 use std::fmt;
 use std::marker::PhantomData;
 
-use eyre::Result;
 use rand::Rng;
 use rand::seq::IndexedMutRandom;
 use smallvec::SmallVec;
 
+use crate::error::Result;
 use crate::eval::{Data, Evaluator};
 use crate::evaluators::lgp::cfg::LgpEvaluatorCfg;
 use crate::evaluators::lgp::vm::cfg::LgpVmCfg;
@@ -33,7 +33,7 @@ impl fmt::Display for LgpState {
             "Unopt code len: {}, Opt code len: {}, Diff: {}",
             self.ops_unopt.len(),
             ops_opt.len(),
-            self.ops_unopt.len() - ops_opt.len()
+            self.ops_unopt.len() as i64 - ops_opt.len() as i64
         )?;
         write!(f, "{}", lgp_disasm(&ops_opt))
     }

@@ -37,6 +37,7 @@
 #![allow(clippy::expl_impl_clone_on_copy)]
 #![feature(associated_type_defaults, iter_array_chunks, trait_alias)]
 
+pub mod error;
 pub mod eval;
 pub mod evaluators;
 pub mod evolve;
@@ -44,3 +45,5 @@ pub mod genr;
 pub mod ops;
 pub mod train;
 pub mod util;
+
+pub use crate::error::{Error, Result};

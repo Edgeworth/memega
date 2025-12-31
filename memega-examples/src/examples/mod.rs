@@ -1,3 +1,5 @@
+use std::num::NonZeroUsize;
+
 use memega::evolve::cfg::{Crossover, EvolveCfg, Mutation, Niching, Species, Survival};
 
 pub mod ackley;
@@ -14,7 +16,7 @@ pub fn all_cfg() -> EvolveCfg {
         .set_mutation(Mutation::Adaptive)
         .set_crossover(Crossover::Adaptive)
         .set_survival(Survival::SpeciesTopProportion(0.1))
-        .set_species(Species::TargetNumber(10))
+        .set_species(Species::TargetNumber(NonZeroUsize::new(10).unwrap()))
         .set_niching(Niching::SpeciesSharedFitness)
 }
 

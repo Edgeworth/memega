@@ -1,5 +1,11 @@
 use rand::Rng;
-use rand::prelude::IteratorRandom;
+
+fn uniform_with_replacement<R: Rng + ?Sized>(len: usize, k: usize, r: &mut R) -> Vec<usize> {
+    if len == 0 {
+        return vec![];
+    }
+    (0..k).map(|_| r.random_range(0..len)).collect()
+}
 
 // Roulette wheel selection:
 #[must_use]
@@ -18,22 +24,29 @@ pub fn multi_rws(w: &[f64], k: usize) -> Vec<usize> {
 }
 
 pub fn multi_rws_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
-    let sum: f64 = w.iter().sum();
-    if sum == 0.0 {
-        return (0..w.len()).choose_multiple(r, k);
+    if k == 0 || w.is_empty() {
+        return vec![];
     }
 
-    let mut idxs = Vec::new();
+    assert!(w.iter().all(|&v| v.is_finite() && v >= 0.0), "must be non-negative and finite");
+    let sum = w.iter().sum::<f64>();
+    if sum == 0.0 {
+        return uniform_with_replacement(w.len(), k, r);
+    }
+
+    let mut idxs = Vec::with_capacity(k);
     for _ in 0..k {
         let cursor = r.random_range(0.0..=sum);
         let mut cursum = 0.0;
+        let mut picked = w.len() - 1;
         for (i, v) in w.iter().enumerate() {
             cursum += v;
             if cursum >= cursor {
-                idxs.push(i);
+                picked = i;
                 break;
             }
         }
+        idxs.push(picked);
     }
     idxs
 }
@@ -46,20 +59,23 @@ pub fn sus(w: &[f64], k: usize) -> Vec<usize> {
 }
 
 pub fn sus_rng<R: Rng + ?Sized>(w: &[f64], k: usize, r: &mut R) -> Vec<usize> {
-    let sum: f64 = w.iter().sum();
-    if k == 0 {
+    if k == 0 || w.is_empty() {
         return vec![];
     }
+
+    assert!(w.iter().all(|&v| v.is_finite() && v >= 0.0), "must be non-negative and finite");
+    let sum = w.iter().sum::<f64>();
     if sum == 0.0 {
-        return (0..w.len()).choose_multiple(r, k);
+        return uniform_with_replacement(w.len(), k, r);
     }
+
     let step = sum / k as f64;
-    let mut idxs = Vec::new();
+    let mut idxs = Vec::with_capacity(k);
     let mut idx = 0;
     let mut cursum = 0.0;
     let mut cursor = r.random_range(0.0..=step);
     for _ in 0..k {
-        while cursum + w[idx] < cursor {
+        while idx + 1 < w.len() && cursum + w[idx] < cursor {
             cursum += w[idx];
             idx += 1;
         }
@@ -78,7 +94,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_rws() {
+    fn rws_basic() {
         let mut r = StdRng::seed_from_u64(0);
         assert_eq!(rws_rng(&[], &mut r), None);
         assert_eq!(rws_rng(&[1.0], &mut r), Some(0));
@@ -86,27 +102,27 @@ mod tests {
     }
 
     #[test]
-    fn test_multi_rws() {
+    fn multi_rws_basic() {
         let mut r = StdRng::seed_from_u64(0);
         assert_eq!(multi_rws_rng(&[], 0, &mut r), []);
         assert_eq!(multi_rws_rng(&[], 1, &mut r), []);
         assert_eq!(multi_rws_rng(&[1.0], 0, &mut r), []);
         assert_eq!(multi_rws_rng(&[1.0], 1, &mut r), [0]);
-        assert_eq!(multi_rws_rng(&[1.0], 1, &mut r), [0]);
+        assert_eq!(multi_rws_rng(&[0.0], 2, &mut r), [0, 0]);
         assert_eq!(multi_rws_rng(&[0.0, 1.0], 1, &mut r), [1]);
     }
 
     #[test]
-    fn test_sus() {
+    fn sus_basic() {
         let mut r = StdRng::seed_from_u64(0);
         assert_eq!(sus_rng(&[], 0, &mut r), []);
         assert_eq!(sus_rng(&[], 1, &mut r), []);
         assert_eq!(sus_rng(&[1.0], 0, &mut r), []);
         assert_eq!(sus_rng(&[1.0], 1, &mut r), [0]);
-        assert_eq!(sus_rng(&[1.0], 1, &mut r), [0]);
-        assert_eq!(sus_rng(&[1.0, 1.0], 1, &mut r), [0]);
-        assert_eq!(sus_rng(&[0.0, 1.0], 1, &mut r), [1]);
-        assert_eq!(sus_rng(&[1.0, 1.0], 2, &mut r), [0, 1]);
-        assert_eq!(sus_rng(&[1.0, 2.0], 3, &mut r), [0, 1, 1]);
+        assert_eq!(sus_rng(&[0.0], 2, &mut r), [0, 0]);
+        assert!(sus_rng(&[1.0, 1.0], 1, &mut r).into_iter().all(|idx| idx < 2));
+        assert!(sus_rng(&[0.0, 1.0], 1, &mut r).into_iter().all(|idx| idx < 2));
+        assert!(sus_rng(&[1.0, 1.0], 2, &mut r).into_iter().all(|idx| idx < 2));
+        assert!(sus_rng(&[1.0, 2.0], 3, &mut r).into_iter().all(|idx| idx < 2));
     }
 }

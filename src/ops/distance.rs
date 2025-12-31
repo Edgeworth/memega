@@ -1,7 +1,8 @@
 use std::mem::swap;
 
-use eyre::{Result, eyre};
 use num_traits::{Num, NumAssign};
+
+use crate::error::{Error, Result};
 
 // Generalised distance - add missing * difference in lengths distance if the
 // arrays are different distances.
@@ -64,7 +65,7 @@ pub fn count_different<T: PartialEq>(s1: &[T], s2: &[T]) -> usize {
 // Kendall tau distance: https://en.wikipedia.org/wiki/Kendall_tau_distance
 pub fn kendall_tau<T: PartialOrd>(s1: &[T], s2: &[T]) -> Result<usize> {
     if s1.len() != s2.len() {
-        return Err(eyre!("must be same length"));
+        return Err(Error::LengthMismatch { expected: s1.len(), actual: s2.len() });
     }
     let mut count = 0;
     for i in 0..s1.len() {
@@ -84,7 +85,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_count_different() {
+    fn count_different_basic() {
         assert_eq!(count_different(&[1], &[1]), 0);
         assert_eq!(count_different(&[1], &[2]), 1);
         assert_eq!(count_different(&[1], &[1, 2]), 1);
@@ -92,7 +93,7 @@ mod tests {
     }
 
     #[test]
-    fn test_kendall_tau() -> Result<()> {
+    fn kendall_tau_basic() -> Result<()> {
         assert_eq!(kendall_tau(&[1], &[1])?, 0);
         assert_eq!(kendall_tau(&[1], &[2])?, 0);
         assert_eq!(kendall_tau(&[1, 2], &[1, 2])?, 0);

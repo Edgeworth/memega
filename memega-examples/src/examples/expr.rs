@@ -1,4 +1,3 @@
-use eyre::{Result, eyre};
 use memega::eval::Evaluator;
 use memega::evaluators::lgp::builder::lgp_fitness_evolver;
 use memega::evaluators::lgp::cfg::LgpEvaluatorCfg;
@@ -7,6 +6,7 @@ use memega::evaluators::lgp::vm::lgpvm::LgpVm;
 use memega::evolve::cfg::EvolveCfg;
 use memega::evolve::evolver::Evolver;
 use memega::train::sampler::DataSampler;
+use memega::{Error, Result};
 use num_traits::ToPrimitive;
 use savage_core::expression::{Expression, Rational};
 
@@ -15,16 +15,27 @@ const NUM_CONST: usize = 4;
 const OUTPUT_REG: u8 = 0;
 
 pub fn expr_fitness(s: &LgpState, x: f64, target: &str) -> Result<f64> {
-    let expr: Expression = target.parse().map_err(|_| eyre!("failed to parse expression"))?;
+    let expr: Expression =
+        target.parse().map_err(|_| Error::InvalidLgp("failed to parse expression".to_string()))?;
 
     let mut expr_ctx = std::collections::HashMap::default();
-    let x_expr = Expression::from(Rational::from_float(x).ok_or_else(|| eyre!("invalid x"))?);
+    let x_rat =
+        Rational::from_float(x).ok_or_else(|| Error::InvalidLgp("invalid x".to_string()))?;
+    let x_expr = Expression::from(x_rat);
     expr_ctx.insert("x".to_string(), x_expr);
-    let ans = expr.evaluate(expr_ctx).map_err(|_| eyre!("failed to evaluate expression"))?;
+    let ans = expr
+        .evaluate(expr_ctx)
+        .map_err(|_| Error::InvalidLgp("failed to evaluate expression".to_string()))?;
     let ans = match ans {
-        Expression::Integer(integer) => integer.to_f64().ok_or_else(|| eyre!("invalid y"))?,
-        Expression::Rational(ratio, _) => ratio.to_f64().ok_or_else(|| eyre!("invalid y"))?,
-        _ => panic!("should be number output: {ans}"),
+        Expression::Integer(integer) => {
+            integer.to_f64().ok_or_else(|| Error::InvalidLgp("invalid y".to_string()))?
+        }
+        Expression::Rational(ratio, _) => {
+            ratio.to_f64().ok_or_else(|| Error::InvalidLgp("invalid y".to_string()))?
+        }
+        _ => {
+            return Err(Error::InvalidLgp("expression did not evaluate to a number".to_string()));
+        }
     };
 
     let regs: [f64; NUM_REG] = [0.0, 0.0];

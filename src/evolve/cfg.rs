@@ -1,7 +1,7 @@
+use std::num::NonZeroUsize;
+
 use rand::Rng;
 use rand_distr::{Distribution, StandardUniform};
-
-use crate::genr::species::SpeciesId;
 
 #[must_use]
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
@@ -30,14 +30,16 @@ pub enum Survival {
     TopProportion(f64),
     SpeciesTopProportion(f64), // Top proportion for each species.
     Youngest,                  // Only the youngest members survive. Age based replacement.
-    Tournament(usize),         // Tournament selection. Tournament size is given.
+    Tournament(NonZeroUsize),  // Tournament selection. Tournament size is given.
 }
 
 impl Distribution<Survival> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Survival {
-        match r.random_range(0..2) {
+        match r.random_range(0..4) {
             0 => Survival::TopProportion(r.random_range(0.0..0.9)),
-            _ => Survival::SpeciesTopProportion(r.random_range(0.0..0.9)),
+            1 => Survival::SpeciesTopProportion(r.random_range(0.0..0.9)),
+            2 => Survival::Youngest,
+            _ => Survival::Tournament(NonZeroUsize::new(r.random_range(1..=10)).unwrap()),
         }
     }
 }
@@ -70,7 +72,7 @@ impl Distribution<Niching> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Niching {
         match r.random_range(0..3) {
             0 => Niching::None,
-            1 => Niching::SharedFitness(r.random_range(0.0..100.0)), // TODO: Hardcoded.
+            1 => Niching::SharedFitness(r.random_range(1.0e-6..100.0)), // TODO: Hardcoded.
             _ => Niching::SpeciesSharedFitness,
         }
     }
@@ -80,14 +82,14 @@ impl Distribution<Niching> for StandardUniform {
 #[derive(Debug, Copy, Clone, Eq, PartialEq, PartialOrd)]
 pub enum Species {
     None,
-    TargetNumber(SpeciesId), // Target number of species.
+    TargetNumber(NonZeroUsize), // Target number of species.
 }
 
 impl Distribution<Species> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Species {
         match r.random_range(0..2) {
             0 => Species::None,
-            _ => Species::TargetNumber(r.random_range(1..10)), // TODO: Hardcoded.
+            _ => Species::TargetNumber(NonZeroUsize::new(r.random_range(1..10)).unwrap()), // TODO: Hardcoded.
         }
     }
 }
@@ -97,17 +99,17 @@ impl Distribution<Species> for StandardUniform {
 pub enum Stagnation {
     None,
     // After N generations of the same best fitness, trigger stagnation once.
-    OneShotAfter(usize),
+    OneShotAfter(NonZeroUsize),
     // Stagnation continuously after N generations of the same best fitness.
-    ContinuousAfter(usize),
+    ContinuousAfter(NonZeroUsize),
 }
 
 impl Distribution<Stagnation> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Stagnation {
-        match r.random_range(0..2) {
+        match r.random_range(0..3) {
             0 => Stagnation::None,
-            1 => Stagnation::OneShotAfter(r.random_range(1..1000)),
-            _ => Stagnation::ContinuousAfter(r.random_range(1..1000)),
+            1 => Stagnation::OneShotAfter(NonZeroUsize::new(r.random_range(1..1000)).unwrap()),
+            _ => Stagnation::ContinuousAfter(NonZeroUsize::new(r.random_range(1..1000)).unwrap()),
         }
     }
 }
@@ -123,10 +125,11 @@ pub enum StagnationCondition {
 }
 
 impl Distribution<StagnationCondition> for StandardUniform {
-    fn sample<R: Rng + ?Sized>(&self, _: &mut R) -> StagnationCondition {
-        // Just return default for now - evolving a stagnation condition epsilon
-        // probably not that useful.
-        StagnationCondition::Default
+    fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> StagnationCondition {
+        match r.random_range(0..2) {
+            0 => StagnationCondition::Default,
+            _ => StagnationCondition::Epsilon(r.random_range(1.0e-6..=1.0)), // TODO: Hardcoded.
+        }
     }
 }
 
@@ -152,7 +155,7 @@ pub enum Duplicates {
 
 impl Distribution<Duplicates> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> Duplicates {
-        match r.random_range(0..1) {
+        match r.random_range(0..2) {
             0 => Duplicates::DisallowDuplicates,
             _ => Duplicates::AllowDuplicates,
         }
@@ -170,7 +173,7 @@ pub enum FitnessReduction {
 
 impl Distribution<FitnessReduction> for StandardUniform {
     fn sample<R: Rng + ?Sized>(&self, r: &mut R) -> FitnessReduction {
-        match r.random_range(0..1) {
+        match r.random_range(0..2) {
             0 => FitnessReduction::ArithmeticMean,
             _ => FitnessReduction::GeometricMean,
         }

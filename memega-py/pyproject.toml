@@ -2,7 +2,7 @@
 authors = [{name = "Eliot Courtney", email = "edgeworth.dev@gmail.com"}]
 description = "memega"
 dynamic = ["dependencies"]
-license = {text = "GPL-3.0-only"}
+license = {text = "MIT OR Apache-2.0"}
 name = "memega"
 requires-python = ">=3.13,<4.0"
 version = "0.1.0"
@@ -72,7 +72,6 @@ ignore = [
   "N806", # allow uppercase variables
   "N812", # allow e.g. import torch.nn.functional as F
   "PD002", # allow pandas in place operations
-  "PD901", # allow 'df'
   "PLR0912", # allow more branches in functions
   "PLR0913", # allow more arguments in functions
   "PLR0915", # allow more statements in functions

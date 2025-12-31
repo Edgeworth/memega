@@ -29,11 +29,10 @@ members = ["memega-examples", "memega-py"]
 [dependencies]
 ahash = "0.8.12"
 approx = "0.5.1"
-chrono = {version = "0.4.41", optional = true}
-derive_more = {version = "2.0.1", features = ["display", "deref", "deref_mut"]}
+chrono = {version = "0.4.42", optional = true}
+derive_more = {version = "2.1.1", features = ["display", "deref", "deref_mut"]}
 enumset = "1.1.10"
-eyre = "0.6.12"
-log = "0.4.28"
+log = "0.4.29"
 num-traits = "0.2.19"
 rand = "0.9.2"
 rand_distr = "0.5.1"
@@ -42,9 +41,10 @@ smallvec = "1.15.1"
 stretto = {version = "0.8.4", features = ["sync"]}
 strum = "0.27.2"
 strum_macros = "0.27.2"
-tempfile = "3.21.0"
+tempfile = "3.24.0"
 tensorboard-rs = {version = "0.5.9", optional = true}
 textwrap = "0.16.2"
+thiserror = "2.0.17"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"

@@ -1,9 +1,9 @@
 use std::fmt::Write;
 
 use approx::{abs_diff_eq, relative_eq};
-use eyre::Result;
 use textwrap::indent;
 
+use crate::error::Result;
 use crate::eval::{Evaluator, State};
 use crate::evolve::cfg::{Crossover, EvolveCfg, Mutation, Stagnation, StagnationCondition};
 use crate::evolve::result::{EvolveResult, Stats};
@@ -98,14 +98,14 @@ impl<E: Evaluator> Evolver<E> {
         let stagnant = match self.cfg.stagnation {
             Stagnation::None => false,
             Stagnation::OneShotAfter(count) => {
-                if self.stagnation_count >= count {
+                if self.stagnation_count >= count.get() {
                     self.stagnation_count = 0;
                     true
                 } else {
                     false
                 }
             }
-            Stagnation::ContinuousAfter(count) => self.stagnation_count >= count,
+            Stagnation::ContinuousAfter(count) => self.stagnation_count >= count.get(),
         };
 
         let mut next = genr.next_gen(self.rand_state.as_mut(), stagnant, &self.cfg, &self.eval)?;

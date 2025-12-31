@@ -34,10 +34,3 @@
     clippy::unreadable_literal
 )]
 #![feature(trait_alias)]
-
-use pyo3::prelude::*;
-
-#[pymodule]
-fn memega(_m: &Bound<'_, PyModule>) -> PyResult<()> {
-    Ok(())
-}

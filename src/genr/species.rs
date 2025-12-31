@@ -2,20 +2,20 @@ use std::collections::VecDeque;
 use std::ops::Index;
 
 use derive_more::Display;
-use eyre::Result;
 use rayon::iter::{IntoParallelIterator, IntoParallelRefIterator, ParallelIterator};
 
+use crate::error::Result;
 use crate::eval::{Evaluator, State};
 use crate::genr::member::Member;
 
-pub type SpeciesId = u64;
+pub type SpeciesId = usize;
 pub const NO_SPECIES: SpeciesId = 0;
 
 #[must_use]
 #[derive(Copy, Clone, PartialOrd, PartialEq, Debug, Display)]
 #[display("species: {num:>3}, radius: {radius:5.5}")]
 pub struct SpeciesInfo {
-    pub num: u64,
+    pub num: usize,
     pub radius: f64,
 }
 
@@ -92,15 +92,15 @@ impl DistCache {
         assert!(s.is_sorted_by_key(|v| -v.fitness), "Must be sorted by fitness (bug)");
         let mut ids: Vec<SpeciesId> = vec![NO_SPECIES; s.len()];
         let mut unassigned: VecDeque<usize> = (0..s.len()).collect();
-        let mut num = 1;
+        let mut num = 0;
         while !unassigned.is_empty() {
             // Take next highest fitness to define the next species.
             let next = unassigned.pop_front().unwrap();
-            ids[next] = num;
+            ids[next] = num + NO_SPECIES + 1;
 
             unassigned.retain(|&v| {
                 if self[(next, v)] <= radius {
-                    ids[v] = num;
+                    ids[v] = num + NO_SPECIES + 1;
                     false
                 } else {
                     true
@@ -109,7 +109,6 @@ impl DistCache {
             num += 1;
         }
 
-        // Assign species to ones not assigned yet.
         (ids, SpeciesInfo { num, radius })
     }
 
@@ -139,8 +138,8 @@ impl DistCache {
     }
 
     #[must_use]
-    pub fn mean(&self) -> f64 {
-        self.sum / ((self.n * self.n) as f64)
+    pub fn mean(&self) -> Option<f64> {
+        if self.n == 0 { None } else { Some(self.sum / ((self.n * self.n) as f64)) }
     }
 
     #[must_use]
@@ -160,5 +159,71 @@ impl Index<(usize, usize)> for DistCache {
 
     fn index(&self, i: (usize, usize)) -> &f64 {
         &self.cache[i.0 * self.n + i.1]
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fmt;
+
+    use super::DistCache;
+    use crate::Result;
+    use crate::eval::Evaluator;
+    use crate::evolve::cfg::EvolveCfg;
+    use crate::genr::member::Member;
+
+    #[derive(Clone, PartialOrd, PartialEq, Debug)]
+    struct TestState(u8);
+
+    impl fmt::Display for TestState {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0)
+        }
+    }
+
+    #[derive(Debug, Default)]
+    struct UnitDistEval;
+
+    impl Evaluator for UnitDistEval {
+        type State = TestState;
+        type Data = ();
+
+        fn crossover(&self, _s1: &mut Self::State, _s2: &mut Self::State, _idx: usize) {}
+        fn mutate(&self, _s: &mut Self::State, _rate: f64, _idx: usize) {}
+
+        fn fitness(&self, s: &Self::State, _data: &Self::Data) -> Result<f64> {
+            Ok(f64::from(s.0))
+        }
+
+        fn distance(&self, s1: &Self::State, s2: &Self::State) -> Result<f64> {
+            Ok(if s1 == s2 { 0.0 } else { 1.0 })
+        }
+    }
+
+    #[test]
+    fn distcache_mean_empty_is_none() {
+        assert_eq!(DistCache::new().mean(), None);
+    }
+
+    #[test]
+    fn speciate_species_count_is_correct() -> Result<()> {
+        let eval = UnitDistEval;
+        let cfg = EvolveCfg::new(3);
+        let mut mems = vec![
+            Member::new::<UnitDistEval>(TestState(0), &cfg),
+            Member::new::<UnitDistEval>(TestState(1), &cfg),
+            Member::new::<UnitDistEval>(TestState(2), &cfg),
+        ];
+        mems[0].fitness = 3.0;
+        mems[1].fitness = 2.0;
+        mems[2].fitness = 1.0;
+
+        let mut dists = DistCache::new();
+        dists.ensure(&mems, false, &eval)?;
+        let (ids, info) = dists.speciate(&mems, 0.0);
+
+        assert_eq!(info.num, 3);
+        assert_eq!(ids, vec![1, 2, 3]);
+        Ok(())
     }
 }

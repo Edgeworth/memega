@@ -18,7 +18,7 @@ impl LgpOptimizer {
 
     #[must_use]
     pub fn optimize(&self) -> Vec<Op> {
-        let mut eff_regs = [false; u8::MAX as usize];
+        let mut eff_regs = [false; u8::MAX as usize + 1];
         for reg in &self.output_regs {
             eff_regs[*reg as usize] = true;
         }
@@ -71,10 +71,10 @@ impl LgpOptimizer {
 
 #[cfg(test)]
 mod tests {
-    use eyre::Result;
     use pretty_assertions::assert_eq;
 
     use super::*;
+    use crate::Result;
     use crate::evaluators::lgp::vm::asm::lgp_asm;
     use crate::evaluators::lgp::vm::disasm::lgp_disasm;
 
