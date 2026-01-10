@@ -48,7 +48,7 @@ impl<S: State> UnevaluatedGenr<S> {
 
         // Check fitnesses are non-negative and finite.
         if !self.mems.iter().map(|v| v.fitness).all(|v| v >= 0.0 && v.is_finite()) {
-            return Err(Error::EvolverError("got negative or non-finite fitness".to_string()));
+            return Err(Error::evolver_msg("got negative or non-finite fitness"));
         }
 
         // Sort by fitnesses.

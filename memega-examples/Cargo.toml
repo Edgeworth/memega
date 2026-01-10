@@ -11,7 +11,7 @@ version = "0.1.0"
 
 [dependencies]
 approx = "0.5.1"
-clap = {version = "4.5.53", features = ["derive", "unicode", "wrap_help"]}
+clap = {version = "4.5.54", features = ["derive", "unicode", "wrap_help"]}
 derive_more = "2.1.1"
 enumset = "1.1.10"
 log = "0.4.29"

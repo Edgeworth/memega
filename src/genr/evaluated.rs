@@ -108,14 +108,14 @@ impl<S: State> EvaluatedGen<S> {
 
     fn check_weights(weights: &[f64], l: usize) -> Result<()> {
         if weights.len() != l {
-            return Err(Error::EvolverError(format!(
+            return Err(Error::evolver_msg(format!(
                 "number of fixed weights {} doesn't match {l}",
                 weights.len()
             )));
         }
         for &v in weights {
             if v < 0.0 || !v.is_finite() {
-                return Err(Error::EvolverError(format!(
+                return Err(Error::evolver_msg(format!(
                     "weights must all be non-negative and finite: {v}"
                 )));
             }
